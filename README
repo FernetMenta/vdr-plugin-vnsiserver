@@ -1,9 +1,13 @@
+
+-----------------------------------------------------------------------------
+1. Introduction
+-----------------------------------------------------------------------------
+
 This is a "plugin" for the Video Disk Recorder (VDR).
 
-Project's homepage:          xbmc.org
-
-Latest version available at: 
-https://github.com/opdenkamp/xbmc-pvr-addons/tree/master/addons/pvr.vdr.vnsi/vdr-plugin-vnsiserver
+VDR plugin to handle XBMC clients.
+The vdr-plugin-vnsiserver is able to handle serveral XBMC clients connecting
+via the VNSI addon.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -11,15 +15,21 @@ the Free Software Foundation; either version 2 of the License, or
 (at your option) any later version.
 See the file COPYING for more information.
 
+Latest version available at: 
+https://github.com/FernetMenta/vdr-plugin-vnsiserver
 
-Description:
-------------
+-----------------------------------------------------------------------------
+2. Compile in VDR's source tree
+-----------------------------------------------------------------------------
 
-VDR plugin to handle XBMC clients.
-The vdr-plugin-vnsiserver is able to handle serveral XBMC clients connecting via the VNSI addon.
+Get VDR sources.
 
-VNSI supports also dynamic PID switching of the received DVB-TS stream. Further it detect and demuxing several
-not by VDR implemented Audio Streams, this are:
-- Enhanced AC3 (not tested)
-- Advanced Audio Coding (AAC) (not tested)
-- DTS (demuxer not finished now, and does not work)
+   $ cd <path to vdr>/PLUGINS/src
+   $ git clone https://github.com/FernetMenta/vdr-plugin-vnsiserver
+   $ ln -s vdr-plugin-vnsiserver vnsiserver
+   
+   -----------------------------------------------------------------------------
+3. Help and Suppport
+-----------------------------------------------------------------------------
+
+http://forum.xbmc.org/forumdisplay.php?fid=169
