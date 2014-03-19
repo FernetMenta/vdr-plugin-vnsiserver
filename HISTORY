@@ -5,6 +5,7 @@ VDR Plugin 'vnsiserver' Revision History
 
 - release 1.0
 - various fixes
+- remove suffix from plugin name vnsiserver5 -> vnsiserver
 
 2014-01-08: Version 0.9.4
 
