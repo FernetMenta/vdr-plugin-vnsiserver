@@ -100,20 +100,18 @@ void cParserH264::Parse(sStreamPacket *pkt)
       DEBUGLOG("H.264 SPS: PAR %i:%i", m_PixelAspect.num, m_PixelAspect.den);
       DEBUGLOG("H.264 SPS: DAR %.2f", DAR);
 
-      if (m_FpsScale == 0)
-      {
-        if (m_curDTS != DVD_NOPTS_VALUE && m_prevDTS != DVD_NOPTS_VALUE)
-          m_FpsScale = m_Stream->Rescale(m_curDTS - m_prevDTS, DVD_TIME_BASE, 90000);
-        else
-          m_FpsScale = 40000;
-      }
-      bool streamChange = m_Stream->SetVideoInformation(m_FpsScale, DVD_TIME_BASE, m_Height, m_Width, DAR);
-
       int duration;
       if (m_curDTS != DVD_NOPTS_VALUE && m_prevDTS != DVD_NOPTS_VALUE)
         duration = m_curDTS - m_prevDTS;
       else
-        duration = m_Stream->Rescale(m_FpsScale, 90000, DVD_TIME_BASE);
+        duration = m_Stream->Rescale(20000, 90000, DVD_TIME_BASE);
+
+      if (m_FpsScale == 0)
+      {
+        m_FpsScale = m_Stream->Rescale(duration, DVD_TIME_BASE, 90000);
+      }
+
+      bool streamChange = m_Stream->SetVideoInformation(m_FpsScale, DVD_TIME_BASE, m_Height, m_Width, DAR);
 
       pkt->id       = m_pID;
       pkt->size     = m_PesNextFramePtr;
