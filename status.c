@@ -150,7 +150,7 @@ void cVNSIStatus::Action(void)
       {
         (*i)->EpgChange();
       }
-      epgUpdate = cSchedules::Modified();
+      epgUpdate = time(NULL);
     }
 
     m_mutex.Unlock();
