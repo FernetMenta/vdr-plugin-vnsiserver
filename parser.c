@@ -164,7 +164,7 @@ int cParser::ParsePESHeader(uint8_t *buf, size_t len)
     }
   }
   else
-    m_curDTS = DVD_NOPTS_VALUE;
+    m_curDTS = m_curPTS;
 
   return hdr_len;
 }
