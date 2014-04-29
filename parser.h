@@ -167,6 +167,7 @@ protected:
   int         m_PesTimePos;
 
   bool        m_FoundFrame;
+  bool        m_FrameValid;
 
   int         m_pID;
   int64_t     m_curPTS;

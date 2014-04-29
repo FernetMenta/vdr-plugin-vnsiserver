@@ -92,7 +92,7 @@ void cParserMPEG2Video::Parse(sStreamPacket *pkt)
 
   if (frameComplete)
   {
-    if (!m_NeedSPS && !m_NeedIFrame)
+    if (!m_NeedSPS && !m_NeedIFrame && m_FrameValid)
     {
       if (m_FpsScale == 0)
       {
@@ -114,6 +114,7 @@ void cParserMPEG2Video::Parse(sStreamPacket *pkt)
     m_StartCode = 0xffffffff;
     m_PesParserPtr = 0;
     m_FoundFrame = false;
+    m_FrameValid = true;
   }
 }
 

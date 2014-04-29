@@ -67,6 +67,7 @@ void cParser::Reset()
   m_PesParserPtr = 0;
   m_PesNextFramePtr = 0;
   m_FoundFrame = false;
+  m_FrameValid = false;
   m_PesPacketLength = 0;
   m_PesHeaderPtr = 0;
   m_Error = ERROR_PES_GENERAL;

@@ -93,7 +93,7 @@ void cParserH264::Parse(sStreamPacket *pkt)
 
   if (frameComplete)
   {
-    if (!m_NeedSPS && !m_NeedIFrame)
+    if (!m_NeedSPS && !m_NeedIFrame && m_FrameValid)
     {
       double PAR = (double)m_PixelAspect.num/(double)m_PixelAspect.den;
       double DAR = (PAR * m_Width) / m_Height;
@@ -124,6 +124,7 @@ void cParserH264::Parse(sStreamPacket *pkt)
     m_StartCode = 0xffffffff;
     m_PesParserPtr = 0;
     m_FoundFrame = false;
+    m_FrameValid = true;
   }
 }
 
