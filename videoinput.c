@@ -68,7 +68,7 @@ void cLiveReceiver::Receive(uchar *Data, int Length)
 inline void cLiveReceiver::Activate(bool On)
 {
   DEBUGLOG("activate live receiver: %d", On);
-  if (!On)
+  if (!On && !m_VideoInput->m_PmtChange)
   {
     m_VideoInput->Retune();
   }
@@ -437,6 +437,7 @@ bool cVideoInput::Open(const cChannel *channel, int priority, cVideoBuffer *vide
 
 void cVideoInput::Close()
 {
+  INFOLOG("close video input ...");
   Cancel(5);
 
   if (m_Device)
@@ -514,11 +515,11 @@ void cVideoInput::PmtChange(int pidChange)
   if (pidChange)
   {
     INFOLOG("Video Input - new pmt, attaching receiver");
+    m_PmtChange = true;
     m_Device->Detach(m_Receiver);
     m_Receiver->SetPids(NULL);
     m_Receiver->SetPids(&m_Receiver->m_PmtChannel);
     m_Receiver->AddPid(m_Receiver->m_PmtChannel.Tpid());
-    m_PmtChange = true;
     m_Device->AttachReceiver(m_Receiver);
     m_SeenPmt = true;
   }
@@ -541,6 +542,7 @@ inline void cVideoInput::Receive(uchar *data, int length)
 
 void cVideoInput::Retune()
 {
+  INFOLOG("call retune ...");
   cMutexLock lock(&m_Mutex);
   m_IsRetune = true;
   m_Event.Broadcast();
