@@ -630,7 +630,7 @@ bool cVNSIClient::process_Login() /* OPCODE 1 */
   m_resp->add_String(VNSI_SERVER_VERSION);
   m_resp->finalise();
 
-  if (m_protocolVersion != VNSI_PROTOCOLVERSION)
+  if (m_protocolVersion < VNSI_MIN_PROTOCOLVERSION)
     ERRORLOG("Client '%s' have a not allowed protocol version '%u', terminating client", clientName, m_protocolVersion);
   else
     SetLoggedIn(true);
@@ -1018,6 +1018,10 @@ bool cVNSIClient::processCHANNELS_GetChannels() /* OPCODE 63 */
       caid_idx++;
     }
     m_resp->add_String((const char*)caids);
+    if (m_protocolVersion >= 6)
+    {
+      m_resp->add_String(CreatePiconRef(channel));
+    }
   }
 
   Channels.Unlock();
@@ -2276,4 +2280,44 @@ bool cVNSIClient::processOSD_Hitkey() /* OPCODE 162 */
     cVnsiOsdProvider::SendKey(key);
   }
   return true;
+}
+
+// this method is taken from XVDR
+cString cVNSIClient::CreatePiconRef(cChannel* channel)
+{
+  int hash = 0;
+
+  if(cSource::IsSat(channel->Source()))
+  {
+    hash = channel->Source() & cSource::st_Pos;
+
+#if VDRVERSNUM >= 20101
+    hash = -hash;
+#endif
+
+    if(hash > 0x00007FFF)
+      hash |= 0xFFFF0000;
+
+    if(hash < 0)
+      hash = -hash;
+    else
+      hash = 1800 + hash;
+
+    hash = hash << 16;
+  }
+  else if(cSource::IsCable(channel->Source()))
+    hash = 0xFFFF0000;
+  else if(cSource::IsTerr(channel->Source()))
+    hash = 0xEEEE0000;
+  else if(cSource::IsAtsc(channel->Source()))
+    hash = 0xDDDD0000;
+
+  cString serviceref = cString::sprintf("1_0_%i_%X_%X_%X_%X_0_0_0",
+                                cVNSIChannelFilter::IsRadio(channel) ? 2 : (channel->Vtype() == 27) ? 19 : 1,
+                                channel->Sid(),
+                                channel->Tid(),
+                                channel->Nid(),
+                                hash);
+
+  return serviceref;
 }

@@ -180,6 +180,8 @@ private:
   bool processOSD_Connect();
   bool processOSD_Disconnect();
   bool processOSD_Hitkey();
+
+  cString CreatePiconRef(cChannel* channel);
 };
 
 #endif // VNSI_CLIENT_H
