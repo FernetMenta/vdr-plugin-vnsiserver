@@ -40,6 +40,7 @@ private:
   bool        m_Configured;
   int         m_AudioMuxVersion_A;
   int         m_FrameLengthType;
+  bool        m_DetectMuxMode;
 
   int FindHeaders(uint8_t *buf, int buf_size);
   bool ParseLATMAudioMuxElement(cBitstream *bs);
