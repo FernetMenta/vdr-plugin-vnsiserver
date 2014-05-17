@@ -26,6 +26,7 @@ int TimeshiftMode = 0;
 int TimeshiftBufferSize = 5;
 int TimeshiftBufferFileSize = 6;
 char TimeshiftBufferDir[PATH_MAX] = "\0";
+int PlayRecording = 0;
 
 cMenuSetupVNSI::cMenuSetupVNSI(void)
 {
@@ -46,6 +47,9 @@ cMenuSetupVNSI::cMenuSetupVNSI(void)
 
   strn0cpy(newTimeshiftBufferDir, TimeshiftBufferDir, sizeof(newTimeshiftBufferDir));
   Add(new cMenuEditStrItem(tr("TS Buffer Directory"), newTimeshiftBufferDir, sizeof(newTimeshiftBufferDir)));
+
+  newPlayRecording = PlayRecording;
+  Add(new cMenuEditBoolItem( tr("Play Recording instead of live"), &newPlayRecording));
 }
 
 void cMenuSetupVNSI::Store(void)
@@ -69,4 +73,6 @@ void cMenuSetupVNSI::Store(void)
   SetupStore(CONFNAME_TIMESHIFTBUFFERFILESIZE, TimeshiftBufferFileSize = newTimeshiftBufferFileSize);
 
   SetupStore(CONFNAME_TIMESHIFTBUFFERDIR, strn0cpy(TimeshiftBufferDir, newTimeshiftBufferDir, sizeof(TimeshiftBufferDir)));
+
+  SetupStore(CONFNAME_PLAYRECORDING, PlayRecording = newPlayRecording);
 }

@@ -92,7 +92,7 @@ bool cLiveStreamer::Open(int serial)
     recording = true;
     m_VideoBuffer = cVideoBuffer::Create("/home/xbmc/test.ts");
   }
-  else if (serial == -1)
+  else if (PlayRecording && serial == -1)
   {
     for (cTimer *timer = Timers.First(); timer; timer = Timers.Next(timer))
     {

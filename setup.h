@@ -32,6 +32,7 @@ private:
   int newTimeshiftBufferSize;
   int newTimeshiftBufferFileSize;
   char newTimeshiftBufferDir[PATH_MAX];
+  int newPlayRecording;
 protected:
   virtual void Store(void);
 public:

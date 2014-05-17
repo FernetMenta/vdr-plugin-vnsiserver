@@ -717,6 +717,11 @@ bool cVNSIClient::process_StoreSetup() /* OPCODE 9 */
     int value = m_req->extract_U32();
     cPluginVNSIServer::StoreSetup(CONFNAME_TIMESHIFTBUFFERFILESIZE, value);
   }
+  else if (!strcasecmp(name, CONFNAME_PLAYRECORDING))
+  {
+    int value = m_req->extract_U32();
+    cPluginVNSIServer::StoreSetup(CONFNAME_PLAYRECORDING, value);
+  }
 
   m_resp->add_U32(VNSI_RET_OK);
   m_resp->finalise();

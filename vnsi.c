@@ -130,6 +130,8 @@ bool cPluginVNSIServer::SetupParse(const char *Name, const char *Value)
     TimeshiftBufferFileSize = atoi(Value);
   else if (!strcasecmp(Name, CONFNAME_TIMESHIFTBUFFERDIR))
     strn0cpy(TimeshiftBufferDir, Value, sizeof(TimeshiftBufferDir));
+  else if (!strcasecmp(Name, CONFNAME_PLAYRECORDING))
+    PlayRecording = atoi(Value);
   else
     return false;
   return true;

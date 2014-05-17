@@ -34,6 +34,7 @@ extern int TimeshiftMode;
 extern int TimeshiftBufferSize;
 extern int TimeshiftBufferFileSize;
 extern char TimeshiftBufferDir[PATH_MAX];
+extern int PlayRecording;
 
 class cPluginVNSIServer : public cPlugin {
 private:
