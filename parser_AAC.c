@@ -76,6 +76,8 @@ void cParserAAC::Parse(sStreamPacket *pkt)
     pkt->id       = m_pID;
     pkt->data     = &m_PesBuffer[p];
     pkt->size     = m_FrameSize;
+    if(!m_SampleRate)
+      m_SampleRate = aac_sample_rates[4];
     pkt->duration = 1024 * 90000 / m_SampleRate;
     pkt->dts      = m_DTS;
     pkt->pts      = m_PTS;
@@ -111,6 +113,8 @@ int cParserAAC::FindHeaders(uint8_t *buf, int buf_size)
       m_FoundFrame = true;
       m_DTS = m_curPTS;
       m_PTS = m_curPTS;
+      if(!m_SampleRate)
+	m_SampleRate = aac_sample_rates[4];
       m_curPTS += 90000 * 1024 / m_SampleRate;
       return -1;
     }
