@@ -36,10 +36,13 @@ extern int TimeshiftBufferFileSize;
 extern char TimeshiftBufferDir[PATH_MAX];
 extern int PlayRecording;
 
+class cDvbVsniDeviceProbe;
+
 class cPluginVNSIServer : public cPlugin {
 private:
   cVNSIServer *Server;
   static cPluginVNSIServer *VNSIServer;
+  cDvbVsniDeviceProbe *probe;
 
 public:
   cPluginVNSIServer(void);
@@ -66,3 +69,18 @@ public:
   static void StoreSetup(const char *Name, int Value);
 };
 
+class cDvbVsniDeviceProbe : public cDvbDeviceProbe
+{
+public:
+  virtual bool Probe(int Adapter, int Frontend);
+};
+
+class cDvbVnsiDevice : public cDvbDevice
+{
+public:
+  cDvbVnsiDevice(int Adapter, int Frontend);
+  virtual ~cDvbVnsiDevice();
+  virtual bool HasDecoder(void) const;
+  int PlayVideo(const uchar *Data, int Length);
+  int PlayAudio(const uchar *Data, int Length, uchar Id);
+};

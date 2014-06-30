@@ -34,11 +34,13 @@ cPluginVNSIServer::cPluginVNSIServer(void)
 {
   Server = NULL;
   VNSIServer = NULL;
+  probe = new cDvbVsniDeviceProbe();
 }
 
 cPluginVNSIServer::~cPluginVNSIServer()
 {
   // Clean up after yourself!
+  delete probe;
 }
 
 const char *cPluginVNSIServer::CommandLineHelp(void)
@@ -165,6 +167,36 @@ void cPluginVNSIServer::StoreSetup(const char *Name, int Value)
       Setup.Save();
     }
   }
+}
+
+bool cDvbVsniDeviceProbe::Probe(int Adapter, int Frontend)
+{
+  new cDvbVnsiDevice(Adapter, Frontend);
+}
+
+cDvbVnsiDevice::cDvbVnsiDevice(int Adapter, int Frontend) :cDvbDevice(Adapter, Frontend)
+{
+
+}
+
+cDvbVnsiDevice::~cDvbVnsiDevice()
+{
+
+}
+
+bool cDvbVnsiDevice::HasDecoder(void) const
+{
+  return true;
+}
+
+int cDvbVnsiDevice::PlayVideo(const uchar *Data, int Length)
+{
+  return Length;
+}
+
+int cDvbVnsiDevice::PlayAudio(const uchar *Data, int Length, uchar Id)
+{
+  return Length;
 }
 
 VDRPLUGINCREATOR(cPluginVNSIServer); // Don't touch this!
