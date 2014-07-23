@@ -53,14 +53,17 @@ bool cPluginVNSIServer::ProcessArgs(int argc, char *argv[])
   // Implement command line argument processing here if applicable.
   static struct option long_options[] = {
        { "timeout",  required_argument, NULL, 't' },
+       { "device",   no_argument,       NULL, 'd' },
        { NULL,       no_argument,       NULL,  0  }
      };
 
   int c;
 
-  while ((c = getopt_long(argc, argv, "t:", long_options, NULL)) != -1) {
+  while ((c = getopt_long(argc, argv, "t:d", long_options, NULL)) != -1) {
         switch (c) {
           case 't': if(optarg != NULL) VNSIServerConfig.stream_timeout = atoi(optarg);
+                    break;
+          case 'd': VNSIServerConfig.device = true;
                     break;
           default:  return false;
           }
@@ -171,7 +174,13 @@ void cPluginVNSIServer::StoreSetup(const char *Name, int Value)
 
 bool cDvbVsniDeviceProbe::Probe(int Adapter, int Frontend)
 {
-  new cDvbVnsiDevice(Adapter, Frontend);
+  if (VNSIServerConfig.device)
+  {
+    new cDvbVnsiDevice(Adapter, Frontend);
+    return true;
+  }
+  else
+    return false;
 }
 
 cDvbVnsiDevice::cDvbVnsiDevice(int Adapter, int Frontend) :cDvbDevice(Adapter, Frontend)
