@@ -27,6 +27,7 @@ int TimeshiftBufferSize = 5;
 int TimeshiftBufferFileSize = 6;
 char TimeshiftBufferDir[PATH_MAX] = "\0";
 int PlayRecording = 0;
+int AvoidEPGScan = 0;
 
 cMenuSetupVNSI::cMenuSetupVNSI(void)
 {
@@ -50,6 +51,9 @@ cMenuSetupVNSI::cMenuSetupVNSI(void)
 
   newPlayRecording = PlayRecording;
   Add(new cMenuEditBoolItem( tr("Play Recording instead of live"), &newPlayRecording));
+
+  newAvoidEPGScan = AvoidEPGScan;
+  Add(new cMenuEditBoolItem( tr("Avoid EPG scan while streaming"), &newAvoidEPGScan));
 }
 
 void cMenuSetupVNSI::Store(void)
@@ -75,4 +79,6 @@ void cMenuSetupVNSI::Store(void)
   SetupStore(CONFNAME_TIMESHIFTBUFFERDIR, strn0cpy(TimeshiftBufferDir, newTimeshiftBufferDir, sizeof(TimeshiftBufferDir)));
 
   SetupStore(CONFNAME_PLAYRECORDING, PlayRecording = newPlayRecording);
+
+  SetupStore(CONFNAME_AVOIDEPGSCAN, AvoidEPGScan = newAvoidEPGScan);
 }
