@@ -33,6 +33,7 @@ private:
   int newTimeshiftBufferFileSize;
   char newTimeshiftBufferDir[PATH_MAX];
   int newPlayRecording;
+  int newAvoidEPGScan;
 protected:
   virtual void Store(void);
 public:

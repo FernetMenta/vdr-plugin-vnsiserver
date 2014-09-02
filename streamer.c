@@ -27,6 +27,7 @@
 #include <time.h>
 
 #include <vdr/channels.h>
+#include <vdr/eitscan.h>
 
 #include "config.h"
 #include "streamer.h"
@@ -199,6 +200,13 @@ void cLiveStreamer::Action(void)
       {
         last_info.Set(0);
         sendSignalInfo();
+
+        // prevent EPG scan (activity timeout is 60s)
+        // EPG scan can cause artifacts on dual tuner cards
+        if (AvoidEPGScan)
+        {
+          EITScanner.Activity();
+        }
       }
 
       // send buffer stats
