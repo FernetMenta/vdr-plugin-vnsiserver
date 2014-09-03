@@ -1,6 +1,14 @@
 VDR Plugin 'vnsiserver' Revision History
 ----------------------------------------
 
+2014-09-03: Version 1.2.0
+
+- add cmd line switch "-d". if set, vnsi creates a dummy dvb device which makes femon work 
+  on all channels
+- add setup parameter AvoidEPGScan. if set to 1, vnsi disables EPG scan while streaming.
+  EPG scan during streaming can lead to artifacs on some dual tuner cards.
+- fix div by zero on AAC audio, thanks to Jakob Sloth Jepsen
+
 2014-03-20: Version 1.1.0
 
 - add support for picons
