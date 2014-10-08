@@ -36,6 +36,7 @@ cVNSIServerConfig::cVNSIServerConfig()
   ConfigDirectory     = NULL;
   stream_timeout      = 10;
   device              = false;
+  testStreamActive    = false;
 }
 
 /* Global instance */

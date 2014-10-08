@@ -79,6 +79,8 @@ public:
   uint16_t listen_port;         // Port of remote server
   uint16_t stream_timeout;      // timeout in seconds for stream data
   bool device;                  // true if vnsi should act as dummy device
+  cString testStreamFile;       // TS file to simulate channel
+  bool testStreamActive;        // true if test mode is enabled
 };
 
 // Global instance
