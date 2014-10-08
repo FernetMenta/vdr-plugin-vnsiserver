@@ -88,10 +88,10 @@ bool cLiveStreamer::Open(int serial)
     return false;
 
   bool recording = false;
-  if (0) // test harness
+  if (VNSIServerConfig.testStreamActive) // test harness
   {
     recording = true;
-    m_VideoBuffer = cVideoBuffer::Create("/home/xbmc/test.ts");
+    m_VideoBuffer = cVideoBuffer::Create(VNSIServerConfig.testStreamFile);
   }
   else if (PlayRecording && serial == -1)
   {

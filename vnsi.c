@@ -45,7 +45,8 @@ cPluginVNSIServer::~cPluginVNSIServer()
 
 const char *cPluginVNSIServer::CommandLineHelp(void)
 {
-    return "  -t n, --timeout=n      stream data timeout in seconds (default: 10)\n";
+    return "  -t n, --timeout=n      stream data timeout in seconds (default: 10)\n"
+           "  -s n, --test=n         TS stream test file to simulate as channel\n";
 }
 
 bool cPluginVNSIServer::ProcessArgs(int argc, char *argv[])
@@ -54,16 +55,29 @@ bool cPluginVNSIServer::ProcessArgs(int argc, char *argv[])
   static struct option long_options[] = {
        { "timeout",  required_argument, NULL, 't' },
        { "device",   no_argument,       NULL, 'd' },
+       { "test",     required_argument, NULL, 'T' },
        { NULL,       no_argument,       NULL,  0  }
      };
 
   int c;
 
-  while ((c = getopt_long(argc, argv, "t:d", long_options, NULL)) != -1) {
+  while ((c = getopt_long(argc, argv, "t:d:T:", long_options, NULL)) != -1) {
         switch (c) {
           case 't': if(optarg != NULL) VNSIServerConfig.stream_timeout = atoi(optarg);
                     break;
           case 'd': VNSIServerConfig.device = true;
+                    break;
+          case 'T': if(optarg != NULL) {
+                    VNSIServerConfig.testStreamFile = optarg;
+
+                    struct stat file_stat;
+                    if (stat(VNSIServerConfig.testStreamFile, &file_stat) == 0) {
+                      VNSIServerConfig.testStreamActive = true;
+                      printf("vnsiserver: requested test stream file '%s' played now on all channels\n", *VNSIServerConfig.testStreamFile);
+                      }
+                    else
+                      printf("vnsiserver: requested test stream file '%s' not present, started without\n", *VNSIServerConfig.testStreamFile);
+                      }
                     break;
           default:  return false;
           }
