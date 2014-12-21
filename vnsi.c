@@ -46,6 +46,7 @@ cPluginVNSIServer::~cPluginVNSIServer()
 const char *cPluginVNSIServer::CommandLineHelp(void)
 {
     return "  -t n, --timeout=n      stream data timeout in seconds (default: 10)\n"
+           "  -d  , --device         act as the primary device\n"
            "  -s n, --test=n         TS stream test file to simulate as channel\n";
 }
 
@@ -61,7 +62,7 @@ bool cPluginVNSIServer::ProcessArgs(int argc, char *argv[])
 
   int c;
 
-  while ((c = getopt_long(argc, argv, "t:d:T:", long_options, NULL)) != -1) {
+  while ((c = getopt_long(argc, argv, "t:dT:", long_options, NULL)) != -1) {
         switch (c) {
           case 't': if(optarg != NULL) VNSIServerConfig.stream_timeout = atoi(optarg);
                     break;
