@@ -213,7 +213,7 @@ bool cResponsePacket::copyin(const uint8_t* src, uint32_t len)
 }
 
 uint8_t* cResponsePacket::reserve(uint32_t len) {
-  if (!checkExtend(len)) return false;
+  if (!checkExtend(len)) return 0;
   uint8_t* result = buffer + bufUsed;
   bufUsed += len;
   return result;
