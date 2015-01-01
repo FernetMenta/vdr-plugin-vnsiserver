@@ -491,9 +491,11 @@ void cVideoInput::Close()
     }
   }
   m_Channel = NULL;
+  m_Device = NULL;
   if (m_VideoBuffer)
   {
     m_VideoBuffer->AttachInput(false);
+    m_VideoBuffer = NULL;
   }
 }
 
