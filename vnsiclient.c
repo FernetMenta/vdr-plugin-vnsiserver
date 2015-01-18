@@ -254,7 +254,7 @@ void cVNSIClient::EpgChange()
   if (!schedules)
     return;
 
-  std::map<int, time_t>::iterator it;
+  std::map<int, sEpgUpdate>::iterator it;
   for (const cSchedule *schedule = schedules->First(); schedule; schedule = schedules->Next(schedule))
   {
     cEvent *lastEvent =  schedule->Events()->Last();
@@ -273,10 +273,16 @@ void cVNSIClient::EpgChange()
 
     uint32_t channelId = CreateStringHash(schedule->ChannelID().ToString());
     it = m_epgUpdate.find(channelId);
-    if (it != m_epgUpdate.end() && it->second >= lastEvent->StartTime())
+    if (it != m_epgUpdate.end() && it->second.lastEvent >= lastEvent->StartTime())
     {
       continue;
     }
+
+    if (it->second.attempts > 3)
+    {
+      continue;
+    }
+    it->second.attempts++;
 
     INFOLOG("Trigger EPG update for channel %s, id: %d", channel->Name(), channelId);
 
@@ -1010,10 +1016,11 @@ bool cVNSIClient::processCHANNELS_GetChannels() /* OPCODE 63 */
     if (filter && !VNSIChannelFilter.PassFilter(*channel))
       continue;
 
+    uint32_t uuid = CreateChannelUID(channel);
     m_resp->add_U32(channel->Number());
     m_resp->add_String(m_toUTF8.Convert(channel->Name()));
     m_resp->add_String(m_toUTF8.Convert(channel->Provider()));
-    m_resp->add_U32(CreateChannelUID(channel));
+    m_resp->add_U32(uuid);
     m_resp->add_U32(channel->Ca(0));
     caid_idx = 0;
     caids = "caids:";
@@ -1026,6 +1033,15 @@ bool cVNSIClient::processCHANNELS_GetChannels() /* OPCODE 63 */
     if (m_protocolVersion >= 6)
     {
       m_resp->add_String(CreatePiconRef(channel));
+    }
+
+    // create entry in EPG map on first query
+    std::map<int, sEpgUpdate>::iterator it;
+    it = m_epgUpdate.find(uuid);
+    if (it == m_epgUpdate.end())
+    {
+      m_epgUpdate[uuid].lastEvent = 0;
+      m_epgUpdate[uuid].attempts = 0;
     }
   }
 
@@ -1896,7 +1912,6 @@ bool cVNSIClient::processEPG_GetForChannel() /* OPCODE 120 */
 
   cSchedulesLock MutexLock;
   const cSchedules *Schedules = cSchedules::Schedules(MutexLock);
-  m_epgUpdate[channelUID] = 0;
   if (!Schedules)
   {
     m_resp->add_U32(0);
@@ -1991,7 +2006,8 @@ bool cVNSIClient::processEPG_GetForChannel() /* OPCODE 120 */
   cEvent *lastEvent =  Schedule->Events()->Last();
   if (lastEvent)
   {
-    m_epgUpdate[channelUID] = lastEvent->StartTime();
+    m_epgUpdate[channelUID].lastEvent = lastEvent->StartTime();
+    m_epgUpdate[channelUID].attempts = 0;
   }
   DEBUGLOG("written schedules packet");
 

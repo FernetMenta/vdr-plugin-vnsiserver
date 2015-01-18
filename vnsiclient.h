@@ -65,7 +65,12 @@ private:
   cMutex           m_msgLock;
   static cMutex    m_timerLock;
   cVnsiOsdProvider *m_Osd;
-  std::map<int, time_t> m_epgUpdate;
+  typedef struct
+  {
+    int attempts;
+    time_t lastEvent;
+  } sEpgUpdate;
+  std::map<int, sEpgUpdate> m_epgUpdate;
 
 protected:
 
