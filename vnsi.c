@@ -47,13 +47,15 @@ const char *cPluginVNSIServer::CommandLineHelp(void)
 {
     return "  -t n, --timeout=n      stream data timeout in seconds (default: 10)\n"
            "  -d  , --device         act as the primary device\n"
-           "  -s n, --test=n         TS stream test file to simulate as channel\n";
+           "  -s n, --test=n         TS stream test file to simulate as channel\n"
+           "  -p n, --port=n         tcp port to listen on\n";
 }
 
 bool cPluginVNSIServer::ProcessArgs(int argc, char *argv[])
 {
   // Implement command line argument processing here if applicable.
   static struct option long_options[] = {
+       { "port",     required_argument, NULL, 'p' },
        { "timeout",  required_argument, NULL, 't' },
        { "device",   no_argument,       NULL, 'd' },
        { "test",     required_argument, NULL, 'T' },
@@ -62,8 +64,10 @@ bool cPluginVNSIServer::ProcessArgs(int argc, char *argv[])
 
   int c;
 
-  while ((c = getopt_long(argc, argv, "t:dT:", long_options, NULL)) != -1) {
+  while ((c = getopt_long(argc, argv, "t:dT:p:", long_options, NULL)) != -1) {
         switch (c) {
+          case 'p': if(optarg != NULL) VNSIServerConfig.listen_port = atoi(optarg);
+                    break;
           case 't': if(optarg != NULL) VNSIServerConfig.stream_timeout = atoi(optarg);
                     break;
           case 'd': VNSIServerConfig.device = true;
@@ -97,6 +101,7 @@ bool cPluginVNSIServer::Initialize(void)
 
 bool cPluginVNSIServer::Start(void)
 {
+  INFOLOG("Starting vnsi server at port=%d\n", VNSIServerConfig.listen_port);
   Server = new cVNSIServer(VNSIServerConfig.listen_port);
 
   return true;
