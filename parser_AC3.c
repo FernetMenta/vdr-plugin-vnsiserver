@@ -121,7 +121,7 @@ cParserAC3::~cParserAC3()
 {
 }
 
-void cParserAC3::Parse(sStreamPacket *pkt)
+void cParserAC3::Parse(sStreamPacket *pkt, sStreamPacket *pkt_side_data)
 {
   int p = m_PesParserPtr;
   int l;

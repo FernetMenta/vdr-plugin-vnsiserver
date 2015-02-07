@@ -33,7 +33,7 @@ cParserTeletext::~cParserTeletext()
 {
 }
 
-void cParserTeletext::Parse(sStreamPacket *pkt)
+void cParserTeletext::Parse(sStreamPacket *pkt, sStreamPacket *pkt_side_data)
 {
   int l = m_PesBufferPtr;
   if (l < 1)

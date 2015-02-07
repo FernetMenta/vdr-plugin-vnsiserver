@@ -25,6 +25,8 @@
 #include "parser_MPEGAudio.h"
 #include "bitstream.h"
 
+#define MAX_RDS_BUFFER_SIZE 100000
+
 const uint16_t FrequencyTable[3] = { 44100, 48000, 32000 };
 const uint16_t BitrateTable[2][3][15] =
 {
@@ -40,7 +42,7 @@ const uint16_t BitrateTable[2][3][15] =
   }
 };
 
-cParserMPEG2Audio::cParserMPEG2Audio(int pID, cTSStream *stream, sPtsWrap *ptsWrap, bool observePtsWraps)
+cParserMPEG2Audio::cParserMPEG2Audio(int pID, cTSStream *stream, sPtsWrap *ptsWrap, bool observePtsWraps, bool enableRDS)
  : cParser(pID, stream, ptsWrap, observePtsWraps)
 {
   m_PTS                       = 0;
@@ -50,13 +52,23 @@ cParserMPEG2Audio::cParserMPEG2Audio(int pID, cTSStream *stream, sPtsWrap *ptsWr
   m_Channels                  = 0;
   m_BitRate                   = 0;
   m_PesBufferInitialSize      = 2048;
+  m_RDSEnabled                = enableRDS;
+  m_RDSBufferInitialSize      = 384;
+  m_RDSBuffer                 = NULL;
+  m_RDSBufferSize             = 0;
+  m_RDSExtPID                 = 0;
 }
 
 cParserMPEG2Audio::~cParserMPEG2Audio()
 {
+  if (m_RDSBuffer)
+  {
+    delete m_RDSBuffer;
+    m_RDSBuffer = NULL;
+  }
 }
 
-void cParserMPEG2Audio::Parse(sStreamPacket *pkt)
+void cParserMPEG2Audio::Parse(sStreamPacket *pkt, sStreamPacket *pkt_side_data)
 {
   int p = m_PesParserPtr;
   int l;
@@ -82,8 +94,73 @@ void cParserMPEG2Audio::Parse(sStreamPacket *pkt)
     m_PesNextFramePtr = p + m_FrameSize;
     m_PesParserPtr = 0;
     m_FoundFrame = false;
+
+    if (m_RDSEnabled)
+    {
+      /*
+       * Reading of RDS Universal Encoder Communication Protocol
+       * If present it starts on end of a mpeg audio stream and goes
+       * backwards.
+       * See ETSI TS 101 154 - C.4.2.18 for details.
+       */
+      int rdsl = m_PesBuffer[p+m_FrameSize-2];                  // RDS DataFieldLength
+      if (m_PesBuffer[p+m_FrameSize-1] == 0xfd && rdsl > 0)     // RDS DataSync = 0xfd @ end
+      {
+        if (m_RDSBuffer == NULL)
+        {
+          m_RDSBufferSize = m_RDSBufferInitialSize;
+          m_RDSBuffer = (uint8_t*)malloc(m_RDSBufferSize);
+
+          if (m_RDSBuffer == NULL)
+          {
+            ERRORLOG("PVR Parser MPEG2-Audio - %s - malloc failed for RDS data", __FUNCTION__);
+            m_RDSEnabled = false;
+            return;
+          }
+
+          m_RDSExtPID = m_Stream->AddSideDataType(scRDS);
+          if (!m_RDSExtPID)
+          {
+            ERRORLOG("PVR Parser MPEG2-Audio - %s - failed to add RDS data stream", __FUNCTION__);
+            m_RDSEnabled = false;
+            return;
+          }
+        }
+
+        if (rdsl >= m_RDSBufferSize)
+        {
+          if (rdsl >= MAX_RDS_BUFFER_SIZE)
+          {
+            ERRORLOG("PVR Parser MPEG2-Audio - %s - max buffer size (%i kB) for RDS data reached, pid: %d", __FUNCTION__, MAX_RDS_BUFFER_SIZE/1024, m_pID);
+            m_RDSEnabled = false;
+            return;
+          }
+          m_RDSBufferSize += m_RDSBufferInitialSize / 10;
+          m_RDSBuffer = (uint8_t*)realloc(m_RDSBuffer, m_RDSBufferSize);
+          if (m_RDSBuffer == NULL)
+          {
+            ERRORLOG("PVR Parser MPEG2-Audio - %s - realloc for RDS data failed", __FUNCTION__);
+            m_RDSEnabled = false;
+            return;
+          }
+        }
+
+        int pes_buffer_ptr = 0;
+        for (int i = m_FrameSize-3; i > m_FrameSize-3-rdsl; i--)    // <-- data reverse, from end to start
+          m_RDSBuffer[pes_buffer_ptr++] = m_PesBuffer[p+i];
+
+        pkt_side_data->id       = m_RDSExtPID;
+        pkt_side_data->data     = m_RDSBuffer;
+        pkt_side_data->size     = pes_buffer_ptr;
+        pkt_side_data->duration = 0;
+        pkt_side_data->dts      = m_curDTS;
+        pkt_side_data->pts      = m_curPTS;
+        pkt_side_data->streamChange = false;
+      }
+    }
   }
 }
+
 
 int cParserMPEG2Audio::FindHeaders(uint8_t *buf, int buf_size)
 {

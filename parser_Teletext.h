@@ -35,7 +35,7 @@ public:
   cParserTeletext(int pID, cTSStream *stream, sPtsWrap *ptsWrap, bool observePtsWraps);
   virtual ~cParserTeletext();
 
-  virtual void Parse(sStreamPacket *pkt);
+  virtual void Parse(sStreamPacket *pkt, sStreamPacket *pkt_side_data);
 };
 
 #endif // VNSI_DEMUXER_TELETEXT_H

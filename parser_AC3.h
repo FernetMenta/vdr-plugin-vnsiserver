@@ -42,7 +42,7 @@ public:
   cParserAC3(int pID, cTSStream *stream, sPtsWrap *ptsWrap, bool observePtsWraps);
   virtual ~cParserAC3();
 
-  virtual void Parse(sStreamPacket *pkt);
+  virtual void Parse(sStreamPacket *pkt, sStreamPacket *pkt_side_data);
   virtual void Reset();
 };
 

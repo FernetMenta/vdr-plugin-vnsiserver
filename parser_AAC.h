@@ -51,7 +51,7 @@ private:
 public:
   cParserAAC(int pID, cTSStream *stream, sPtsWrap *ptsWrap, bool observePtsWraps);
   virtual ~cParserAAC();
-  virtual void Parse(sStreamPacket *pkt);
+  virtual void Parse(sStreamPacket *pkt, sStreamPacket *pkt_side_data);
   virtual void Reset();
 };
 

@@ -31,7 +31,7 @@ public:
   cParserSubtitle(int pID, cTSStream *stream, sPtsWrap *ptsWrap, bool observePtsWraps);
   virtual ~cParserSubtitle();
 
-  virtual void Parse(sStreamPacket *pkt);
+  virtual void Parse(sStreamPacket *pkt, sStreamPacket *pkt_side_data);
 };
 
 

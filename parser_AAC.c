@@ -58,7 +58,7 @@ cParserAAC::~cParserAAC()
 
 }
 
-void cParserAAC::Parse(sStreamPacket *pkt)
+void cParserAAC::Parse(sStreamPacket *pkt, sStreamPacket *pkt_side_data)
 {
   int p = m_PesParserPtr;
   int l;

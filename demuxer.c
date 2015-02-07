@@ -27,7 +27,8 @@
 #include <vdr/channels.h>
 #include <libsi/si.h>
 
-cVNSIDemuxer::cVNSIDemuxer()
+cVNSIDemuxer::cVNSIDemuxer(bool bAllowRDS)
+ : m_bAllowRDS(bAllowRDS)
 {
   m_OldPmtVersion = -1;
 }
@@ -73,7 +74,7 @@ void cVNSIDemuxer::Close()
   m_StreamInfos.clear();
 }
 
-int cVNSIDemuxer::Read(sStreamPacket *packet)
+int cVNSIDemuxer::Read(sStreamPacket *packet, sStreamPacket *packet_side_data)
 {
   uint8_t *buf;
   int len;
@@ -132,7 +133,7 @@ int cVNSIDemuxer::Read(sStreamPacket *packet)
   }
   else if (stream = FindStream(ts_pid))
   {
-    int error = stream->ProcessTSPacket(buf, packet, m_WaitIFrame);
+    int error = stream->ProcessTSPacket(buf, packet, packet_side_data, m_WaitIFrame);
     if (error == 0)
     {
       if (m_WaitIFrame)
@@ -434,7 +435,7 @@ bool cVNSIDemuxer::EnsureParsers()
     }
     else if (it->type == stMPEG2AUDIO)
     {
-      stream = new cTSStream(stMPEG2AUDIO, it->pID, &m_PtsWrap);
+      stream = new cTSStream(stMPEG2AUDIO, it->pID, &m_PtsWrap, it->handleRDS);
       stream->SetLanguage(it->language);
     }
     else if (it->type == stAACADTS)
@@ -484,6 +485,7 @@ bool cVNSIDemuxer::EnsureParsers()
 void cVNSIDemuxer::SetChannelStreams(const cChannel *channel)
 {
   sStreamInfo newStream;
+  bool containsVideo = false;
   int index = 0;
   if (channel->Vpid())
   {
@@ -496,6 +498,7 @@ void cVNSIDemuxer::SetChannelStreams(const cChannel *channel)
       newStream.type = stMPEG2VIDEO;
 
     AddStreamInfo(newStream);
+    containsVideo = true;
   }
 
   const int *DPids = channel->Dpids();
@@ -530,6 +533,7 @@ void cVNSIDemuxer::SetChannelStreams(const cChannel *channel)
       else if (channel->Atype(index) == 0x11)
         newStream.type = stAACLATM;
 #endif
+      newStream.handleRDS = m_bAllowRDS && newStream.type == stMPEG2AUDIO && !containsVideo ? true : false; // Relevant for RDS, if present only on mpeg 2 audio, use only if RDS is allowed
       newStream.SetLanguage(channel->Alang(index));
       AddStreamInfo(newStream);
     }

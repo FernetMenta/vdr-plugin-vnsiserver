@@ -68,7 +68,7 @@ cParserH264::~cParserH264()
 {
 }
 
-void cParserH264::Parse(sStreamPacket *pkt)
+void cParserH264::Parse(sStreamPacket *pkt, sStreamPacket *pkt_side_data)
 {
   if (m_PesBufferPtr < 4)
     return;

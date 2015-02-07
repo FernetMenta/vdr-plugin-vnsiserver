@@ -26,7 +26,10 @@
 #define VNSI_COMMAND_H
 
 /** Current VNSI Protocol Version number */
-#define VNSI_PROTOCOLVERSION 7
+#define VNSI_PROTOCOLVERSION 8
+
+/** Start of RDS support protocol Version */
+#define VNSI_RDS_PROTOCOLVERSION 8
 
 /** Minimum VNSI Protocol Version number */
 #define VNSI_MIN_PROTOCOLVERSION 5

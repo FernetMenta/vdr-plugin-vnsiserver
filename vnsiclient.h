@@ -56,6 +56,7 @@ private:
   bool             m_StatusInterfaceEnabled;
   cLiveStreamer   *m_Streamer;
   bool             m_isStreaming;
+  bool             m_bSupportRDS;
   cString          m_ClientAddress;
   cRecPlayer      *m_RecPlayer;
   cRequestPacket  *m_req;

@@ -66,6 +66,7 @@ cVNSIClient::cVNSIClient(int fd, unsigned int id, const char *ClientAdr)
   m_processSCAN_Response    = NULL;
   m_processSCAN_Socket      = NULL;
   m_Osd                     = NULL;
+  m_bSupportRDS             = false;
 
   m_socket.SetHandle(fd);
 
@@ -165,7 +166,7 @@ void cVNSIClient::Action(void)
 
 bool cVNSIClient::StartChannelStreaming(const cChannel *channel, int32_t priority, uint8_t timeshift, uint32_t timeout)
 {
-  m_Streamer    = new cLiveStreamer(m_Id, timeshift, timeout);
+  m_Streamer    = new cLiveStreamer(m_Id, m_bSupportRDS, timeshift, timeout);
   m_isStreaming = m_Streamer->StreamChannel(channel, priority, &m_socket, m_resp);
   return m_isStreaming;
 }
@@ -667,6 +668,16 @@ bool cVNSIClient::process_Login() /* OPCODE 1 */
     ERRORLOG("Client '%s' have a not allowed protocol version '%u', terminating client", clientName, m_protocolVersion);
   else
     SetLoggedIn(true);
+
+  if (m_protocolVersion < VNSI_RDS_PROTOCOLVERSION)
+  {
+    INFOLOG("RDS not supported on client '%s' and stream type disabled", clientName);
+    m_bSupportRDS = false;
+  }
+  else
+  {
+    m_bSupportRDS = true;
+  }
 
   m_socket.write(m_resp->getPtr(), m_resp->getLen());
 

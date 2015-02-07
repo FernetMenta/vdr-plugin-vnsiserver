@@ -40,10 +40,11 @@
 
 // --- cLiveStreamer -------------------------------------------------
 
-cLiveStreamer::cLiveStreamer(int clientID, uint8_t timeshift, uint32_t timeout)
+cLiveStreamer::cLiveStreamer(int clientID, bool bAllowRDS, uint8_t timeshift, uint32_t timeout)
  : cThread("cLiveStreamer stream processor")
  , m_ClientID(clientID)
  , m_scanTimeout(timeout)
+ , m_Demuxer(bAllowRDS)
  , m_VideoInput(m_Event, m_Mutex, m_IsRetune)
 {
   m_Channel         = NULL;
@@ -167,32 +168,53 @@ void cLiveStreamer::Close(void)
 void cLiveStreamer::Action(void)
 {
   int ret;
-  sStreamPacket pkt;
-  memset(&pkt, 0, sizeof(sStreamPacket));
-  bool requestStreamChange = false;
+  sStreamPacket pkt_data;
+  sStreamPacket pkt_side_data; // Additional data
+  memset(&pkt_data, 0, sizeof(sStreamPacket));
+  memset(&pkt_side_data, 0, sizeof(sStreamPacket));
+  bool requestStreamChangeStdData = false;
+  bool requestStreamChangeExtData = false;
   cTimeMs last_info(1000);
   cTimeMs bufferStatsTimer(1000);
 
   while (Running())
   {
-    ret = m_Demuxer.Read(&pkt);
+    ret = m_Demuxer.Read(&pkt_data, &pkt_side_data);
     if (ret > 0)
     {
-      if (pkt.pmtChange)
+      if (pkt_data.pmtChange)
       {
-        requestStreamChange = true;
+        requestStreamChangeStdData = true;
+        requestStreamChangeExtData = true;
       }
-      if (pkt.data)
+
+      // Process normal data if present
+      if (pkt_data.data)
       {
-        if (pkt.streamChange || requestStreamChange)
+        if (pkt_data.streamChange || requestStreamChangeStdData)
           sendStreamChange();
-        requestStreamChange = false;
-        if (pkt.reftime)
+        requestStreamChangeStdData = false;
+        if (pkt_data.reftime)
         {
-          sendRefTime(&pkt);
-          pkt.reftime = 0;
+          sendRefTime(&pkt_data);
+          pkt_data.reftime = 0;
         }
-        sendStreamPacket(&pkt);
+        sendStreamPacket(&pkt_data);
+      }
+
+      // If some additional data is present inside the stream, it is written there (currently RDS inside MPEG2-Audio)
+      if (pkt_side_data.data)
+      {
+        if (pkt_side_data.streamChange || requestStreamChangeExtData)
+          sendStreamChange();
+        requestStreamChangeExtData = false;
+        if (pkt_side_data.reftime)
+        {
+          sendRefTime(&pkt_side_data);
+          pkt_side_data.reftime = 0;
+        }
+        sendStreamPacket(&pkt_side_data);
+        pkt_side_data.data = NULL;
       }
 
       // send signal info every 10 sec.
@@ -340,6 +362,17 @@ void cLiveStreamer::sendStreamChange()
       resp->add_U32(BlockAlign);
       resp->add_U32(BitRate);
       resp->add_U32(BitsPerSample);
+
+      for (unsigned int i = 0; i < stream->GetSideDataTypes()->size(); i++)
+      {
+        resp->add_U32(stream->GetSideDataTypes()->at(i).first);
+        if (stream->GetSideDataTypes()->at(i).second == scRDS)
+        {
+          resp->add_String("RDS");
+          resp->add_String(stream->GetLanguage());
+          resp->add_U32(stream->GetPID());
+        }
+      }
     }
     else if (stream->Type() == stMPEG2VIDEO)
     {

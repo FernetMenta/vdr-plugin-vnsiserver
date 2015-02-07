@@ -56,7 +56,7 @@ public:
   cParserMPEG2Video(int pID, cTSStream *stream, sPtsWrap *ptsWrap, bool observePtsWraps);
   virtual ~cParserMPEG2Video();
 
-  virtual void Parse(sStreamPacket *pkt);
+  virtual void Parse(sStreamPacket *pkt, sStreamPacket *pkt_side_data);
   virtual void Reset();
 };
 
