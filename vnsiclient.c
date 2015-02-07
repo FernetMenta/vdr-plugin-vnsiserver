@@ -561,6 +561,7 @@ bool cVNSIClient::processRequest(cRequestPacket* req)
       result = processRECORDINGS_GetEdl();
       break;
 
+
     /** OPCODE 120 - 139: VNSI network functions for epg access and manipulating */
     case VNSI_EPG_GETFORCHANNEL:
       result = processEPG_GetForChannel();
@@ -599,6 +600,32 @@ bool cVNSIClient::processRequest(cRequestPacket* req)
 
     case VNSI_OSD_HITKEY:
       result = processOSD_Hitkey();
+      break;
+
+
+    /** OPCODE 180 - 189: VNSI network functions for deleted recording access */
+    case VNSI_RECORDINGS_DELETED_ACCESS_SUPPORTED:
+      result = processRECORDINGS_DELETED_Supported();
+      break;
+
+    case VNSI_RECORDINGS_DELETED_GETCOUNT:
+      result = processRECORDINGS_DELETED_GetCount();
+      break;
+
+    case VNSI_RECORDINGS_DELETED_GETLIST:
+      result = processRECORDINGS_DELETED_GetList();
+      break;
+
+    case VNSI_RECORDINGS_DELETED_DELETE:
+      result = processRECORDINGS_DELETED_Delete();
+      break;
+
+    case VNSI_RECORDINGS_DELETED_UNDELETE:
+      result = processRECORDINGS_DELETED_Undelete();
+      break;
+
+    case VNSI_RECORDINGS_DELETED_DELETE_ALL:
+      result = processRECORDINGS_DELETED_DeleteAll();
       break;
   }
 
@@ -1748,7 +1775,7 @@ bool cVNSIClient::processRECORDINGS_GetList() /* OPCODE 102 */
     m_resp->add_String((isempty(directory)) ? "" : m_toUTF8.Convert(directory));
 
     // filename / uid of recording
-    uint32_t uid = cRecordingsCache::GetInstance().Register(recording);
+    uint32_t uid = cRecordingsCache::GetInstance().Register(recording, false);
     m_resp->add_U32(uid);
 
     free(fullname);
@@ -2300,6 +2327,317 @@ bool cVNSIClient::processOSD_Hitkey() /* OPCODE 162 */
     unsigned int key = m_req->extract_U32();
     cVnsiOsdProvider::SendKey(key);
   }
+  return true;
+}
+
+/** OPCODE 180 - 189: VNSI network functions for deleted recording access */
+
+bool cVNSIClient::processRECORDINGS_DELETED_Supported() /* OPCODE 180 */
+{
+  m_resp->add_U32(VNSI_RET_OK);
+  m_resp->finalise();
+  m_socket.write(m_resp->getPtr(), m_resp->getLen());
+  return true;
+}
+
+bool cVNSIClient::processRECORDINGS_DELETED_GetCount() /* OPCODE 181 */
+{
+  DeletedRecordings.Load();
+  m_resp->add_U32(DeletedRecordings.Count());
+  m_resp->finalise();
+  m_socket.write(m_resp->getPtr(), m_resp->getLen());
+  return true;
+}
+
+bool cVNSIClient::processRECORDINGS_DELETED_GetList() /* OPCODE 182 */
+{
+  cMutexLock lock(&m_timerLock);
+  cThreadLock RecordingsLock(&Recordings);
+
+  for (cRecording *recording = DeletedRecordings.First(); recording; recording = DeletedRecordings.Next(recording))
+  {
+#if APIVERSNUM >= 10705
+    const cEvent *event = recording->Info()->GetEvent();
+#else
+    const cEvent *event = NULL;
+#endif
+
+    time_t recordingStart    = 0;
+    int    recordingDuration = 0;
+    if (event)
+    {
+      recordingStart    = event->StartTime();
+      recordingDuration = event->Duration();
+    }
+    else
+    {
+      cRecordControl *rc = cRecordControls::GetRecordControl(recording->FileName());
+      if (rc)
+      {
+        recordingStart    = rc->Timer()->StartTime();
+        recordingDuration = rc->Timer()->StopTime() - recordingStart;
+      }
+      else
+      {
+#if APIVERSNUM >= 10727
+        recordingStart = recording->Start();
+#else
+        recordingStart = recording->start;
+#endif
+      }
+    }
+    DEBUGLOG("GRI: RC: recordingStart=%lu recordingDuration=%i", recordingStart, recordingDuration);
+
+    // recording_time
+    m_resp->add_U32(recordingStart);
+
+    // duration
+    m_resp->add_U32(recordingDuration);
+
+    // priority
+#if APIVERSNUM >= 10727
+    m_resp->add_U32(recording->Priority());
+#else
+    m_resp->add_U32(recording->priority);
+#endif
+
+    // lifetime
+#if APIVERSNUM >= 10727
+    m_resp->add_U32(recording->Lifetime());
+#else
+    m_resp->add_U32(recording->lifetime);
+#endif
+
+    // channel_name
+    m_resp->add_String(recording->Info()->ChannelName() ? m_toUTF8.Convert(recording->Info()->ChannelName()) : "");
+
+    char* fullname = strdup(recording->Name());
+    char* recname = strrchr(fullname, FOLDERDELIMCHAR);
+    char* directory = NULL;
+
+    if(recname == NULL) {
+      recname = fullname;
+    }
+    else {
+      *recname = 0;
+      recname++;
+      directory = fullname;
+    }
+
+    // title
+    m_resp->add_String(m_toUTF8.Convert(recname));
+
+    // subtitle
+    if (!isempty(recording->Info()->ShortText()))
+      m_resp->add_String(m_toUTF8.Convert(recording->Info()->ShortText()));
+    else
+      m_resp->add_String("");
+
+    // description
+    if (!isempty(recording->Info()->Description()))
+      m_resp->add_String(m_toUTF8.Convert(recording->Info()->Description()));
+    else
+      m_resp->add_String("");
+
+    // directory
+    if(directory != NULL) {
+      char* p = directory;
+      while(*p != 0) {
+        if(*p == FOLDERDELIMCHAR) *p = '/';
+        if(*p == '_') *p = ' ';
+        p++;
+      }
+      while(*directory == '/') directory++;
+    }
+
+    m_resp->add_String((isempty(directory)) ? "" : m_toUTF8.Convert(directory));
+
+    // filename / uid of recording
+    uint32_t uid = cRecordingsCache::GetInstance().Register(recording, false);
+    m_resp->add_U32(uid);
+
+    free(fullname);
+  }
+
+  m_resp->finalise();
+  m_socket.write(m_resp->getPtr(), m_resp->getLen());
+  return true;
+}
+
+bool cVNSIClient::processRECORDINGS_DELETED_Delete() /* OPCODE 183 */
+{
+  cString recName;
+  cRecording* recording = NULL;
+
+  cLockFile LockFile(VideoDirectory);
+  if (LockFile.Lock())
+  {
+    uint32_t uid = m_req->extract_U32();
+
+    cThreadLock DeletedRecordingsLock(&DeletedRecordings);
+
+    for (recording = DeletedRecordings.First(); recording; recording = DeletedRecordings.Next(recording))
+    {
+      if (uid == CreateStringHash(recording->FileName()))
+      {
+        if (!RemoveVideoFile(recording->FileName()))
+        {
+          ERRORLOG("Error while remove deleted recording (%s)", recording->FileName());
+          m_resp->add_U32(VNSI_RET_ERROR);
+        }
+        else
+        {
+          DeletedRecordings.Del(recording);
+          DeletedRecordings.Update();
+          INFOLOG("Recording \"%s\" permanent deleted", recording->FileName());
+          m_resp->add_U32(VNSI_RET_OK);
+        }
+        break;
+      }
+    }
+  }
+
+  m_resp->finalise();
+  m_socket.write(m_resp->getPtr(), m_resp->getLen());
+
+  return true;
+}
+
+bool cVNSIClient::Undelete(cRecording* recording)
+{
+  DEBUGLOG("undelete recording: %s", recording->Name());
+
+  char *NewName = strdup(recording->FileName());
+  char *ext = strrchr(NewName, '.');
+  if (ext && strcmp(ext, ".del") == 0)
+  {
+    strncpy(ext, ".rec", strlen(ext));
+    if (!access(NewName, F_OK))
+    {
+      ERRORLOG("Recording with the same name exists (%s)", NewName);
+      OsdStatusMessage(*cString::sprintf("%s (%s)", tr("Recording with the same name exists"), NewName));
+    }
+    else
+    {
+      if (access(recording->FileName(), F_OK) == 0)
+      {
+        if (!RenameVideoFile(recording->FileName(), NewName))
+        {
+          ERRORLOG("Error while rename deleted recording (%s) to (%s)", recording->FileName(), NewName);
+        }
+
+        cIndexFile *index = new cIndexFile(NewName, false, recording->IsPesRecording());
+        int LastFrame = index->Last() - 1;
+        if (LastFrame > 0)
+        {
+          uint16_t FileNumber = 0;
+          off_t FileOffset = 0;
+          index->Get(LastFrame, &FileNumber, &FileOffset);
+          delete index;
+          if (FileNumber == 0)
+          {
+            ERRORLOG("while read last filenumber (%s)", NewName);
+            OsdStatusMessage(*cString::sprintf("%s (%s)", tr("Error while read last filenumber"), NewName));
+          }
+          else
+          {
+            for (int i = 1; i <= FileNumber; i++)
+            {
+              cString temp = cString::sprintf(recording->IsPesRecording() ? "%s/%03d.vdr" : "%s/%05d.ts", (const char *)NewName, i);
+              if (access(*temp, R_OK) != 0)
+              {
+                i = FileNumber;
+                OsdStatusMessage(*cString::sprintf("%s %03d (%s)", tr("Error while accessing vdrfile"), i, NewName));
+              }
+            }
+          }
+        }
+        else
+        {
+          delete index;
+          ERRORLOG("accessing indexfile (%s)", NewName);
+          OsdStatusMessage(*cString::sprintf("%s (%s)", tr("Error while accessing indexfile"), NewName));
+        }
+
+        DeletedRecordings.Del(recording);
+        Recordings.Update();
+        DeletedRecordings.Update();
+      }
+      else
+      {
+        ERRORLOG("deleted recording '%s' vanished", recording->FileName());
+        OsdStatusMessage(*cString::sprintf("%s \"%s\"", tr("Deleted recording vanished"), recording->FileName()));
+      }
+    }
+  }
+  free(NewName);
+  return true;
+}
+
+bool cVNSIClient::processRECORDINGS_DELETED_Undelete() /* OPCODE 184 */
+{
+  int ret = VNSI_RET_DATAUNKNOWN;
+
+  cLockFile LockFile(VideoDirectory);
+  if (LockFile.Lock())
+  {
+    uint32_t uid = m_req->extract_U32();
+
+    cThreadLock DeletedRecordingsLock(&DeletedRecordings);
+
+    for (cRecording* recording = DeletedRecordings.First(); recording; recording = DeletedRecordings.Next(recording))
+    {
+      if (uid == CreateStringHash(recording->FileName()))
+      {
+        if (Undelete(recording))
+        {
+          INFOLOG("Recording \"%s\" undeleted", recording->FileName());
+          ret = VNSI_RET_OK;
+        }
+        else
+          ret = VNSI_RET_ERROR;
+        break;
+      }
+    }
+  }
+
+  m_resp->add_U32(ret);
+  m_resp->finalise();
+  m_socket.write(m_resp->getPtr(), m_resp->getLen());
+  return true;
+}
+
+bool cVNSIClient::processRECORDINGS_DELETED_DeleteAll() /* OPCODE 185 */
+{
+  int ret = VNSI_RET_OK;
+
+  cLockFile LockFile(VideoDirectory);
+
+  if (LockFile.Lock())
+  {
+    cThreadLock DeletedRecordingsLock(&DeletedRecordings);
+
+    for (cRecording *recording = DeletedRecordings.First(); recording; )
+    {
+      cRecording *next = DeletedRecordings.Next(recording);
+      if (!RemoveVideoFile(recording->FileName()))
+      {
+        ERRORLOG("Error while remove deleted recording (%s)", recording->FileName());
+        ret = VNSI_RET_ERROR;
+        break;
+      }
+      else
+        INFOLOG("Recording \"%s\" permanent deleted", recording->FileName());
+      recording = next;
+    }
+    DeletedRecordings.Clear();
+    DeletedRecordings.Update();
+  }
+
+  m_resp->add_U32(ret);
+  m_resp->finalise();
+  m_socket.write(m_resp->getPtr(), m_resp->getLen());
+
   return true;
 }
 
