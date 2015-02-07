@@ -23,6 +23,7 @@
 
 #include <vdr/device.h>
 #include <queue>
+#include <vector>
 
 #define DVD_TIME_BASE 1000000
 #define DVD_NOPTS_VALUE    (-1LL<<52) // should be possible to represent in both double and __int64
@@ -84,7 +85,8 @@ enum eStreamContent
   scAUDIO,
   scSUBTITLE,
   scTELETEXT,
-  scPROGRAMM
+  scPROGRAMM,
+  scRDS
 };
 
 enum eStreamType
@@ -144,7 +146,7 @@ public:
   virtual ~cParser();
 
   bool AddPESPacket(uint8_t *data, int size);
-  virtual void Parse(sStreamPacket *pkt) = 0;
+  virtual void Parse(sStreamPacket *pkt, sStreamPacket *pkt_side_data) = 0;
 //  void ClearFrame() {m_PesBufferPtr = 0;}
   int ParsePacketHeader(uint8_t *data);
   int ParsePESHeader(uint8_t *buf, size_t len);
@@ -210,15 +212,18 @@ private:
   int                   m_BitsPerSample;
   int                   m_BlockAlign;
 
+  std::vector< std::pair<uint32_t, eStreamContent> >  m_SideDataTypes;
+  static uint32_t       m_UniqueSideDataIDs;
+
   unsigned char         m_subtitlingType;
   uint16_t              m_compositionPageId;
   uint16_t              m_ancillaryPageId;
 
 public:
-  cTSStream(eStreamType type, int pid, sPtsWrap *ptsWrap);
+  cTSStream(eStreamType type, int pid, sPtsWrap *ptsWrap, bool handleSideData = false);
   virtual ~cTSStream();
 
-  int ProcessTSPacket(uint8_t *data, sStreamPacket *pkt, bool iframe);
+  int ProcessTSPacket(uint8_t *data, sStreamPacket *pkt, sStreamPacket *pkt_side_data, bool iframe);
   bool ReadTime(uint8_t *data, int64_t *dts);
   void ResetParser();
 
@@ -228,6 +233,9 @@ public:
   const eStreamType Type() const { return m_streamType; }
   void SetType(eStreamType type) { m_streamType = type; }
   const int GetPID() const { return m_pID; }
+
+  uint32_t AddSideDataType(eStreamContent content);
+  const std::vector< std::pair<uint32_t, eStreamContent> > *GetSideDataTypes() const { return &m_SideDataTypes; }
 
   /* Video Stream Information */
   bool SetVideoInformation(int FpsScale, int FpsRate, int Height, int Width, float Aspect);

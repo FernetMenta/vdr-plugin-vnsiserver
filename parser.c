@@ -434,7 +434,9 @@ inline bool cParser::IsValidStartCode(uint8_t *buf, int size)
 
 // --- cTSStream ----------------------------------------------------
 
-cTSStream::cTSStream(eStreamType type, int pid, sPtsWrap *ptsWrap)
+uint32_t cTSStream::m_UniqueSideDataIDs = 0;
+
+cTSStream::cTSStream(eStreamType type, int pid, sPtsWrap *ptsWrap, bool handleSideData)
   : m_streamType(type)
   , m_pID(pid)
 {
@@ -465,7 +467,7 @@ cTSStream::cTSStream(eStreamType type, int pid, sPtsWrap *ptsWrap)
   }
   else if (m_streamType == stMPEG2AUDIO)
   {
-    m_pesParser = new cParserMPEG2Audio(m_pID, this, ptsWrap, true);
+    m_pesParser = new cParserMPEG2Audio(m_pID, this, ptsWrap, true, handleSideData);
     m_streamContent = scAUDIO;
   }
   else if (m_streamType == stAACADTS)
@@ -519,17 +521,19 @@ cTSStream::~cTSStream()
   }
 }
 
-int cTSStream::ProcessTSPacket(uint8_t *data, sStreamPacket *pkt, bool iframe)
+int cTSStream::ProcessTSPacket(uint8_t *data, sStreamPacket *pkt, sStreamPacket *pkt_side_data, bool iframe)
 {
+  int ret = 1;
+
   if (!data)
-    return 1;
+    return ret;
 
   if (!m_pesParser)
-    return 1;
+    return ret;
 
   int payloadSize = m_pesParser->ParsePacketHeader(data);
   if (payloadSize == 0)
-    return 1;
+    return ret;
   else if (payloadSize < 0)
   {
     return -m_pesParser->GetError();
@@ -540,9 +544,9 @@ int cTSStream::ProcessTSPacket(uint8_t *data, sStreamPacket *pkt, bool iframe)
     return -m_pesParser->GetError();
   }
 
-  m_pesParser->Parse(pkt);
+  m_pesParser->Parse(pkt, pkt_side_data);
   if (iframe && !m_pesParser->IsVideo())
-    return 1;
+    return ret;
 
   if (pkt->data)
   {
@@ -555,10 +559,26 @@ int cTSStream::ProcessTSPacket(uint8_t *data, sStreamPacket *pkt, bool iframe)
     if (pkt->pts != DVD_NOPTS_VALUE)
       pkt->pts      = Rescale(pts, DVD_TIME_BASE, 90000);
     pkt->duration = Rescale(pkt->duration, DVD_TIME_BASE, 90000);
-    return 0;
+
+    ret = 0;
   }
 
-  return 1;
+  if (pkt_side_data && pkt_side_data->data)
+  {
+    int64_t dts = pkt_side_data->dts;
+    int64_t pts = pkt_side_data->pts;
+
+    // Rescale for XBMC
+    if (pkt_side_data->dts != DVD_NOPTS_VALUE)
+      pkt_side_data->dts      = Rescale(dts, DVD_TIME_BASE, 90000);
+    if (pkt_side_data->pts != DVD_NOPTS_VALUE)
+      pkt_side_data->pts      = Rescale(pts, DVD_TIME_BASE, 90000);
+    pkt_side_data->duration = Rescale(pkt_side_data->duration, DVD_TIME_BASE, 90000);
+
+    ret = 0;
+  }
+
+  return ret;
 }
 
 bool cTSStream::ReadTime(uint8_t *data, int64_t *dts)
@@ -632,7 +652,7 @@ int64_t cTSStream::Rescale(int64_t a, int64_t b, int64_t c)
     {
       a1+= a1 + ((a0>>i)&1);
       t1+=t1;
-      if (c <= a1)
+      if (c <= (int64_t)a1)
       {
         a1 -= c;
         t1++;
@@ -640,6 +660,19 @@ int64_t cTSStream::Rescale(int64_t a, int64_t b, int64_t c)
     }
     return t1;
   }
+}
+
+uint32_t cTSStream::AddSideDataType(eStreamContent content)
+{
+  m_UniqueSideDataIDs++;
+  if (m_UniqueSideDataIDs == 0)
+    m_UniqueSideDataIDs++;
+
+  uint32_t sidePid = m_UniqueSideDataIDs << 16;
+
+  m_SideDataTypes.push_back(std::make_pair(sidePid, content));
+
+  return sidePid;
 }
 
 void cTSStream::SetLanguage(const char *language)

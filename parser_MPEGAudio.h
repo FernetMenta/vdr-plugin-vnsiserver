@@ -36,13 +36,20 @@ private:
   int64_t     m_PTS;
   int64_t     m_DTS;
 
+  bool        m_RDSEnabled;
+  uint32_t    m_RDSExtPID;
+  uint8_t    *m_RDSBuffer;
+  int         m_RDSBufferSize;
+  int         m_RDSBufferPtr;
+  size_t      m_RDSBufferInitialSize;
+
   int FindHeaders(uint8_t *buf, int buf_size);
 
 public:
-  cParserMPEG2Audio(int pID, cTSStream *stream, sPtsWrap *ptsWrap, bool observePtsWraps);
+  cParserMPEG2Audio(int pID, cTSStream *stream, sPtsWrap *ptsWrap, bool observePtsWraps, bool enableRDS);
   virtual ~cParserMPEG2Audio();
 
-  virtual void Parse(sStreamPacket *pkt);
+  virtual void Parse(sStreamPacket *pkt, sStreamPacket *pkt_side_data);
 };
 
 

@@ -35,7 +35,7 @@ cParserSubtitle::~cParserSubtitle()
 
 }
 
-void cParserSubtitle::Parse(sStreamPacket *pkt)
+void cParserSubtitle::Parse(sStreamPacket *pkt, sStreamPacket *pkt_side_data)
 {
   int l = m_PesBufferPtr;
 

@@ -38,6 +38,7 @@ struct sStreamInfo
   int subtitlingType;
   int compositionPageId;
   int ancillaryPageId;
+  bool handleRDS;
   void SetLanguage(const char* lang)
   {
     language[0] = lang[0];
@@ -52,7 +53,7 @@ class cVNSIDemuxer
 public:
   cVNSIDemuxer();
   virtual ~cVNSIDemuxer();
-  int Read(sStreamPacket *packet);
+  int Read(sStreamPacket *packet, sStreamPacket *packet_side_data);
   cTSStream *GetFirstStream();
   cTSStream *GetNextStream();
   void Open(const cChannel &channel, cVideoBuffer *videoBuffer);

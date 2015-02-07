@@ -67,7 +67,7 @@ cParserMPEG2Video::~cParserMPEG2Video()
 {
 }
 
-void cParserMPEG2Video::Parse(sStreamPacket *pkt)
+void cParserMPEG2Video::Parse(sStreamPacket *pkt, sStreamPacket *pkt_side_data)
 {
   if (m_PesBufferPtr < 4)
     return;

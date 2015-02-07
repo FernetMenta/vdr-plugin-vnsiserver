@@ -34,7 +34,7 @@ cParserDTS::~cParserDTS()
 {
 }
 
-void cParserDTS::Parse(sStreamPacket *pkt)
+void cParserDTS::Parse(sStreamPacket *pkt, sStreamPacket *pkt_side_data)
 {
 
 }
