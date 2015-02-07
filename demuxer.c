@@ -27,7 +27,8 @@
 #include <vdr/channels.h>
 #include <libsi/si.h>
 
-cVNSIDemuxer::cVNSIDemuxer()
+cVNSIDemuxer::cVNSIDemuxer(bool bAllowRDS)
+ : m_bAllowRDS(bAllowRDS)
 {
   m_OldPmtVersion = -1;
 }
@@ -532,7 +533,7 @@ void cVNSIDemuxer::SetChannelStreams(const cChannel *channel)
       else if (channel->Atype(index) == 0x11)
         newStream.type = stAACLATM;
 #endif
-      newStream.handleRDS = newStream.type == stMPEG2AUDIO && !containsVideo ? true : false; // Relevant for RDS, if present only on mpeg 2 audio
+      newStream.handleRDS = m_bAllowRDS && newStream.type == stMPEG2AUDIO && !containsVideo ? true : false; // Relevant for RDS, if present only on mpeg 2 audio, use only if RDS is allowed
       newStream.SetLanguage(channel->Alang(index));
       AddStreamInfo(newStream);
     }

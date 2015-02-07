@@ -51,7 +51,7 @@ struct sStreamInfo
 class cVNSIDemuxer
 {
 public:
-  cVNSIDemuxer();
+  cVNSIDemuxer(bool bAllowRDS);
   virtual ~cVNSIDemuxer();
   int Read(sStreamPacket *packet, sStreamPacket *packet_side_data);
   cTSStream *GetFirstStream();
@@ -87,4 +87,5 @@ protected:
   uint16_t m_Error;
   bool m_SetRefTime;
   time_t m_refTime, m_endTime, m_wrapTime;
+  bool m_bAllowRDS;
 };

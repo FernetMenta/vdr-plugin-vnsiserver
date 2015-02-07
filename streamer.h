@@ -90,7 +90,7 @@ protected:
   void Close();
 
 public:
-  cLiveStreamer(int clientID, uint8_t timeshift, uint32_t timeout = 0);
+  cLiveStreamer(int clientID, bool bAllowRDS, uint8_t timeshift, uint32_t timeout = 0);
   virtual ~cLiveStreamer();
 
   void Activate(bool On);

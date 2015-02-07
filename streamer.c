@@ -40,10 +40,11 @@
 
 // --- cLiveStreamer -------------------------------------------------
 
-cLiveStreamer::cLiveStreamer(int clientID, uint8_t timeshift, uint32_t timeout)
+cLiveStreamer::cLiveStreamer(int clientID, bool bAllowRDS, uint8_t timeshift, uint32_t timeout)
  : cThread("cLiveStreamer stream processor")
  , m_ClientID(clientID)
  , m_scanTimeout(timeout)
+ , m_Demuxer(bAllowRDS)
  , m_VideoInput(m_Event, m_Mutex, m_IsRetune)
 {
   m_Channel         = NULL;
@@ -172,7 +173,7 @@ void cLiveStreamer::Action(void)
   memset(&pkt_data, 0, sizeof(sStreamPacket));
   memset(&pkt_side_data, 0, sizeof(sStreamPacket));
   bool requestStreamChangeStdData = false;
-  bool requestStreamChangeExtData= false;
+  bool requestStreamChangeExtData = false;
   cTimeMs last_info(1000);
   cTimeMs bufferStatsTimer(1000);
 
