@@ -21,6 +21,7 @@
 
 #include "config.h"
 #include "recordingscache.h"
+#include "vnsiclient.h"
 #include "hash.h"
 
 cRecordingsCache::cRecordingsCache() {
@@ -34,7 +35,7 @@ cRecordingsCache& cRecordingsCache::GetInstance() {
   return singleton;
 }
 
-uint32_t cRecordingsCache::Register(cRecording* recording) {
+uint32_t cRecordingsCache::Register(cRecording* recording, bool deleted) {
   cString filename = recording->FileName();
   uint32_t uid = CreateStringHash(filename);
 
@@ -42,7 +43,8 @@ uint32_t cRecordingsCache::Register(cRecording* recording) {
   if(m_recordings.find(uid) == m_recordings.end())
   {
     DEBUGLOG("%s - uid: %08x '%s'", __FUNCTION__, uid, (const char*)filename);
-    m_recordings[uid] = filename;
+    m_recordings[uid].filename = filename;
+    m_recordings[uid].isDeleted = deleted;
   }
   m_mutex.Unlock();
 
@@ -58,10 +60,15 @@ cRecording* cRecordingsCache::Lookup(uint32_t uid) {
   }
 
   m_mutex.Lock();
-  cString filename = m_recordings[uid];
+  cString filename = m_recordings[uid].filename;
   DEBUGLOG("%s - filename: %s", __FUNCTION__, (const char*)filename);
 
-  cRecording* r = Recordings.GetByName(filename);
+  cRecording* r;
+  if (!m_recordings[uid].isDeleted)
+    r = Recordings.GetByName(filename);
+  else
+    r = DeletedRecordings.GetByName(filename);
+
   DEBUGLOG("%s - recording %s", __FUNCTION__, (r == NULL) ? "not found !" : "found");
   m_mutex.Unlock();
 

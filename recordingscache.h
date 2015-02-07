@@ -40,13 +40,17 @@ public:
 
   static cRecordingsCache& GetInstance();
 
-  uint32_t Register(cRecording* recording);
+  uint32_t Register(cRecording* recording, bool deleted = false);
 
   cRecording* Lookup(uint32_t uid);
 
 private:
-
-  std::map<uint32_t, cString> m_recordings;
+  struct RecordingsInfo
+  {
+    cString filename;
+    bool isDeleted;
+  };
+  std::map<uint32_t, RecordingsInfo> m_recordings;
 
   cMutex m_mutex;
 };

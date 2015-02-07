@@ -159,6 +159,12 @@ private:
   bool processRECORDINGS_Delete();
   bool processRECORDINGS_Move();
   bool processRECORDINGS_GetEdl();
+  bool processRECORDINGS_DELETED_Supported();
+  bool processRECORDINGS_DELETED_GetCount();
+  bool processRECORDINGS_DELETED_GetList();
+  bool processRECORDINGS_DELETED_Delete();
+  bool processRECORDINGS_DELETED_Undelete();
+  bool processRECORDINGS_DELETED_DeleteAll();
 
   bool processEPG_GetForChannel();
 
@@ -167,6 +173,8 @@ private:
   bool processSCAN_GetSatellites();
   bool processSCAN_Start();
   bool processSCAN_Stop();
+
+  bool Undelete(cRecording* recording);
 
   /** Static callback functions to interact with wirbelscan plugin over
       the plugin service interface */

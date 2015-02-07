@@ -1,0 +1,61 @@
+# VDR VNSI plugin language source file.
+# Copyright (C) 2015 Alwin Esch
+# This file is distributed under the same license as the VDR package.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: VNSI-Server 1.0.0\n"
+"Report-Msgid-Bugs-To: <see README>\n"
+"POT-Creation-Date: 2015-01-23 22:25+0100\n"
+"PO-Revision-Date: 2015-01-23 21:46+0100\n"
+"Last-Translator: Alwin Esch\n"
+"Language-Team: German\n"
+"Language: de\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=ISO-8859-15\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "PMT Timeout (0-10)"
+msgstr "PMT Auszeit (0-10)"
+
+msgid "Off"
+msgstr "Aus"
+
+msgid "RAM"
+msgstr "RAM"
+
+msgid "File"
+msgstr "Datei"
+
+msgid "Time Shift Mode"
+msgstr "Time Shift Modus"
+
+msgid "TS Buffersize (RAM) (1-80) x 100MB"
+msgstr "TS Puffergröße (RAM) (1-80) x 100MB"
+
+msgid "TS Buffersize (File) (1-10) x 1GB"
+msgstr "TS Puffergröße (Datei) (1-10) x 1GB"
+
+msgid "TS Buffer Directory"
+msgstr "TS-Puffer-Verzeichnis"
+
+msgid "Play Recording instead of live"
+msgstr "Wiedergeben als Aufzeichnung statt Live"
+
+msgid "Avoid EPG scan while streaming"
+msgstr "Keine EPG suche während der Wiedergabe durchführen"
+
+msgid "Recording with the same name exists"
+msgstr "Aufnahme mit der selben größe existiert"
+
+msgid "Error while read last filenumber"
+msgstr "Fehler beim lesen der letzen Dateinummer"
+
+msgid "Error while accessing vdrfile"
+msgstr "Fehler beim zugriff auf VDR-Datei"
+
+msgid "Error while accessing indexfile"
+msgstr "Fehler beim Zugriff der Indexdatei"
+
+msgid "Deleted recording vanished"
+msgstr "Gelöschte Aufnahme verschwunden"
