@@ -2480,7 +2480,11 @@ bool cVNSIClient::processRECORDINGS_DELETED_Delete() /* OPCODE 183 */
   cString recName;
   cRecording* recording = NULL;
 
+#if VDRVERSNUM >= 20102
+  cLockFile LockFile(cVideoDirectory::Name());
+#else
   cLockFile LockFile(VideoDirectory);
+#endif
   if (LockFile.Lock())
   {
     uint32_t uid = m_req->extract_U32();
@@ -2491,7 +2495,11 @@ bool cVNSIClient::processRECORDINGS_DELETED_Delete() /* OPCODE 183 */
     {
       if (uid == CreateStringHash(recording->FileName()))
       {
+#if VDRVERSNUM >= 20102
+        if (!cVideoDirectory::RemoveVideoFile(recording->FileName()))
+#else
         if (!RemoveVideoFile(recording->FileName()))
+#endif
         {
           ERRORLOG("Error while remove deleted recording (%s)", recording->FileName());
           m_resp->add_U32(VNSI_RET_ERROR);
@@ -2532,7 +2540,11 @@ bool cVNSIClient::Undelete(cRecording* recording)
     {
       if (access(recording->FileName(), F_OK) == 0)
       {
+#if VDRVERSNUM >= 20102
+        if (!cVideoDirectory::RenameVideoFile(recording->FileName(), NewName))
+#else
         if (!RenameVideoFile(recording->FileName(), NewName))
+#endif
         {
           ERRORLOG("Error while rename deleted recording (%s) to (%s)", recording->FileName(), NewName);
         }
@@ -2589,7 +2601,11 @@ bool cVNSIClient::processRECORDINGS_DELETED_Undelete() /* OPCODE 184 */
 {
   int ret = VNSI_RET_DATAUNKNOWN;
 
+#if VDRVERSNUM >= 20102
+  cLockFile LockFile(cVideoDirectory::Name());
+#else
   cLockFile LockFile(VideoDirectory);
+#endif
   if (LockFile.Lock())
   {
     uint32_t uid = m_req->extract_U32();
@@ -2622,7 +2638,11 @@ bool cVNSIClient::processRECORDINGS_DELETED_DeleteAll() /* OPCODE 185 */
 {
   int ret = VNSI_RET_OK;
 
+#if VDRVERSNUM >= 20102
+  cLockFile LockFile(cVideoDirectory::Name());
+#else
   cLockFile LockFile(VideoDirectory);
+#endif
 
   if (LockFile.Lock())
   {
@@ -2631,7 +2651,11 @@ bool cVNSIClient::processRECORDINGS_DELETED_DeleteAll() /* OPCODE 185 */
     for (cRecording *recording = DeletedRecordings.First(); recording; )
     {
       cRecording *next = DeletedRecordings.Next(recording);
+#if VDRVERSNUM >= 20102
+      if (!cVideoDirectory::RemoveVideoFile(recording->FileName()))
+#else
       if (!RemoveVideoFile(recording->FileName()))
+#endif
       {
         ERRORLOG("Error while remove deleted recording (%s)", recording->FileName());
         ret = VNSI_RET_ERROR;
