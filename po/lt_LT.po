@@ -1,0 +1,61 @@
+# VDR VNSI plugin language source file.
+# Copyright (C) 2015 Alwin Esch
+# This file is distributed under the same license as the VDR package.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: VNSI-Server 1.0.0\n"
+"Report-Msgid-Bugs-To: <see README>\n"
+"POT-Creation-Date: 2015-01-23 22:25+0100\n"
+"PO-Revision-Date: 2015-02-11 22:30+0200\n"
+"Last-Translator: Valdemaras Pipiras\n"
+"Language-Team: Lithuanian\n"
+"Language: lt\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "PMT Timeout (0-10)"
+msgstr "PMT  (0-10)"
+
+msgid "Off"
+msgstr "Išjungta"
+
+msgid "RAM"
+msgstr "RAM"
+
+msgid "File"
+msgstr "Failas"
+
+msgid "Time Shift Mode"
+msgstr "Atidėto žiūrėjimo (TS) būsena"
+
+msgid "TS Buffersize (RAM) (1-80) x 100MB"
+msgstr "TS buferio dydis (RAM) (1-80) x 100MB"
+
+msgid "TS Buffersize (File) (1-10) x 1GB"
+msgstr "TS buferio dydis (Failas) (1-10) x 1GB"
+
+msgid "TS Buffer Directory"
+msgstr "TS katalogas buferiavimui"
+
+msgid "Play Recording instead of live"
+msgstr "Groti įrašą vietoj gyvos transliacijos"
+
+msgid "Avoid EPG scan while streaming"
+msgstr "Vengti EPG skanavimo kol vyksta transliacija"
+
+msgid "Recording with the same name exists"
+msgstr "Jau yra įrašų tokiu pat pavadinimu"
+
+msgid "Error while read last filenumber"
+msgstr "Klaida nuskaitant paskutinių failų skaičių"
+
+msgid "Error while accessing vdrfile"
+msgstr "Klaida bandant atidaryti VDR failą"
+
+msgid "Error while accessing indexfile"
+msgstr "Klaida bandant atidaryti index failą"
+
+msgid "Deleted recording vanished"
+msgstr "Ištrintas įrašas galutinai išvalytas"
