@@ -172,8 +172,8 @@ void cLiveStreamer::Action(void)
   sStreamPacket pkt_side_data; // Additional data
   memset(&pkt_data, 0, sizeof(sStreamPacket));
   memset(&pkt_side_data, 0, sizeof(sStreamPacket));
-  bool requestStreamChangeStdData = false;
-  bool requestStreamChangeExtData = false;
+  bool requestStreamChangeData = false;
+  bool requestStreamChangeSideData = false;
   cTimeMs last_info(1000);
   cTimeMs bufferStatsTimer(1000);
 
@@ -184,16 +184,16 @@ void cLiveStreamer::Action(void)
     {
       if (pkt_data.pmtChange)
       {
-        requestStreamChangeStdData = true;
-        requestStreamChangeExtData = true;
+        requestStreamChangeData = true;
+        requestStreamChangeSideData = true;
       }
 
       // Process normal data if present
       if (pkt_data.data)
       {
-        if (pkt_data.streamChange || requestStreamChangeStdData)
+        if (pkt_data.streamChange || requestStreamChangeData)
           sendStreamChange();
-        requestStreamChangeStdData = false;
+        requestStreamChangeData = false;
         if (pkt_data.reftime)
         {
           sendRefTime(&pkt_data);
@@ -205,14 +205,10 @@ void cLiveStreamer::Action(void)
       // If some additional data is present inside the stream, it is written there (currently RDS inside MPEG2-Audio)
       if (pkt_side_data.data)
       {
-        if (pkt_side_data.streamChange || requestStreamChangeExtData)
+        if (pkt_side_data.streamChange || requestStreamChangeSideData)
           sendStreamChange();
-        requestStreamChangeExtData = false;
-        if (pkt_side_data.reftime)
-        {
-          sendRefTime(&pkt_side_data);
-          pkt_side_data.reftime = 0;
-        }
+        requestStreamChangeSideData = false;
+
         sendStreamPacket(&pkt_side_data);
         pkt_side_data.data = NULL;
       }
