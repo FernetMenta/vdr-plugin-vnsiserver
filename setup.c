@@ -21,7 +21,7 @@
 #include "setup.h"
 #include "vnsicommand.h"
 
-int PmtTimeout = 5;
+int PmtTimeout = 0;
 int TimeshiftMode = 0;
 int TimeshiftBufferSize = 5;
 int TimeshiftBufferFileSize = 6;
