@@ -179,7 +179,10 @@ void cLiveStreamer::Action(void)
 
   while (Running())
   {
-    ret = m_Demuxer.Read(&pkt_data, &pkt_side_data);
+    if (m_IsRetune)
+      ret = -1;
+    else
+      ret = m_Demuxer.Read(&pkt_data, &pkt_side_data);
     if (ret > 0)
     {
       if (pkt_data.pmtChange)
@@ -242,8 +245,10 @@ void cLiveStreamer::Action(void)
         if (m_IsRetune)
         {
           m_VideoInput.Close();
-          m_VideoInput.Open(m_Channel, m_Priority, m_VideoBuffer);
-          m_IsRetune = false;
+          if (m_VideoInput.Open(m_Channel, m_Priority, m_VideoBuffer))
+            m_IsRetune = false;
+          else
+            m_Event.TimedWait(m_Mutex, 100);
         }
         else
           m_Event.TimedWait(m_Mutex, 10);
