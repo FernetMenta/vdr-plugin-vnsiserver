@@ -56,7 +56,7 @@ bool cVNSIChannelFilter::IsRadio(const cChannel* channel)
   if (channel->Vpid() == 0 && channel->Apid(0) == 0)
     isRadio = false;
   // channels without VPID are radio channels (channels with VPID 1 are encrypted radio channels)
-  else if (channel->Vpid() == 0 || channel->Vpid() == 1)
+  else if (channel->Vpid() == 0 || channel->Vpid() == 1 || channel->Rid() == 1)
     isRadio = true;
 
   return isRadio;
