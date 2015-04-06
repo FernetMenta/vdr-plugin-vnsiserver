@@ -47,13 +47,13 @@
 #include "responsepacket.h"
 #include "hash.h"
 #include "channelfilter.h"
-#include "wirbelscanservice.h" /// copied from modified wirbelscan plugin
-                               /// must be hold up to date with wirbelscan
-
+#include "channelscancontrol.h"
 
 cMutex cVNSIClient::m_timerLock;
+bool cVNSIClient::m_inhibidDataUpdates = false;
 
 cVNSIClient::cVNSIClient(int fd, unsigned int id, const char *ClientAdr)
+  : m_ChannelScanControl(this)
 {
   m_Id                      = id;
   m_Streamer                = NULL;
@@ -63,8 +63,6 @@ cVNSIClient::cVNSIClient(int fd, unsigned int id, const char *ClientAdr)
   m_RecPlayer               = NULL;
   m_req                     = NULL;
   m_resp                    = NULL;
-  m_processSCAN_Response    = NULL;
-  m_processSCAN_Socket      = NULL;
   m_Osd                     = NULL;
   m_bSupportRDS             = false;
 
@@ -77,6 +75,7 @@ cVNSIClient::~cVNSIClient()
 {
   DEBUGLOG("%s", __FUNCTION__);
   StopChannelStreaming();
+  m_ChannelScanControl.StopScan();
   m_socket.close(); // force closing connection
   Cancel(10);
   DEBUGLOG("done");
@@ -155,6 +154,7 @@ void cVNSIClient::Action(void)
   /* If thread is ended due to closed connection delete a
      possible running stream here */
   StopChannelStreaming();
+  m_ChannelScanControl.StopScan();
 
   // Shutdown OSD
   if (m_Osd)
@@ -588,6 +588,10 @@ bool cVNSIClient::processRequest(cRequestPacket* req)
 
     case VNSI_SCAN_STOP:
       result = processSCAN_Stop();
+      break;
+
+    case VNSI_SCAN_SUPPORTED_TYPES:
+      result = processSCAN_GetSupportedTypes();
       break;
 
     /** OPCODE 160 - 179: VNSI network functions for OSD */
@@ -2053,19 +2057,37 @@ bool cVNSIClient::processEPG_GetForChannel() /* OPCODE 120 */
 }
 
 
-/** OPCODE 140 - 169: VNSI network functions for channel scanning */
+/*!
+ * OPCODE 140 - 169:
+ * VNSI network functions for channel scanning
+ */
 
 bool cVNSIClient::processSCAN_ScanSupported() /* OPCODE 140 */
 {
-  /** Note: Using "WirbelScanService-StopScan-v1.0" to detect
-            a present service interface in wirbelscan plugin,
-            it returns true if supported */
-  cPlugin *p = cPluginManager::GetPlugin("wirbelscan");
-  if (p && p->Service("WirbelScanService-StopScan-v1.0", NULL))
-    m_resp->add_U32(VNSI_RET_OK);
-  else
-    m_resp->add_U32(VNSI_RET_NOTSUPPORTED);
+  uint32_t retValue = VNSI_RET_NOTSUPPORTED;
+  if (!m_inhibidDataUpdates && m_ChannelScanControl.IsSupported())
+    retValue = VNSI_RET_OK;
 
+  m_resp->add_U32(retValue);
+  m_resp->finalise();
+  m_socket.write(m_resp->getPtr(), m_resp->getLen());
+  return true;
+}
+
+bool cVNSIClient::processSCAN_GetSupportedTypes()
+{
+  uint32_t retValue = 0;
+  if (m_ChannelScanControl.IsSupported())
+  {
+    retValue |= m_ChannelScanControl.SupportsDVB_T()        ? VNSI_SCAN_SUPPORT_DVB_T : 0;
+    retValue |= m_ChannelScanControl.SupportsDVB_C()        ? VNSI_SCAN_SUPPORT_DVB_C : 0;
+    retValue |= m_ChannelScanControl.SupportsDVB_S()        ? VNSI_SCAN_SUPPORT_DVB_S : 0;
+    retValue |= m_ChannelScanControl.SupportsAnalogTV()     ? VNSI_SCAN_SUPPORT_ANALOG_TV : 0;
+    retValue |= m_ChannelScanControl.SupportsAnalogRadio()  ? VNSI_SCAN_SUPPORT_ANALOG_RADIO : 0;
+    retValue |= m_ChannelScanControl.SupportsATSC()         ? VNSI_SCAN_SUPPORT_ATSC : 0;
+  }
+
+  m_resp->add_U32(retValue);
   m_resp->finalise();
   m_socket.write(m_resp->getPtr(), m_resp->getLen());
   return true;
@@ -2073,24 +2095,20 @@ bool cVNSIClient::processSCAN_ScanSupported() /* OPCODE 140 */
 
 bool cVNSIClient::processSCAN_GetCountries() /* OPCODE 141 */
 {
-  if (!m_processSCAN_Response)
+  scannerEntryList list;
+  if (m_ChannelScanControl.GetCountries(list))
   {
-    m_processSCAN_Response = m_resp;
-    cPlugin *p = cPluginManager::GetPlugin("wirbelscan");
-    if (p)
+    m_resp->add_U32(VNSI_RET_OK);
+    for (scannerEntryList::const_iterator it = list.begin(); it != list.end(); ++it)
     {
-      m_resp->add_U32(VNSI_RET_OK);
-      p->Service("WirbelScanService-GetCountries-v1.0", (void*) processSCAN_AddCountry);
+      m_resp->add_U32(it->index);
+      m_resp->add_String(it->name);
+      m_resp->add_String(it->longName);
     }
-    else
-    {
-      m_resp->add_U32(VNSI_RET_NOTSUPPORTED);
-    }
-    m_processSCAN_Response = NULL;
   }
   else
   {
-    m_resp->add_U32(VNSI_RET_DATALOCKED);
+    m_resp->add_U32(VNSI_RET_NOTSUPPORTED);
   }
 
   m_resp->finalise();
@@ -2100,24 +2118,20 @@ bool cVNSIClient::processSCAN_GetCountries() /* OPCODE 141 */
 
 bool cVNSIClient::processSCAN_GetSatellites() /* OPCODE 142 */
 {
-  if (!m_processSCAN_Response)
+  scannerEntryList list;
+  if (m_ChannelScanControl.GetSatellites(list))
   {
-    m_processSCAN_Response = m_resp;
-    cPlugin *p = cPluginManager::GetPlugin("wirbelscan");
-    if (p)
+    m_resp->add_U32(VNSI_RET_OK);
+    for (scannerEntryList::const_iterator it = list.begin(); it != list.end(); ++it)
     {
-      m_resp->add_U32(VNSI_RET_OK);
-      p->Service("WirbelScanService-GetSatellites-v1.0", (void*) processSCAN_AddSatellite);
+      m_resp->add_U32(it->index);
+      m_resp->add_String(it->name);
+      m_resp->add_String(it->longName);
     }
-    else
-    {
-      m_resp->add_U32(VNSI_RET_NOTSUPPORTED);
-    }
-    m_processSCAN_Response = NULL;
   }
   else
   {
-    m_resp->add_U32(VNSI_RET_DATALOCKED);
+    m_resp->add_U32(VNSI_RET_NOTSUPPORTED);
   }
 
   m_resp->finalise();
@@ -2127,8 +2141,8 @@ bool cVNSIClient::processSCAN_GetSatellites() /* OPCODE 142 */
 
 bool cVNSIClient::processSCAN_Start() /* OPCODE 143 */
 {
-  WirbelScanService_DoScan_v1_0 svc;
-  svc.type              = (scantype_t)m_req->extract_U32();
+  sScanServiceData svc;
+  svc.type              = (int)m_req->extract_U32();
   svc.scan_tv           = (bool)m_req->extract_U8();
   svc.scan_radio        = (bool)m_req->extract_U8();
   svc.scan_fta          = (bool)m_req->extract_U8();
@@ -2141,27 +2155,19 @@ bool cVNSIClient::processSCAN_Start() /* OPCODE 143 */
   svc.DVBT_Inversion    = (int)m_req->extract_U32();
   svc.SatIndex          = (int)m_req->extract_U32();
   svc.ATSC_Type         = (int)m_req->extract_U32();
-  svc.SetPercentage     = processSCAN_SetPercentage;
-  svc.SetSignalStrength = processSCAN_SetSignalStrength;
-  svc.SetDeviceInfo     = processSCAN_SetDeviceInfo;
-  svc.SetTransponder    = processSCAN_SetTransponder;
-  svc.NewChannel        = processSCAN_NewChannel;
-  svc.IsFinished        = processSCAN_IsFinished;
-  svc.SetStatus         = processSCAN_SetStatus;
-  m_processSCAN_Socket  = &m_socket;
 
-  cPlugin *p = cPluginManager::GetPlugin("wirbelscan");
-  if (p)
+  if (!m_inhibidDataUpdates && m_ChannelScanControl.IsSupported())
   {
-    if (p->Service("WirbelScanService-DoScan-v1.0", (void*) &svc))
+    if (m_ChannelScanControl.StartScan(svc))
+    {
       m_resp->add_U32(VNSI_RET_OK);
+      m_inhibidDataUpdates = true;
+    }
     else
       m_resp->add_U32(VNSI_RET_ERROR);
   }
   else
-  {
     m_resp->add_U32(VNSI_RET_NOTSUPPORTED);
-  }
 
   m_resp->finalise();
   m_socket.write(m_resp->getPtr(), m_resp->getLen());
@@ -2170,36 +2176,21 @@ bool cVNSIClient::processSCAN_Start() /* OPCODE 143 */
 
 bool cVNSIClient::processSCAN_Stop() /* OPCODE 144 */
 {
-  cPlugin *p = cPluginManager::GetPlugin("wirbelscan");
-  if (p)
+  m_inhibidDataUpdates = false;
+
+  if (m_ChannelScanControl.IsSupported())
   {
-    p->Service("WirbelScanService-StopScan-v1.0", NULL);
-    m_resp->add_U32(VNSI_RET_OK);
+    if (m_ChannelScanControl.StopScan())
+      m_resp->add_U32(VNSI_RET_OK);
+    else
+      m_resp->add_U32(VNSI_RET_ERROR);
   }
   else
-  {
     m_resp->add_U32(VNSI_RET_NOTSUPPORTED);
-  }
+
   m_resp->finalise();
   m_socket.write(m_resp->getPtr(), m_resp->getLen());
   return true;
-}
-
-cResponsePacket *cVNSIClient::m_processSCAN_Response = NULL;
-cxSocket *cVNSIClient::m_processSCAN_Socket = NULL;
-
-void cVNSIClient::processSCAN_AddCountry(int index, const char *isoName, const char *longName)
-{
-  m_processSCAN_Response->add_U32(index);
-  m_processSCAN_Response->add_String(isoName);
-  m_processSCAN_Response->add_String(longName);
-}
-
-void cVNSIClient::processSCAN_AddSatellite(int index, const char *shortName, const char *longName)
-{
-  m_processSCAN_Response->add_U32(index);
-  m_processSCAN_Response->add_String(shortName);
-  m_processSCAN_Response->add_String(longName);
 }
 
 void cVNSIClient::processSCAN_SetPercentage(int percent)
@@ -2212,7 +2203,7 @@ void cVNSIClient::processSCAN_SetPercentage(int percent)
   }
   resp->add_U32(percent);
   resp->finalise();
-  m_processSCAN_Socket->write(resp->getPtr(), resp->getLen());
+  m_socket.write(resp->getPtr(), resp->getLen());
   delete resp;
 }
 
@@ -2224,12 +2215,10 @@ void cVNSIClient::processSCAN_SetSignalStrength(int strength, bool locked)
     delete resp;
     return;
   }
-  strength *= 100;
-  strength /= 0xFFFF;
   resp->add_U32(strength);
   resp->add_U32(locked);
   resp->finalise();
-  m_processSCAN_Socket->write(resp->getPtr(), resp->getLen());
+  m_socket.write(resp->getPtr(), resp->getLen());
   delete resp;
 }
 
@@ -2243,7 +2232,7 @@ void cVNSIClient::processSCAN_SetDeviceInfo(const char *Info)
   }
   resp->add_String(Info);
   resp->finalise();
-  m_processSCAN_Socket->write(resp->getPtr(), resp->getLen());
+  m_socket.write(resp->getPtr(), resp->getLen());
   delete resp;
 }
 
@@ -2257,7 +2246,7 @@ void cVNSIClient::processSCAN_SetTransponder(const char *Info)
   }
   resp->add_String(Info);
   resp->finalise();
-  m_processSCAN_Socket->write(resp->getPtr(), resp->getLen());
+  m_socket.write(resp->getPtr(), resp->getLen());
   delete resp;
 }
 
@@ -2274,7 +2263,7 @@ void cVNSIClient::processSCAN_NewChannel(const char *Name, bool isRadio, bool is
   resp->add_U32(isHD);
   resp->add_String(Name);
   resp->finalise();
-  m_processSCAN_Socket->write(resp->getPtr(), resp->getLen());
+  m_socket.write(resp->getPtr(), resp->getLen());
   delete resp;
 }
 
@@ -2287,8 +2276,7 @@ void cVNSIClient::processSCAN_IsFinished()
     return;
   }
   resp->finalise();
-  m_processSCAN_Socket->write(resp->getPtr(), resp->getLen());
-  m_processSCAN_Socket = NULL;
+  m_socket.write(resp->getPtr(), resp->getLen());
   delete resp;
 }
 
@@ -2302,7 +2290,7 @@ void cVNSIClient::processSCAN_SetStatus(int status)
   }
   resp->add_U32(status);
   resp->finalise();
-  m_processSCAN_Socket->write(resp->getPtr(), resp->getLen());
+  m_socket.write(resp->getPtr(), resp->getLen());
   delete resp;
 }
 

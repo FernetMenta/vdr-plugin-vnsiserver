@@ -104,53 +104,61 @@ void cVNSIStatus::Action(void)
       }
     }
 
-    // trigger clients to reload the modified channel list
-    if(m_clients.size() > 0 && chanTimer.TimedOut())
+    /*!
+     * Don't to updates during running channel scan, KODI's PVR manager becomes
+     * restarted of finished scan.
+     */
+    if (!cVNSIClient::InhibidDataUpdates())
     {
-      int modified = Channels.Modified();
-      if (modified)
+      // trigger clients to reload the modified channel list
+      if(m_clients.size() > 0 && chanTimer.TimedOut())
       {
-        Channels.SetModified((modified == CHANNELSMOD_USER) ? true : false);
-        INFOLOG("Requesting clients to reload channel list");
+        int modified = Channels.Modified();
+        if (modified)
+        {
+          Channels.SetModified((modified == CHANNELSMOD_USER) ? true : false);
+          INFOLOG("Requesting clients to reload channel list");
+          for (ClientList::iterator i = m_clients.begin(); i != m_clients.end(); i++)
+            (*i)->ChannelsChange();
+        }
+        chanTimer.Set(5000);
+      }
+
+      // reset inactivity timeout as long as there are clients connected
+      if(m_clients.size() > 0)
+      {
+        ShutdownHandler.SetUserInactiveTimeout();
+      }
+
+      // update recordings
+      if(Recordings.StateChanged(recState))
+      {
+        INFOLOG("Recordings state changed (%i)", recState);
+        INFOLOG("Requesting clients to reload recordings list");
         for (ClientList::iterator i = m_clients.begin(); i != m_clients.end(); i++)
-          (*i)->ChannelsChange();
+          (*i)->RecordingsChange();
       }
-      chanTimer.Set(5000);
-    }
 
-    // reset inactivity timeout as long as there are clients connected
-    if(m_clients.size() > 0) {
-      ShutdownHandler.SetUserInactiveTimeout();
-    }
-
-    // update recordings
-    if(Recordings.StateChanged(recState))
-    {
-      INFOLOG("Recordings state changed (%i)", recState);
-      INFOLOG("Requesting clients to reload recordings list");
-      for (ClientList::iterator i = m_clients.begin(); i != m_clients.end(); i++)
-        (*i)->RecordingsChange();
-    }
-
-    // update timers
-    if(Timers.Modified(timerState))
-    {
-      INFOLOG("Timers state changed (%i)", timerState);
-      INFOLOG("Requesting clients to reload timers");
-      for (ClientList::iterator i = m_clients.begin(); i != m_clients.end(); i++)
+      // update timers
+      if(Timers.Modified(timerState))
       {
-        (*i)->TimerChange();
+        INFOLOG("Timers state changed (%i)", timerState);
+        INFOLOG("Requesting clients to reload timers");
+        for (ClientList::iterator i = m_clients.begin(); i != m_clients.end(); i++)
+        {
+          (*i)->TimerChange();
+        }
       }
-    }
 
-    // update epg
-    if((cSchedules::Modified() > epgUpdate + 10) || time(NULL) > epgUpdate + 300)
-    {
-      for (ClientList::iterator i = m_clients.begin(); i != m_clients.end(); i++)
+      // update epg
+      if((cSchedules::Modified() > epgUpdate + 10) || time(NULL) > epgUpdate + 300)
       {
-        (*i)->EpgChange();
+        for (ClientList::iterator i = m_clients.begin(); i != m_clients.end(); i++)
+        {
+          (*i)->EpgChange();
+        }
+        epgUpdate = time(NULL);
       }
-      epgUpdate = time(NULL);
     }
 
     m_mutex.Unlock();

@@ -32,6 +32,7 @@
 
 #include "config.h"
 #include "cxsocket.h"
+#include "channelscancontrol.h"
 
 #include <map>
 #include <string>
@@ -66,6 +67,8 @@ private:
   cMutex           m_msgLock;
   static cMutex    m_timerLock;
   cVnsiOsdProvider *m_Osd;
+  CScanControl      m_ChannelScanControl;
+  static bool       m_inhibidDataUpdates;
   typedef struct
   {
     int attempts;
@@ -93,6 +96,7 @@ public:
   void RecordingsChange();
   void TimerChange();
   void EpgChange();
+  static bool InhibidDataUpdates() { return m_inhibidDataUpdates; }
 
   unsigned int GetID() { return m_Id; }
 
@@ -170,6 +174,7 @@ private:
   bool processEPG_GetForChannel();
 
   bool processSCAN_ScanSupported();
+  bool processSCAN_GetSupportedTypes();
   bool processSCAN_GetCountries();
   bool processSCAN_GetSatellites();
   bool processSCAN_Start();
@@ -177,25 +182,24 @@ private:
 
   bool Undelete(cRecording* recording);
 
-  /** Static callback functions to interact with wirbelscan plugin over
-      the plugin service interface */
-  static void processSCAN_AddCountry(int index, const char *isoName, const char *longName);
-  static void processSCAN_AddSatellite(int index, const char *shortName, const char *longName);
-  static void processSCAN_SetPercentage(int percent);
-  static void processSCAN_SetSignalStrength(int strength, bool locked);
-  static void processSCAN_SetDeviceInfo(const char *Info);
-  static void processSCAN_SetTransponder(const char *Info);
-  static void processSCAN_NewChannel(const char *Name, bool isRadio, bool isEncrypted, bool isHD);
-  static void processSCAN_IsFinished();
-  static void processSCAN_SetStatus(int status);
-  static cResponsePacket *m_processSCAN_Response;
-  static cxSocket *m_processSCAN_Socket;
-
   bool processOSD_Connect();
   bool processOSD_Disconnect();
   bool processOSD_Hitkey();
 
   cString CreatePiconRef(cChannel* channel);
+
+private:
+  /** Static callback functions to interact with wirbelscan plugin over
+      the plugin service interface */
+  friend class CScanControl;
+
+  void processSCAN_SetPercentage(int percent);
+  void processSCAN_SetSignalStrength(int strength, bool locked);
+  void processSCAN_SetDeviceInfo(const char *Info);
+  void processSCAN_SetTransponder(const char *Info);
+  void processSCAN_NewChannel(const char *Name, bool isRadio, bool isEncrypted, bool isHD);
+  void processSCAN_IsFinished();
+  void processSCAN_SetStatus(int status);
 };
 
 #endif // VNSI_CLIENT_H
