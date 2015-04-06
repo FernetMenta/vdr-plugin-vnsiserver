@@ -8,6 +8,7 @@ VDR Plugin 'vnsiserver' Revision History
 - Update support for wirbelscan plugin
 - Rework Licence files to use KODI
 - Improved README
+- Fix possible seq fault in void cRecPlayer::reScan()
 
 2015-01-25: Version 1.2.1
 

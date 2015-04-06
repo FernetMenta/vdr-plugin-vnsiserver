@@ -116,7 +116,7 @@ void cRecPlayer::reScan()
     cSegment* segment;
     if (m_segments.Size() < i+1)
     {
-      cSegment* segment = new cSegment();
+      segment = new cSegment();
       m_segments.Append(segment);
       segment->start = m_totalLength;
     }
