@@ -1,11 +1,12 @@
 /*
- *      vdr-plugin-vnsi - XBMC server plugin for VDR
+ *      vdr-plugin-vnsi - KODI server plugin for VDR
  *
  *      Copyright (C) 2004-2005 Chris Tallon
  *      Copyright (C) 2010 Alwin Esch (Team XBMC)
  *      Copyright (C) 2010, 2011 Alexander Pipelka
+ *      Copyright (C) 2015 Team KODI
  *
- *      http://www.xbmc.org
+ *      http://kodi.tv
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -18,7 +19,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, see
+ *  along with KODI; see the file COPYING.  If not, see
  *  <http://www.gnu.org/licenses/>.
  *
  */
@@ -115,7 +116,7 @@ void cRecPlayer::reScan()
     cSegment* segment;
     if (m_segments.Size() < i+1)
     {
-      cSegment* segment = new cSegment();
+      segment = new cSegment();
       m_segments.Append(segment);
       segment->start = m_totalLength;
     }

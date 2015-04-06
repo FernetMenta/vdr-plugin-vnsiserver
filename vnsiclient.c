@@ -1,10 +1,11 @@
 /*
- *      vdr-plugin-vnsi - XBMC server plugin for VDR
+ *      vdr-plugin-vnsi - KODI server plugin for VDR
  *
  *      Copyright (C) 2010 Alwin Esch (Team XBMC)
  *      Copyright (C) 2010, 2011 Alexander Pipelka
+ *      Copyright (C) 2015 Team KODI
  *
- *      http://www.xbmc.org
+ *      http://kodi.tv
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,7 +18,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, see
+ *  along with KODI; see the file COPYING.  If not, see
  *  <http://www.gnu.org/licenses/>.
  *
  */
@@ -53,19 +54,19 @@ cMutex cVNSIClient::m_timerLock;
 bool cVNSIClient::m_inhibidDataUpdates = false;
 
 cVNSIClient::cVNSIClient(int fd, unsigned int id, const char *ClientAdr)
-  : m_ChannelScanControl(this)
+  : m_Id(id),
+    m_loggedIn(false),
+    m_StatusInterfaceEnabled(false),
+    m_Streamer(NULL),
+    m_isStreaming(false),
+    m_bSupportRDS(false),
+    m_ClientAddress(ClientAdr),
+    m_RecPlayer(NULL),
+    m_req(NULL),
+    m_resp(NULL),
+    m_Osd(NULL),
+    m_ChannelScanControl(this)
 {
-  m_Id                      = id;
-  m_Streamer                = NULL;
-  m_isStreaming             = false;
-  m_ClientAddress           = ClientAdr;
-  m_StatusInterfaceEnabled  = false;
-  m_RecPlayer               = NULL;
-  m_req                     = NULL;
-  m_resp                    = NULL;
-  m_Osd                     = NULL;
-  m_bSupportRDS             = false;
-
   m_socket.SetHandle(fd);
 
   Start();

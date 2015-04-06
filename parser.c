@@ -1,6 +1,10 @@
 /*
+ *      vdr-plugin-vnsi - KODI server plugin for VDR
+ *
  *      Copyright (C) 2005-2012 Team XBMC
- *      http://www.xbmc.org
+ *      Copyright (C) 2015 Team KODI
+ *
+ *      http://kodi.tv
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -13,7 +17,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, see
+ *  along with KODI; see the file COPYING.  If not, see
  *  <http://www.gnu.org/licenses/>.
  *
  */
@@ -553,7 +557,7 @@ int cTSStream::ProcessTSPacket(uint8_t *data, sStreamPacket *pkt, sStreamPacket 
     int64_t dts = pkt->dts;
     int64_t pts = pkt->pts;
 
-    // Rescale for XBMC
+    // Rescale for KODI
     if (pkt->dts != DVD_NOPTS_VALUE)
       pkt->dts      = Rescale(dts, DVD_TIME_BASE, 90000);
     if (pkt->pts != DVD_NOPTS_VALUE)
@@ -568,7 +572,7 @@ int cTSStream::ProcessTSPacket(uint8_t *data, sStreamPacket *pkt, sStreamPacket 
     int64_t dts = pkt_side_data->dts;
     int64_t pts = pkt_side_data->pts;
 
-    // Rescale for XBMC
+    // Rescale for KODI
     if (pkt_side_data->dts != DVD_NOPTS_VALUE)
       pkt_side_data->dts      = Rescale(dts, DVD_TIME_BASE, 90000);
     if (pkt_side_data->pts != DVD_NOPTS_VALUE)
