@@ -112,6 +112,7 @@
 #define VNSI_SCAN_GETSATELLITES    142
 #define VNSI_SCAN_START            143
 #define VNSI_SCAN_STOP             144
+#define VNSI_SCAN_SUPPORTED_TYPES  145
 
 /* OPCODE 160 - 179: VNSI network functions for channel scanning */
 #define VNSI_OSD_CONNECT           160
@@ -160,6 +161,14 @@
 #define VNSI_STATUS_CHANNELCHANGE    4
 #define VNSI_STATUS_RECORDINGSCHANGE 5
 #define VNSI_STATUS_EPGCHANGE        6
+
+/** Channel search signal supported flags */
+#define VNSI_SCAN_SUPPORT_DVB_T      0x01
+#define VNSI_SCAN_SUPPORT_DVB_C      0x02
+#define VNSI_SCAN_SUPPORT_DVB_S      0x04
+#define VNSI_SCAN_SUPPORT_ANALOG_TV  0x08
+#define VNSI_SCAN_SUPPORT_ANALOG_RADIO 0x10
+#define VNSI_SCAN_SUPPORT_ATSC       0x20
 
 /** Packet return codes */
 #define VNSI_RET_OK              0
