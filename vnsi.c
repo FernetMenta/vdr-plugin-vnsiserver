@@ -208,7 +208,8 @@ bool cDvbVsniDeviceProbe::Probe(int Adapter, int Frontend)
 
 cDvbVnsiDevice::cDvbVnsiDevice(int Adapter, int Frontend) :cDvbDevice(Adapter, Frontend)
 {
-
+  VNSIServerConfig.pDevice = this;
+  m_hasDecoder = false;
 }
 
 cDvbVnsiDevice::~cDvbVnsiDevice()
@@ -218,7 +219,8 @@ cDvbVnsiDevice::~cDvbVnsiDevice()
 
 bool cDvbVnsiDevice::HasDecoder(void) const
 {
-  return true;
+  cMutexLock lock((cMutex*)&m_mutex);
+  return m_hasDecoder;
 }
 
 int cDvbVnsiDevice::PlayVideo(const uchar *Data, int Length)
@@ -229,6 +231,12 @@ int cDvbVnsiDevice::PlayVideo(const uchar *Data, int Length)
 int cDvbVnsiDevice::PlayAudio(const uchar *Data, int Length, uchar Id)
 {
   return Length;
+}
+
+void cDvbVnsiDevice::ActivateDecoder(bool active)
+{
+  cMutexLock lock(&m_mutex);
+  m_hasDecoder = active;
 }
 
 VDRPLUGINCREATOR(cPluginVNSIServer); // Don't touch this!

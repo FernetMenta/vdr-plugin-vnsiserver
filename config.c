@@ -37,6 +37,7 @@ cVNSIServerConfig::cVNSIServerConfig()
   ConfigDirectory     = NULL;
   stream_timeout      = 10;
   device              = false;
+  pDevice             = NULL;
   testStreamActive    = false;
 }
 
