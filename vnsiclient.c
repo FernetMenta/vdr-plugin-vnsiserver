@@ -2665,26 +2665,22 @@ bool cVNSIClient::processRECORDINGS_DELETED_DeleteAll() /* OPCODE 185 */
   return true;
 }
 
-// this method is taken from XVDR
+// part of this method is taken from XVDR
 cString cVNSIClient::CreatePiconRef(cChannel* channel)
 {
   int hash = 0;
 
   if(cSource::IsSat(channel->Source()))
   {
-    hash = channel->Source() & cSource::st_Pos;
+    int16_t pos = channel->Source() & cSource::st_Pos;
+    hash = pos;
 
 #if VDRVERSNUM >= 20101
-    hash = -hash;
-#endif
-
-    if(hash > 0x00007FFF)
-      hash |= 0xFFFF0000;
-
     if(hash < 0)
-      hash = -hash;
-    else
-      hash = 1800 + hash;
+    {
+      hash = 3600 + hash;
+    }
+#endif
 
     hash = hash << 16;
   }
