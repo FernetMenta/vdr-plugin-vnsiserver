@@ -26,6 +26,7 @@
 #include "vnsiosd.h"
 #include "vnsicommand.h"
 #include "responsepacket.h"
+#include "vnsi.h"
 #include <signal.h>
 #include <sys/ioctl.h>
 #include <sys/unistd.h>
@@ -220,12 +221,14 @@ cVnsiOsdProvider::cVnsiOsdProvider(cxSocket *socket)
   INFOLOG("new osd provider");
   m_Socket = socket;
   m_RequestFull = true;
+  ((cDvbVnsiDevice*)VNSIServerConfig.pDevice)->ActivateDecoder(true);
 }
 
 cVnsiOsdProvider::~cVnsiOsdProvider()
 {
   cMutexLock lock(&m_Mutex);
   m_Socket = NULL;
+  ((cDvbVnsiDevice*)VNSIServerConfig.pDevice)->ActivateDecoder(false);
 }
 
 cOsd *cVnsiOsdProvider::CreateOsd(int Left, int Top, uint Level)

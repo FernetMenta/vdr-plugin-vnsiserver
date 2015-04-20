@@ -25,6 +25,7 @@
 
 #include <getopt.h>
 #include <vdr/plugin.h>
+#include <vdr/thread.h>
 #include "vnsiserver.h"
 
 static const char *VERSION        = "1.3.0";
@@ -85,4 +86,8 @@ public:
   virtual bool HasDecoder(void) const;
   int PlayVideo(const uchar *Data, int Length);
   int PlayAudio(const uchar *Data, int Length, uchar Id);
+  void ActivateDecoder(bool active);
+protected:
+  bool m_hasDecoder;
+  cMutex m_mutex;
 };
