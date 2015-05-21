@@ -242,14 +242,26 @@ void cLiveStreamer::Action(void)
     {
       // no data
       {
-        cMutexLock lock(&m_Mutex);
-        if (m_IsRetune)
+        bool retune = false;
+        {
+          cMutexLock lock(&m_Mutex);
+          retune = m_IsRetune;
+          if (!retune)
+            m_Event.TimedWait(m_Mutex, 10);
+        }
+        if (retune)
         {
           m_VideoInput.Close();
           if (m_VideoInput.Open(m_Channel, m_Priority, m_VideoBuffer))
+          {
+            cMutexLock lock(&m_Mutex);
             m_IsRetune = false;
+          }
           else
+          {
+            cMutexLock lock(&m_Mutex);
             m_Event.TimedWait(m_Mutex, 100);
+          }
         }
         else
           m_Event.TimedWait(m_Mutex, 10);
