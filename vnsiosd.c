@@ -221,14 +221,16 @@ cVnsiOsdProvider::cVnsiOsdProvider(cxSocket *socket)
   INFOLOG("new osd provider");
   m_Socket = socket;
   m_RequestFull = true;
-  ((cDvbVnsiDevice*)VNSIServerConfig.pDevice)->ActivateDecoder(true);
+  if (VNSIServerConfig.pDevice)
+    ((cDvbVnsiDevice*)VNSIServerConfig.pDevice)->ActivateDecoder(true);
 }
 
 cVnsiOsdProvider::~cVnsiOsdProvider()
 {
   cMutexLock lock(&m_Mutex);
   m_Socket = NULL;
-  ((cDvbVnsiDevice*)VNSIServerConfig.pDevice)->ActivateDecoder(false);
+  if (VNSIServerConfig.pDevice)
+    ((cDvbVnsiDevice*)VNSIServerConfig.pDevice)->ActivateDecoder(false);
 }
 
 cOsd *cVnsiOsdProvider::CreateOsd(int Left, int Top, uint Level)
