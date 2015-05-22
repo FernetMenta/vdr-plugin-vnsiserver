@@ -32,6 +32,8 @@
 #include <vdr/channels.h>
 #include <vdr/device.h>
 #include <vdr/receiver.h>
+#include <vdr/ci.h>
+#include <vdr/config.h>
 #include <libsi/section.h>
 #include <libsi/descriptor.h>
 
@@ -432,6 +434,9 @@ bool cVideoInput::Open(const cChannel *channel, int priority, cVideoBuffer *vide
       m_Receiver = new cLiveReceiver(this, m_Channel, m_Priority);
       m_Device->AttachReceiver(m_Receiver0);
       m_Device->AttachFilter(m_PatFilter);
+      cCamSlot *cs = m_Device->CamSlot();
+      if (m_Priority <= MINPRIORITY && cs)
+        cs->StartDecrypting();
       m_VideoBuffer->AttachInput(true);
       Start();
       return true;
@@ -496,6 +501,13 @@ void cVideoInput::Close()
     }
 
     m_Device->SetCurrentChannel(NULL);
+    cCamSlot *cs = m_Device->CamSlot();
+    if (m_Priority <= MINPRIORITY && cs)
+    {
+      cs->StartDecrypting();
+      if (!cs->IsDecrypting())
+        cs->Assign(NULL);
+    }
   }
   m_Channel = NULL;
   m_Device = NULL;
@@ -530,6 +542,9 @@ void cVideoInput::PmtChange(int pidChange)
     m_Receiver->SetPids(&m_Receiver->m_PmtChannel);
     m_Receiver->AddPid(m_Receiver->m_PmtChannel.Tpid());
     m_Device->AttachReceiver(m_Receiver);
+    cCamSlot *cs = m_Device->CamSlot();
+    if (m_Priority <= MINPRIORITY && cs)
+      cs->StartDecrypting();
     m_SeenPmt = true;
   }
 }
