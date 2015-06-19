@@ -263,8 +263,6 @@ void cLiveStreamer::Action(void)
             m_Event.TimedWait(m_Mutex, 100);
           }
         }
-        else
-          m_Event.TimedWait(m_Mutex, 10);
       }
       if(m_last_tick.Elapsed() >= (uint64_t)(m_scanTimeout*1000))
       {

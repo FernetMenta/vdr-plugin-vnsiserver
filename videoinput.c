@@ -427,7 +427,7 @@ bool cVideoInput::Open(const cChannel *channel, int priority, cVideoBuffer *vide
     if (m_Device->SwitchChannel(m_Channel, false))
     {
       DEBUGLOG("Creating new live Receiver");
-      m_Device->SetCurrentChannel(m_Channel);
+      //m_Device->SetCurrentChannel(m_Channel);
       m_SeenPmt = false;
       m_PatFilter = new cLivePatFilter(this, m_Channel);
       m_Receiver0 = new cLiveReceiver(this, m_Channel, m_Priority);
@@ -500,7 +500,7 @@ void cVideoInput::Close()
       DELETENULL(m_PatFilter);
     }
 
-    m_Device->SetCurrentChannel(NULL);
+    //m_Device->SetCurrentChannel(NULL);
     cCamSlot *cs = m_Device->CamSlot();
     if (m_Priority <= MINPRIORITY && cs)
     {
