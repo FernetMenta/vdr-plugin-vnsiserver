@@ -2305,8 +2305,6 @@ bool cVNSIClient::processOSD_Connect() /* OPCODE 160 */
   m_resp->add_U32(osdHeight);
   m_resp->finalise();
   m_socket.write(m_resp->getPtr(), m_resp->getLen());
-
-  m_Osd = new cVnsiOsdProvider(&m_socket);
   return true;
 }
 
