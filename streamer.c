@@ -218,9 +218,9 @@ void cLiveStreamer::Action(void)
       }
 
       // send signal info every 10 sec.
-      if(last_info.Elapsed() >= 10*1000)
+      if(last_info.TimedOut())
       {
-        last_info.Set(0);
+        last_info.Set(10000);
         sendSignalInfo();
 
         // prevent EPG scan (activity timeout is 60s)
