@@ -31,7 +31,7 @@ int TimeshiftBufferSize = 5;
 int TimeshiftBufferFileSize = 6;
 char TimeshiftBufferDir[PATH_MAX] = "\0";
 int PlayRecording = 0;
-int AvoidEPGScan = 0;
+int AvoidEPGScan = 1;
 
 cMenuSetupVNSI::cMenuSetupVNSI(void)
 {
