@@ -55,8 +55,6 @@ void cVNSIDemuxer::Open(const cChannel &channel, cVideoBuffer *videoBuffer)
   else
     m_WaitIFrame = false;
 
-  m_FirstFramePTS = 0;
-
   m_PtsWrap.m_Wrap = false;
   m_PtsWrap.m_NoOfWraps = 0;
   m_PtsWrap.m_ConfirmCount = 0;
@@ -140,15 +138,7 @@ int cVNSIDemuxer::Read(sStreamPacket *packet, sStreamPacket *packet_side_data)
     int error = stream->ProcessTSPacket(buf, packet, packet_side_data, m_WaitIFrame);
     if (error == 0)
     {
-      if (m_WaitIFrame)
-      {
-        if (packet->pts != DVD_NOPTS_VALUE)
-          m_FirstFramePTS = packet->pts;
-        m_WaitIFrame = false;
-      }
-
-      if (packet->pts < m_FirstFramePTS)
-        return 0;
+      m_WaitIFrame = false;
 
       packet->serial = m_MuxPacketSerial;
       if (m_SetRefTime)
