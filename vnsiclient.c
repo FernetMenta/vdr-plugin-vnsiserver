@@ -1679,7 +1679,6 @@ bool cVNSIClient::processRECORDINGS_GetDiskSpace() /* OPCODE 100 */
 
 bool cVNSIClient::processRECORDINGS_GetCount() /* OPCODE 101 */
 {
-  Recordings.Load();
   m_resp->add_U32(Recordings.Count());
 
   m_resp->finalise();
