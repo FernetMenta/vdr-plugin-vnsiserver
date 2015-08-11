@@ -105,7 +105,7 @@ void cParserH264::Parse(sStreamPacket *pkt, sStreamPacket *pkt_side_data)
       DEBUGLOG("H.264 SPS: DAR %.2f", DAR);
 
       int duration;
-      if (m_curDTS != DVD_NOPTS_VALUE && m_prevDTS != DVD_NOPTS_VALUE)
+      if (m_curDTS != DVD_NOPTS_VALUE && m_prevDTS != DVD_NOPTS_VALUE && m_curDTS > m_prevDTS)
         duration = m_curDTS - m_prevDTS;
       else
         duration = m_Stream->Rescale(20000, 90000, DVD_TIME_BASE);
