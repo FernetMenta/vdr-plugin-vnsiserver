@@ -98,9 +98,21 @@ uint32_t CreateChannelUID(const cChannel* channel) {
 }
 
 const cChannel* FindChannelByUID(uint32_t channelUID) {
-  cChannel* result = NULL;
+  const cChannel* result = NULL;
 
+#if VDRVERSNUM >= 20301
+  LOCK_CHANNELS_READ;
   // maybe we need to use a lookup table
+  for (const cChannel *channel = Channels->First(); channel; channel = Channels->Next(channel)) {
+    cString channelid = channel->GetChannelID().ToString();
+    if(channelUID == CreateStringHash(channelid)) {
+      result = channel;
+      break;
+    }
+  }
+#else
+  // maybe we need to use a lookup table
+  Channels.Lock(false);
   for (cChannel *channel = Channels.First(); channel; channel = Channels.Next(channel)) {
     cString channelid = channel->GetChannelID().ToString();
     if(channelUID == CreateStringHash(channelid)) {
@@ -108,6 +120,8 @@ const cChannel* FindChannelByUID(uint32_t channelUID) {
       break;
     }
   }
+  Channels.Unlock();
+#endif
 
   return result;
 }

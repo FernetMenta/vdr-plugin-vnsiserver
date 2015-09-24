@@ -40,7 +40,7 @@ class cVideoBufferSimple : public cVideoBuffer
 {
 friend class cVideoBuffer;
 public:
-  virtual void Put(uint8_t *buf, unsigned int size);
+  virtual void Put(const uint8_t *buf, unsigned int size);
   virtual int ReadBlock(uint8_t **buf, unsigned int size, time_t &endTime, time_t &wrapTime);
 
 protected:
@@ -63,7 +63,7 @@ cVideoBufferSimple::~cVideoBufferSimple()
     delete m_Buffer;
 }
 
-void cVideoBufferSimple::Put(uint8_t *buf, unsigned int size)
+void cVideoBufferSimple::Put(const uint8_t *buf, unsigned int size)
 {
   m_Buffer->Put(buf, size);
 }
@@ -198,7 +198,7 @@ class cVideoBufferRAM : public cVideoBufferTimeshift
 {
 friend class cVideoBuffer;
 public:
-  virtual void Put(uint8_t *buf, unsigned int size);
+  virtual void Put(const uint8_t *buf, unsigned int size);
   virtual int ReadBlock(uint8_t **buf, unsigned int size, time_t &endTime, time_t &wrapTime);
   virtual void SetPos(off_t pos);
 
@@ -243,7 +243,7 @@ void cVideoBufferRAM::SetPos(off_t pos)
   m_BytesConsumed = 0;
 }
 
-void cVideoBufferRAM::Put(uint8_t *buf, unsigned int size)
+void cVideoBufferRAM::Put(const uint8_t *buf, unsigned int size)
 {
   if (Available() + MARGIN >= m_BufferSize)
   {
@@ -335,7 +335,7 @@ class cVideoBufferFile : public cVideoBufferTimeshift
 friend class cVideoBuffer;
 public:
   virtual off_t GetPosMax();
-  virtual void Put(uint8_t *buf, unsigned int size);
+  virtual void Put(const uint8_t *buf, unsigned int size);
   virtual int ReadBlock(uint8_t **buf, unsigned int size, time_t &endTime, time_t &wrapTime);
   virtual void SetPos(off_t pos);
 
@@ -451,7 +451,7 @@ off_t cVideoBufferFile::GetPosMax()
   return posMax;
 }
 
-void cVideoBufferFile::Put(uint8_t *buf, unsigned int size)
+void cVideoBufferFile::Put(const uint8_t *buf, unsigned int size)
 {
   if (Available() + MARGIN >= m_BufferSize)
   {
@@ -626,22 +626,22 @@ class cVideoBufferRecording : public cVideoBufferFile
 friend class cVideoBuffer;
 public:
   virtual off_t GetPosMax();
-  virtual void Put(uint8_t *buf, unsigned int size);
+  virtual void Put(const uint8_t *buf, unsigned int size);
   virtual int ReadBlock(uint8_t **buf, unsigned int size, time_t &endTime, time_t &wrapTime);
   virtual time_t GetRefTime();
 
 protected:
-  cVideoBufferRecording(cRecording *rec);
+  cVideoBufferRecording(const cRecording *rec);
   virtual ~cVideoBufferRecording();
   virtual bool Init();
   virtual off_t Available();
   off_t GetPosEnd();
   cRecPlayer *m_RecPlayer;
-  cRecording *m_Recording;
+  const cRecording *m_Recording;
   cTimeMs m_ScanTimer;
 };
 
-cVideoBufferRecording::cVideoBufferRecording(cRecording *rec)
+cVideoBufferRecording::cVideoBufferRecording(const cRecording *rec)
 {
   m_Recording = rec;
   m_ReadCacheSize = 0;
@@ -662,7 +662,7 @@ off_t cVideoBufferRecording::GetPosMax()
   return cVideoBufferFile::GetPosMax();
 }
 
-void cVideoBufferRecording::Put(uint8_t *buf, unsigned int size)
+void cVideoBufferRecording::Put(const uint8_t *buf, unsigned int size)
 {
 
 }
@@ -778,7 +778,7 @@ class cVideoBufferTest : public cVideoBufferFile
 friend class cVideoBuffer;
 public:
   virtual off_t GetPosMax();
-  virtual void Put(uint8_t *buf, unsigned int size);
+  virtual void Put(const uint8_t *buf, unsigned int size);
 
 protected:
   cVideoBufferTest(cString filename);
@@ -818,7 +818,7 @@ off_t cVideoBufferTest::GetPosEnd()
   return end;
 }
 
-void cVideoBufferTest::Put(uint8_t *buf, unsigned int size)
+void cVideoBufferTest::Put(const uint8_t *buf, unsigned int size)
 {
 
 }
@@ -915,7 +915,7 @@ cVideoBuffer* cVideoBuffer::Create(cString filename)
     return buffer;
 }
 
-cVideoBuffer* cVideoBuffer::Create(cRecording *rec)
+cVideoBuffer* cVideoBuffer::Create(const cRecording *rec)
 {
   INFOLOG("Open recording: %s", rec->FileName());
   cVideoBufferRecording *buffer = new cVideoBufferRecording(rec);

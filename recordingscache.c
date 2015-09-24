@@ -38,7 +38,7 @@ cRecordingsCache& cRecordingsCache::GetInstance() {
   return singleton;
 }
 
-uint32_t cRecordingsCache::Register(cRecording* recording, bool deleted) {
+uint32_t cRecordingsCache::Register(const cRecording* recording, bool deleted) {
   cString filename = recording->FileName();
   uint32_t uid = CreateStringHash(filename);
 
@@ -54,7 +54,45 @@ uint32_t cRecordingsCache::Register(cRecording* recording, bool deleted) {
   return uid;
 }
 
-cRecording* cRecordingsCache::Lookup(uint32_t uid) {
+const cRecording* cRecordingsCache::Lookup(uint32_t uid) {
+  DEBUGLOG("%s - lookup uid: %08x", __FUNCTION__, uid);
+
+  if(m_recordings.find(uid) == m_recordings.end()) {
+    DEBUGLOG("%s - not found !", __FUNCTION__);
+    return NULL;
+  }
+
+  m_mutex.Lock();
+  cString filename = m_recordings[uid].filename;
+  DEBUGLOG("%s - filename: %s", __FUNCTION__, (const char*)filename);
+
+  const cRecording* r;
+  if (!m_recordings[uid].isDeleted)
+  {
+#if VDRVERSNUM >= 20301
+    LOCK_RECORDINGS_READ;
+    r = Recordings->GetByName(filename);
+#else
+    r = Recordings.GetByName(filename);
+#endif
+  }
+  else
+  {
+#if VDRVERSNUM >= 20301
+    LOCK_DELETEDRECORDINGS_READ;
+    r = DeletedRecordings->GetByName(filename);
+#else
+    r = DeletedRecordings.GetByName(filename);
+#endif
+  }
+
+  DEBUGLOG("%s - recording %s", __FUNCTION__, (r == NULL) ? "not found !" : "found");
+  m_mutex.Unlock();
+
+  return r;
+}
+
+cRecording* cRecordingsCache::LookupWrite(uint32_t uid) {
   DEBUGLOG("%s - lookup uid: %08x", __FUNCTION__, uid);
 
   if(m_recordings.find(uid) == m_recordings.end()) {
@@ -68,9 +106,23 @@ cRecording* cRecordingsCache::Lookup(uint32_t uid) {
 
   cRecording* r;
   if (!m_recordings[uid].isDeleted)
+  {
+#if VDRVERSNUM >= 20301
+    LOCK_RECORDINGS_WRITE;
+    r = Recordings->GetByName(filename);
+#else
     r = Recordings.GetByName(filename);
+#endif
+  }
   else
+  {
+#if VDRVERSNUM >= 20301
+    LOCK_DELETEDRECORDINGS_WRITE;
+    r = DeletedRecordings->GetByName(filename);
+#else
     r = DeletedRecordings.GetByName(filename);
+#endif
+  }
 
   DEBUGLOG("%s - recording %s", __FUNCTION__, (r == NULL) ? "not found !" : "found");
   m_mutex.Unlock();

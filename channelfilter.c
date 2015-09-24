@@ -309,18 +309,30 @@ bool cVNSIChannelFilter::PassFilter(const cChannel &channel)
 
 void cVNSIChannelFilter::SortChannels()
 {
+#if VDRVERSNUM >= 20301
+  LOCK_CHANNELS_WRITE;
+  for (cChannel *channel = Channels->First(); channel; channel = Channels->Next(channel))
+#else
   Channels.IncBeingEdited();
   Channels.Lock(true);
-
   for (cChannel *channel = Channels.First(); channel; channel = Channels.Next(channel))
+#endif
   {
     if(!PassFilter(*channel))
     {
+#if VDRVERSNUM >= 20301
+      for (cChannel *whitechan = Channels->Next(channel); whitechan; whitechan = Channels->Next(whitechan))
+#else
       for (cChannel *whitechan = Channels.Next(channel); whitechan; whitechan = Channels.Next(whitechan))
+#endif
       {
         if(PassFilter(*whitechan))
         {
+#if VDRVERSNUM >= 20301
+          Channels->Move(whitechan, channel);
+#else
           Channels.Move(whitechan, channel);
+#endif
           channel = whitechan;
           break;
         }
@@ -328,9 +340,13 @@ void cVNSIChannelFilter::SortChannels()
     }
   }
 
+#if VDRVERSNUM >= 20301
+  Channels->SetModifiedByUser();
+#else
   Channels.SetModified(true);
   Channels.Unlock();
   Channels.DecBeingEdited();
+#endif
 }
 
 cVNSIChannelFilter VNSIChannelFilter;

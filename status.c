@@ -55,17 +55,43 @@ void cVNSIStatus::AddClient(cVNSIClient* client)
 void cVNSIStatus::Action(void)
 {
   cTimeMs chanTimer(0);
+  cTimeMs epgTimer(0);
 
   // get initial state of the recordings
+#if VDRVERSNUM >= 20301
+  cStateKey chanState;
+  const cChannels *channels = cChannels::GetChannelsRead(chanState);
+  chanState.Remove();
+#endif
+
+  // get initial state of the recordings
+#if VDRVERSNUM >= 20301
+  cStateKey recState;
+  const cRecordings *recordings = cRecordings::GetRecordingsRead(recState);
+  recState.Remove();
+#else
   int recState = -1;
   Recordings.StateChanged(recState);
+#endif
 
   // get initial state of the timers
+#if VDRVERSNUM >= 20301
+  cStateKey timerState;
+  const cTimers *timers = cTimers::GetTimersRead(timerState);
+  timerState.Remove();
+#else
   int timerState = -1;
   Timers.Modified(timerState);
+#endif
 
   // last update of epg
+#if VDRVERSNUM >= 20301
+  cStateKey epgState;
+  const cSchedules *epg = cSchedules::GetSchedulesRead(epgState);
+  epgState.Remove();
+#else
   time_t epgUpdate = cSchedules::Modified();
+#endif
 
   // delete old timeshift file
   cString cmd;
@@ -85,7 +111,7 @@ void cVNSIStatus::Action(void)
     cmd = cString::sprintf("rm -f %s/*.vnsi", VideoDirectory);
 #endif
   }
-  int ret = system(cmd);
+  system(cmd);
 
   // set thread priority
   SetPriority(1);
@@ -112,11 +138,23 @@ void cVNSIStatus::Action(void)
      * Don't to updates during running channel scan, KODI's PVR manager becomes
      * restarted of finished scan.
      */
-    if (!cVNSIClient::InhibidDataUpdates())
+    if (!cVNSIClient::InhibidDataUpdates() && m_clients.size() > 0)
     {
+      // reset inactivity timeout as long as there are clients connected
+      ShutdownHandler.SetUserInactiveTimeout();
+
       // trigger clients to reload the modified channel list
-      if(m_clients.size() > 0 && chanTimer.TimedOut())
+      if(chanTimer.TimedOut())
       {
+#if VDRVERSNUM >= 20301
+        if (channels->Lock(chanState))
+        {
+          chanState.Remove();
+          INFOLOG("Requesting clients to reload channel list");
+          for (ClientList::iterator i = m_clients.begin(); i != m_clients.end(); i++)
+            (*i)->ChannelsChange();
+        }
+#else
         int modified = Channels.Modified();
         if (modified)
         {
@@ -125,15 +163,45 @@ void cVNSIStatus::Action(void)
           for (ClientList::iterator i = m_clients.begin(); i != m_clients.end(); i++)
             (*i)->ChannelsChange();
         }
+#endif
         chanTimer.Set(5000);
       }
 
-      // reset inactivity timeout as long as there are clients connected
-      if(m_clients.size() > 0)
+
+#if VDRVERSNUM >= 20301
+      if (recordings->Lock(recState))
       {
-        ShutdownHandler.SetUserInactiveTimeout();
+        recState.Remove();
+        INFOLOG("Requesting clients to reload recordings list");
+        for (ClientList::iterator i = m_clients.begin(); i != m_clients.end(); i++)
+        {
+          (*i)->RecordingsChange();
+        }
       }
 
+      if (timers->Lock(timerState))
+      {
+        timerState.Remove();
+        INFOLOG("Requesting clients to reload timers");
+        for (ClientList::iterator i = m_clients.begin(); i != m_clients.end(); i++)
+        {
+          (*i)->TimerChange();
+        }
+      }
+
+      if (epgTimer.TimedOut())
+      {
+        if (epg->Lock(epgState))
+        {
+          epgState.Remove();
+          INFOLOG("Requesting clients to load epg");
+          for (ClientList::iterator i = m_clients.begin(); i != m_clients.end(); i++)
+          {
+            (*i)->EpgChange();
+          }
+        }
+      }
+#else
       // update recordings
       if(Recordings.StateChanged(recState))
       {
@@ -163,6 +231,7 @@ void cVNSIStatus::Action(void)
         }
         epgUpdate = time(NULL);
       }
+#endif
     }
 
     m_mutex.Unlock();

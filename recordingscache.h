@@ -43,9 +43,10 @@ public:
 
   static cRecordingsCache& GetInstance();
 
-  uint32_t Register(cRecording* recording, bool deleted = false);
+  uint32_t Register(const cRecording* recording, bool deleted = false);
 
-  cRecording* Lookup(uint32_t uid);
+  const cRecording* Lookup(uint32_t uid);
+  cRecording* LookupWrite(uint32_t uid);
 
 private:
   struct RecordingsInfo

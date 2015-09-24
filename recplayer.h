@@ -47,7 +47,7 @@ class cSegment
 class cRecPlayer
 {
 public:
-  cRecPlayer(cRecording* rec, bool inProgress = false);
+  cRecPlayer(const cRecording* rec, bool inProgress = false);
   ~cRecPlayer();
   uint64_t getLengthBytes();
   uint32_t getLengthFrames();

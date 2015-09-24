@@ -97,12 +97,30 @@ bool cLiveStreamer::Open(int serial)
   }
   else if (PlayRecording && serial == -1)
   {
+#if VDRVERSNUM >= 20301
+    LOCK_TIMERS_READ;
+    for (const cTimer *timer = Timers->First(); timer; timer = Timers->Next(timer))
+#else
     for (cTimer *timer = Timers.First(); timer; timer = Timers.Next(timer))
+#endif
     {
       if (timer &&
           timer->Recording() &&
           timer->Channel() == m_Channel)
       {
+#if VDRVERSNUM >= 20301
+        LOCK_RECORDINGS_READ;
+        cTimer t(*timer);
+        cRecording matchRec(&t, t.Event());
+        const cRecording *rec;
+        {
+          rec = Recordings->GetByName(matchRec.FileName());
+          if (!rec)
+          {
+            return false;
+          }
+        }
+#else
         Recordings.Load();
         cRecording matchRec(timer, timer->Event());
         cRecording *rec;
@@ -114,6 +132,7 @@ bool cLiveStreamer::Open(int serial)
             return false;
           }
         }
+#endif
         m_VideoBuffer = cVideoBuffer::Create(rec);
         recording = true;
         break;

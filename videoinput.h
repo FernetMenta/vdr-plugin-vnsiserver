@@ -47,7 +47,7 @@ protected:
   virtual void Action(void);
   void PmtChange(int pidChange);
   cChannel *PmtChannel();
-  void Receive(uchar *data, int length);
+  void Receive(const uchar *data, int length);
   void Retune();
   cDevice          *m_Device;
   cLivePatFilter   *m_PatFilter;

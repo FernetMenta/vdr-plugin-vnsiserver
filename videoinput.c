@@ -48,7 +48,11 @@ public:
 
 protected:
   virtual void Activate(bool On);
+#if VDRVERSNUM >= 20301
+  virtual void Receive(const uchar *Data, int Length);
+#else
   virtual void Receive(uchar *Data, int Length);
+#endif
 
   cVideoInput *m_VideoInput;
 };
@@ -66,7 +70,11 @@ cLiveReceiver::~cLiveReceiver()
 }
 
 //void cLiveReceiver
+#if VDRVERSNUM >= 20301
+void cLiveReceiver::Receive(const uchar *Data, int Length)
+#else
 void cLiveReceiver::Receive(uchar *Data, int Length)
+#endif
 {
   m_VideoInput->Receive(Data, Length);
 }
@@ -122,7 +130,12 @@ void cLivePatFilter::Process(u_short Pid, u_char Tid, const u_char *Data, int Le
       {
         if (!assoc.isNITPid())
         {
+#if VDRVERSNUM >= 20301
+          LOCK_CHANNELS_READ;
+          const cChannel *Channel =  Channels->GetByServiceID(Source(), Transponder(), assoc.getServiceId());
+#else
           const cChannel *Channel =  Channels.GetByServiceID(Source(), Transponder(), assoc.getServiceId());
+#endif
           if (Channel && (Channel == m_Channel))
           {
             int prevPmtPid = m_pmtPid;
@@ -160,7 +173,12 @@ void cLivePatFilter::Process(u_short Pid, u_char Tid, const u_char *Data, int Le
     }
     m_pmtVersion = pmt.getVersionNumber();
 
+#if VDRVERSNUM >= 20301
+    LOCK_CHANNELS_READ;
+    const cChannel *Channel = Channels->GetByServiceID(Source(), Transponder(), pmt.getServiceId());
+#else
     cChannel *Channel = Channels.GetByServiceID(Source(), Transponder(), pmt.getServiceId());
+#endif
     if (Channel) {
        // Scan the stream-specific loop:
        SI::PMT::Stream stream;
@@ -549,7 +567,7 @@ void cVideoInput::PmtChange(int pidChange)
   }
 }
 
-inline void cVideoInput::Receive(uchar *data, int length)
+inline void cVideoInput::Receive(const uchar *data, int length)
 {
   if (m_PmtChange)
   {

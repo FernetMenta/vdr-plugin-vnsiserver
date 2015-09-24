@@ -198,7 +198,14 @@ bool CScanControl::StartScan(sScanServiceData &data)
   m_setup.scanflags |= data.scan_fta       ? SCAN_FTA       : 0;
   m_setup.scanflags |= data.scan_hd        ? SCAN_HD        : 0;
 
+#if VDRVERSNUM >= 20301
+  {
+    LOCK_CHANNELS_READ;
+    m_lastChannelCount = Channels->Count();
+  }
+#else
   m_lastChannelCount = Channels.Count();
+#endif
 
   char *s;
   if (asprintf(&s, "%sSet%s", SPlugin, SSetup) < 0)
@@ -291,12 +298,36 @@ void CScanControl::Action(void)
     m_client->processSCAN_SetDeviceInfo(m_scanStatus.curr_device);
     m_client->processSCAN_SetTransponder(m_scanStatus.transponder);
 
-    for (int i = 0; i < Channels.Count()-m_lastChannelCount; i++)
+
+    int noOfChannels;
+#if VDRVERSNUM >= 20301
     {
+      LOCK_CHANNELS_READ;
+      noOfChannels = Channels->Count();
+    }
+#else
+    noOfChannels = Channels.Count();
+#endif
+
+    for (int i = 0; i < noOfChannels-m_lastChannelCount; i++)
+    {
+#if VDRVERSNUM >= 20301
+      LOCK_CHANNELS_READ;
+      const cChannel *channel = Channels->GetByNumber(Channels->Count()-i);
+#else
       cChannel *channel = Channels.GetByNumber(Channels.Count()-i);
+#endif
       m_client->processSCAN_NewChannel(channel->Name(), channel->Vpid() == 0, channel->Ca() > 0, channel->Vtype() > 2);
     }
-    m_lastChannelCount = Channels.Count();
+
+#if VDRVERSNUM >= 20301
+  {
+    LOCK_CHANNELS_READ;
+    m_lastChannelCount = Channels->Count();
+  }
+#else
+  m_lastChannelCount = Channels.Count();
+#endif
 
     if (m_scanStatus.status == StatusStopped)
     {

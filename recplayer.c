@@ -38,7 +38,7 @@
 #define O_NOATIME 0
 #endif
 
-cRecPlayer::cRecPlayer(cRecording* rec, bool inProgress)
+cRecPlayer::cRecPlayer(const cRecording* rec, bool inProgress)
 {
   m_file          = -1;
   m_fileOpen      = -1;

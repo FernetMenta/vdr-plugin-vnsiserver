@@ -36,8 +36,8 @@ public:
   virtual ~cVideoBuffer();
   static cVideoBuffer* Create(int clientID, uint8_t timeshift);
   static cVideoBuffer* Create(cString filename);
-  static cVideoBuffer* Create(cRecording *rec);
-  virtual void Put(uint8_t *buf, unsigned int size) = 0;
+  static cVideoBuffer* Create(const cRecording *rec);
+  virtual void Put(const uint8_t *buf, unsigned int size) = 0;
   virtual int ReadBlock(uint8_t **buf, unsigned int size, time_t &endTime, time_t &wrapTime) = 0;
   virtual off_t GetPosMin() { return 0; };
   virtual off_t GetPosMax() { return 0; };

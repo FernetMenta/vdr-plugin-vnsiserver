@@ -251,21 +251,36 @@ void cVNSIClient::EpgChange()
   if (!m_StatusInterfaceEnabled)
     return;
 
+#if VDRVERSNUM >= 20301
+  cStateKey SchedulesStateKey;
+  const cSchedules *schedules = cSchedules::GetSchedulesRead(SchedulesStateKey);
+  if (!schedules)
+  {
+    SchedulesStateKey.Remove();
+    return;
+  }
+#else
   cSchedulesLock MutexLock;
   const cSchedules *schedules = cSchedules::Schedules(MutexLock);
   if (!schedules)
     return;
+#endif
 
   std::map<int, sEpgUpdate>::iterator it;
   for (const cSchedule *schedule = schedules->First(); schedule; schedule = schedules->Next(schedule))
   {
-    cEvent *lastEvent =  schedule->Events()->Last();
+    const cEvent *lastEvent =  schedule->Events()->Last();
     if (!lastEvent)
       continue;
 
+#if VDRVERSNUM >= 20301
+    LOCK_CHANNELS_READ;
+    const cChannel *channel = Channels->GetByChannelID(schedule->ChannelID());
+#else
     Channels.Lock(false);
     const cChannel *channel = Channels.GetByChannelID(schedule->ChannelID());
     Channels.Unlock();
+#endif
 
     if (!channel)
       continue;
@@ -793,16 +808,18 @@ bool cVNSIClient::processChannelStream_Open() /* OPCODE 20 */
   if (m_isStreaming)
     StopChannelStreaming();
 
-  Channels.Lock(false);
-  const cChannel *channel = NULL;
-
-  // try to find channel by uid first
-  channel = FindChannelByUID(uid);
-  Channels.Unlock();
+  const cChannel *channel = FindChannelByUID(uid);
 
   // try channelnumber
   if (channel == NULL)
+  {
+#if VDRVERSNUM >= 20301
+    LOCK_CHANNELS_READ;
+    channel = Channels->GetByNumber(uid);
+#else
     channel = Channels.GetByNumber(uid);
+#endif
+  }
 
   if (channel == NULL) {
     ERRORLOG("Can't find channel %08x", uid);
@@ -860,7 +877,7 @@ bool cVNSIClient::processChannelStream_Seek() /* OPCODE 22 */
 
 bool cVNSIClient::processRecStream_Open() /* OPCODE 40 */
 {
-  cRecording *recording = NULL;
+  const cRecording *recording = NULL;
 
   uint32_t uid = m_req->extract_U32();
   recording = cRecordingsCache::GetInstance().Lookup(uid);
@@ -1023,9 +1040,17 @@ bool cVNSIClient::processRecStream_GetLength() /* OPCODE 46 */
 
 bool cVNSIClient::processCHANNELS_ChannelsCount() /* OPCODE 61 */
 {
+  int count = 0;
+#if VDRVERSNUM >= 20301
+  {
+    LOCK_CHANNELS_READ;
+    count = Channels->MaxNumber();
+  }
+#else
   Channels.Lock(false);
-  int count = Channels.MaxNumber();
+  count = Channels.MaxNumber();
   Channels.Unlock();
+#endif
 
   m_resp->add_U32(count);
 
@@ -1041,12 +1066,21 @@ bool cVNSIClient::processCHANNELS_GetChannels() /* OPCODE 63 */
   bool radio = m_req->extract_U32();
   bool filter = m_req->extract_U8();
 
+#if VDRVERSNUM >= 20301
+  cStateKey ChannelsKey;
+  const cChannels *Channels = cChannels::GetChannelsRead(ChannelsKey);
+#else
   Channels.Lock(false);
+#endif
 
   cString caids;
   int caid;
   int caid_idx;
+#if VDRVERSNUM >= 20301
+  for (const cChannel *channel = Channels->First(); channel; channel = Channels->Next(channel))
+#else
   for (cChannel *channel = Channels.First(); channel; channel = Channels.Next(channel))
+#endif
   {
     if (radio != cVNSIChannelFilter::IsRadio(channel))
       continue;
@@ -1088,7 +1122,11 @@ bool cVNSIClient::processCHANNELS_GetChannels() /* OPCODE 63 */
     }
   }
 
+#if VDRVERSNUM >= 20301
+  ChannelsKey.Remove();
+#else
   Channels.Unlock();
+#endif
 
   m_resp->finalise();
   m_socket.write(m_resp->getPtr(), m_resp->getLen());
@@ -1099,8 +1137,6 @@ bool cVNSIClient::processCHANNELS_GetChannels() /* OPCODE 63 */
 bool cVNSIClient::processCHANNELS_GroupsCount()
 {
   uint32_t type = m_req->extract_U32();
-
-  Channels.Lock(false);
 
   m_channelgroups[0].clear();
   m_channelgroups[1].clear();
@@ -1117,8 +1153,6 @@ bool cVNSIClient::processCHANNELS_GroupsCount()
       CreateChannelGroups(true);
       break;
   }
-
-  Channels.Unlock();
 
   uint32_t count = m_channelgroups[0].size() + m_channelgroups[1].size();
 
@@ -1163,9 +1197,14 @@ bool cVNSIClient::processCHANNELS_GetGroupMembers()
   bool automatic = m_channelgroups[radio][groupname].automatic;
   std::string name;
 
+#if VDRVERSNUM >= 20301
+  cStateKey ChannelsKey;
+  const cChannels *Channels = cChannels::GetChannelsRead(ChannelsKey);
+  for (const cChannel *channel = Channels->First(); channel; channel = Channels->Next(channel))
+#else
   Channels.Lock(false);
-
   for (cChannel *channel = Channels.First(); channel; channel = Channels.Next(channel))
+#endif
   {
 
     if(automatic && !channel->GroupSep())
@@ -1196,7 +1235,11 @@ bool cVNSIClient::processCHANNELS_GetGroupMembers()
     }
   }
 
+#if VDRVERSNUM >= 20301
+  ChannelsKey.Remove();
+#else
   Channels.Unlock();
+#endif
 
   delete[] groupname;
   m_resp->finalise();
@@ -1208,10 +1251,7 @@ bool cVNSIClient::processCHANNELS_GetCaids()
 {
   uint32_t uid = m_req->extract_U32();
 
-  Channels.Lock(false);
-  const cChannel *channel = NULL;
-  channel = FindChannelByUID(uid);
-  Channels.Unlock();
+  const cChannel *channel = FindChannelByUID(uid);
 
   if (channel != NULL)
   {
@@ -1337,7 +1377,13 @@ void cVNSIClient::CreateChannelGroups(bool automatic)
 {
   std::string groupname;
 
+#if VDRVERSNUM >= 20301
+  LOCK_CHANNELS_READ;
+  for (const cChannel *channel = Channels->First(); channel; channel = Channels->Next(channel))
+#else
+  Channels.Lock(false);
   for (cChannel *channel = Channels.First(); channel; channel = Channels.Next(channel))
+#endif
   {
     bool isRadio = cVNSIChannelFilter::IsRadio(channel);
 
@@ -1358,6 +1404,10 @@ void cVNSIClient::CreateChannelGroups(bool automatic)
       m_channelgroups[isRadio][groupname] = group;
     }
   }
+
+#if VDRVERSNUM < 20301
+  Channels.Unlock();
+#endif
 }
 
 /** OPCODE 80 - 99: VNSI network functions for timer access */
@@ -1366,7 +1416,12 @@ bool cVNSIClient::processTIMER_GetCount() /* OPCODE 80 */
 {
   cMutexLock lock(&m_timerLock);
 
+#if VDRVERSNUM >= 20301
+  LOCK_TIMERS_READ;
+  int count = Timers->Count();
+#else
   int count = Timers.Count();
+#endif
 
   m_resp->add_U32(count);
 
@@ -1381,33 +1436,41 @@ bool cVNSIClient::processTIMER_Get() /* OPCODE 81 */
 
   uint32_t number = m_req->extract_U32();
 
-  int numTimers = Timers.Count();
+#if VDRVERSNUM >= 20301
+  LOCK_TIMERS_READ;
+  int numTimers = Timers->Count();
   if (numTimers > 0)
   {
-    cTimer *timer = Timers.Get(number-1);
-    if (timer)
+    const cTimer *timer = Timers->Get(number-1);
+#else
+    int numTimers = Timers.Count();
+    if (numTimers > 0)
     {
-      m_resp->add_U32(VNSI_RET_OK);
+      cTimer *timer = Timers.Get(number-1);
+#endif
+      if (timer)
+      {
+        m_resp->add_U32(VNSI_RET_OK);
 
-      m_resp->add_U32(timer->Index()+1);
-      m_resp->add_U32(timer->HasFlags(tfActive));
-      m_resp->add_U32(timer->Recording());
-      m_resp->add_U32(timer->Pending());
-      m_resp->add_U32(timer->Priority());
-      m_resp->add_U32(timer->Lifetime());
-      m_resp->add_U32(timer->Channel()->Number());
-      m_resp->add_U32(CreateChannelUID(timer->Channel()));
-      m_resp->add_U32(timer->StartTime());
-      m_resp->add_U32(timer->StopTime());
-      m_resp->add_U32(timer->Day());
-      m_resp->add_U32(timer->WeekDays());
-      m_resp->add_String(m_toUTF8.Convert(timer->File()));
+        m_resp->add_U32(timer->Index()+1);
+        m_resp->add_U32(timer->HasFlags(tfActive));
+        m_resp->add_U32(timer->Recording());
+        m_resp->add_U32(timer->Pending());
+        m_resp->add_U32(timer->Priority());
+        m_resp->add_U32(timer->Lifetime());
+        m_resp->add_U32(timer->Channel()->Number());
+        m_resp->add_U32(CreateChannelUID(timer->Channel()));
+        m_resp->add_U32(timer->StartTime());
+        m_resp->add_U32(timer->StopTime());
+        m_resp->add_U32(timer->Day());
+        m_resp->add_U32(timer->WeekDays());
+        m_resp->add_String(m_toUTF8.Convert(timer->File()));
+      }
+      else
+        m_resp->add_U32(VNSI_RET_DATAUNKNOWN);
     }
     else
       m_resp->add_U32(VNSI_RET_DATAUNKNOWN);
-  }
-  else
-    m_resp->add_U32(VNSI_RET_DATAUNKNOWN);
 
   m_resp->finalise();
   m_socket.write(m_resp->getPtr(), m_resp->getLen());
@@ -1418,14 +1481,20 @@ bool cVNSIClient::processTIMER_GetList() /* OPCODE 82 */
 {
   cMutexLock lock(&m_timerLock);
 
-  cTimer *timer;
-  int numTimers = Timers.Count();
-
+#if VDRVERSNUM >= 20301
+  LOCK_TIMERS_READ;
+  int numTimers = Timers->Count();
   m_resp->add_U32(numTimers);
-
   for (int i = 0; i < numTimers; i++)
   {
-    timer = Timers.Get(i);
+    const cTimer *timer = Timers->Get(i);
+#else
+  int numTimers = Timers.Count();
+  m_resp->add_U32(numTimers);
+  for (int i = 0; i < numTimers; i++)
+  {
+    cTimer *timer = Timers.Get(i);
+#endif
     if (!timer)
       continue;
 
@@ -1491,6 +1560,20 @@ bool cVNSIClient::processTIMER_Add() /* OPCODE 83 */
   cTimer *timer = new cTimer;
   if (timer->Parse(buffer))
   {
+#if VDRVERSNUM >= 20301
+    LOCK_TIMERS_WRITE;
+    const cTimer *t = Timers->GetTimer(timer);
+    if (!t)
+    {
+      Timers->Add(timer);
+      Timers->SetModified();
+      INFOLOG("Timer %s added", *timer->ToDescr());
+      m_resp->add_U32(VNSI_RET_OK);
+      m_resp->finalise();
+      m_socket.write(m_resp->getPtr(), m_resp->getLen());
+      return true;
+    }
+#else
     cTimer *t = Timers.GetTimer(timer);
     if (!t)
     {
@@ -1502,6 +1585,7 @@ bool cVNSIClient::processTIMER_Add() /* OPCODE 83 */
       m_socket.write(m_resp->getPtr(), m_resp->getLen());
       return true;
     }
+#endif
     else
     {
       ERRORLOG("Timer already defined: %d %s", t->Index() + 1, *t->ToText());
@@ -1525,16 +1609,51 @@ bool cVNSIClient::processTIMER_Delete() /* OPCODE 84 */
 {
   cMutexLock lock(&m_timerLock);
 
+#if VDRVERSNUM >= 20301
+  LOCK_TIMERS_WRITE;
+  int timersCount = Timers->Count();
+#else
+  int timersCount = Timers.Count();
+#endif
+
   uint32_t number = m_req->extract_U32();
   bool     force  = m_req->extract_U32();
 
-  if (number <= 0 || number > (uint32_t)Timers.Count())
+  if (number <= 0 || number > (uint32_t)timersCount)
   {
     ERRORLOG("Unable to delete timer - invalid timer identifier");
     m_resp->add_U32(VNSI_RET_DATAINVALID);
   }
   else
   {
+#if VDRVERSNUM >= 20301
+    cTimer *timer = Timers->Get(number-1);
+    if (timer)
+    {
+      Timers->SetExplicitModify();
+      {
+        if (timer->Recording())
+        {
+          if (force)
+          {
+            timer->Skip();
+            cRecordControls::Process(Timers, time(NULL));
+          }
+          else
+          {
+            ERRORLOG("Timer \"%i\" is recording and can be deleted (use force=1 to stop it)", number);
+            m_resp->add_U32(VNSI_RET_RECRUNNING);
+            m_resp->finalise();
+            m_socket.write(m_resp->getPtr(), m_resp->getLen());
+            return true;
+          }
+        }
+        INFOLOG("Deleting timer %s", *timer->ToDescr());
+        Timers->Del(timer);
+        Timers->SetModified();
+        m_resp->add_U32(VNSI_RET_OK);
+      }
+#else
     cTimer *timer = Timers.Get(number-1);
     if (timer)
     {
@@ -1566,6 +1685,7 @@ bool cVNSIClient::processTIMER_Delete() /* OPCODE 84 */
         ERRORLOG("Unable to delete timer - timers being edited at VDR");
         m_resp->add_U32(VNSI_RET_DATALOCKED);
       }
+#endif
     }
     else
     {
@@ -1586,7 +1706,13 @@ bool cVNSIClient::processTIMER_Update() /* OPCODE 85 */
   uint32_t index  = m_req->extract_U32();
   bool active     = m_req->extract_U32();
 
+#if VDRVERSNUM >= 20301
+  LOCK_TIMERS_WRITE;
+  cTimer *timer = Timers->Get(index - 1);
+#else
   cTimer *timer = Timers.Get(index - 1);
+#endif
+
   if (!timer)
   {
     ERRORLOG("Timer \"%u\" not defined", index);
@@ -1647,7 +1773,11 @@ bool cVNSIClient::processTIMER_Update() /* OPCODE 85 */
   }
 
   *timer = t;
+#if VDRVERSNUM >= 20301
+  Timers->SetModified();
+#else
   Timers.SetModified();
+#endif
 
   m_resp->add_U32(VNSI_RET_OK);
   m_resp->finalise();
@@ -1680,7 +1810,12 @@ bool cVNSIClient::processRECORDINGS_GetDiskSpace() /* OPCODE 100 */
 
 bool cVNSIClient::processRECORDINGS_GetCount() /* OPCODE 101 */
 {
+#if VDRVERSNUM >= 20301
+  LOCK_RECORDINGS_READ;
+  m_resp->add_U32(Recordings->Count());
+#else
   m_resp->add_U32(Recordings.Count());
+#endif
 
   m_resp->finalise();
   m_socket.write(m_resp->getPtr(), m_resp->getLen());
@@ -1690,9 +1825,17 @@ bool cVNSIClient::processRECORDINGS_GetCount() /* OPCODE 101 */
 bool cVNSIClient::processRECORDINGS_GetList() /* OPCODE 102 */
 {
   cMutexLock lock(&m_timerLock);
+#if VDRVERSNUM >= 20301
+  LOCK_RECORDINGS_READ;
+#else
   cThreadLock RecordingsLock(&Recordings);
+#endif
 
+#if VDRVERSNUM >= 20301
+  for (const cRecording *recording = Recordings->First(); recording; recording = Recordings->Next(recording))
+#else
   for (cRecording *recording = Recordings.First(); recording; recording = Recordings.Next(recording))
+#endif
   {
 #if APIVERSNUM >= 10705
     const cEvent *event = recording->Info()->GetEvent();
@@ -1804,10 +1947,15 @@ bool cVNSIClient::processRECORDINGS_GetList() /* OPCODE 102 */
 
 bool cVNSIClient::processRECORDINGS_Rename() /* OPCODE 103 */
 {
-  uint32_t    uid          = m_req->extract_U32();
-  char*       newtitle     = m_req->extract_String();
-  cRecording* recording    = cRecordingsCache::GetInstance().Lookup(uid);
-  int         r            = VNSI_RET_DATAINVALID;
+  uint32_t uid = m_req->extract_U32();
+  char* newtitle = m_req->extract_String();
+  int r = VNSI_RET_DATAINVALID;
+
+#if VDRVERSNUM >= 20301
+  LOCK_RECORDINGS_WRITE;
+#endif
+
+  const cRecording* recording = cRecordingsCache::GetInstance().Lookup(uid);
 
   if(recording != NULL) {
     // get filename and remove last part (recording time)
@@ -1830,7 +1978,12 @@ bool cVNSIClient::processRECORDINGS_Rename() /* OPCODE 103 */
 
     INFOLOG("renaming recording '%s' to '%s'", filename_old, filename_new);
     r = rename(filename_old, filename_new);
+
+#if VDRVERSNUM >= 20301
+    Recordings->Update();
+#else
     Recordings.Update();
+#endif
 
     free(filename_old);
     delete[] filename_new;
@@ -1848,8 +2001,12 @@ bool cVNSIClient::processRECORDINGS_Delete() /* OPCODE 104 */
   cString recName;
   cRecording* recording = NULL;
 
+#if VDRVERSNUM >= 20301
+  LOCK_RECORDINGS_WRITE;
+#endif
+
   uint32_t uid = m_req->extract_U32();
-  recording = cRecordingsCache::GetInstance().Lookup(uid);
+  recording = cRecordingsCache::GetInstance().LookupWrite(uid);
 
   if (recording)
   {
@@ -1861,7 +2018,11 @@ bool cVNSIClient::processRECORDINGS_Delete() /* OPCODE 104 */
       if (recording->Delete())
       {
         // Copy svdrdeveldevelp's way of doing this, see if it works
+#if VDRVERSNUM >= 20301
+        Recordings->DelByName(recording->FileName());
+#else
         Recordings.DelByName(recording->FileName());
+#endif
         INFOLOG("Recording \"%s\" deleted", recording->FileName());
         m_resp->add_U32(VNSI_RET_OK);
       }
@@ -1892,7 +2053,7 @@ bool cVNSIClient::processRECORDINGS_Delete() /* OPCODE 104 */
 bool cVNSIClient::processRECORDINGS_GetEdl() /* OPCODE 105 */
 {
   cString recName;
-  cRecording* recording = NULL;
+  const cRecording* recording = NULL;
 
   uint32_t uid = m_req->extract_U32();
   recording = cRecordingsCache::GetInstance().Lookup(uid);
@@ -1932,7 +2093,12 @@ bool cVNSIClient::processEPG_GetForChannel() /* OPCODE 120 */
   uint32_t startTime      = m_req->extract_U32();
   uint32_t duration       = m_req->extract_U32();
 
+#if VDRVERSNUM >= 20301
+  LOCK_CHANNELS_READ;
+  LOCK_SCHEDULES_READ;
+#else
   Channels.Lock(false);
+#endif
 
   const cChannel* channel = NULL;
 
@@ -1947,12 +2113,15 @@ bool cVNSIClient::processEPG_GetForChannel() /* OPCODE 120 */
     m_resp->add_U32(0);
     m_resp->finalise();
     m_socket.write(m_resp->getPtr(), m_resp->getLen());
+#if VDRVERSNUM < 20301
     Channels.Unlock();
+#endif
 
     ERRORLOG("written 0 because channel = NULL");
     return true;
   }
 
+#if VDRVERSNUM < 20301
   cSchedulesLock MutexLock;
   const cSchedules *Schedules = cSchedules::Schedules(MutexLock);
   if (!Schedules)
@@ -1965,14 +2134,21 @@ bool cVNSIClient::processEPG_GetForChannel() /* OPCODE 120 */
     DEBUGLOG("written 0 because Schedule!s! = NULL");
     return true;
   }
+#endif
 
+#if VDRVERSNUM >= 20301
   const cSchedule *Schedule = Schedules->GetSchedule(channel->GetChannelID());
+#else
+  const cSchedule *Schedule = Schedules->GetSchedule(channel->GetChannelID());
+#endif
   if (!Schedule)
   {
     m_resp->add_U32(0);
     m_resp->finalise();
     m_socket.write(m_resp->getPtr(), m_resp->getLen());
+#if VDRVERSNUM < 20301
     Channels.Unlock();
+#endif
 
     DEBUGLOG("written 0 because Schedule = NULL");
     return true;
@@ -2034,7 +2210,10 @@ bool cVNSIClient::processEPG_GetForChannel() /* OPCODE 120 */
     atLeastOneEvent = true;
   }
 
+#if VDRVERSNUM < 20301
   Channels.Unlock();
+#endif
+
   DEBUGLOG("Got all event data");
 
   if (!atLeastOneEvent)
@@ -2046,7 +2225,7 @@ bool cVNSIClient::processEPG_GetForChannel() /* OPCODE 120 */
   m_resp->finalise();
   m_socket.write(m_resp->getPtr(), m_resp->getLen());
 
-  cEvent *lastEvent =  Schedule->Events()->Last();
+  const cEvent *lastEvent =  Schedule->Events()->Last();
   if (lastEvent)
   {
     m_epgUpdate[channelUID].lastEvent = lastEvent->StartTime();
@@ -2340,8 +2519,12 @@ bool cVNSIClient::processRECORDINGS_DELETED_Supported() /* OPCODE 180 */
 
 bool cVNSIClient::processRECORDINGS_DELETED_GetCount() /* OPCODE 181 */
 {
-  DeletedRecordings.Load();
+#if VDRVERSNUM >= 20301
+  LOCK_DELETEDRECORDINGS_READ;
+  m_resp->add_U32(DeletedRecordings->Count());
+#else
   m_resp->add_U32(DeletedRecordings.Count());
+#endif
   m_resp->finalise();
   m_socket.write(m_resp->getPtr(), m_resp->getLen());
   return true;
@@ -2350,9 +2533,14 @@ bool cVNSIClient::processRECORDINGS_DELETED_GetCount() /* OPCODE 181 */
 bool cVNSIClient::processRECORDINGS_DELETED_GetList() /* OPCODE 182 */
 {
   cMutexLock lock(&m_timerLock);
-  cThreadLock RecordingsLock(&Recordings);
 
+#if VDRVERSNUM >= 20301
+  LOCK_DELETEDRECORDINGS_READ;
+  for (const cRecording *recording = DeletedRecordings->First(); recording; recording = DeletedRecordings->Next(recording))
+#else
+  cThreadLock RecordingsLock(&Recordings);
   for (cRecording *recording = DeletedRecordings.First(); recording; recording = DeletedRecordings.Next(recording))
+#endif
   {
 #if APIVERSNUM >= 10705
     const cEvent *event = recording->Info()->GetEvent();
@@ -2476,9 +2664,13 @@ bool cVNSIClient::processRECORDINGS_DELETED_Delete() /* OPCODE 183 */
   {
     uint32_t uid = m_req->extract_U32();
 
+#if VDRVERSNUM >= 20301
+    LOCK_DELETEDRECORDINGS_WRITE;
+    for (recording = DeletedRecordings->First(); recording; recording = DeletedRecordings->Next(recording))
+#else
     cThreadLock DeletedRecordingsLock(&DeletedRecordings);
-
     for (recording = DeletedRecordings.First(); recording; recording = DeletedRecordings.Next(recording))
+#endif
     {
       if (uid == CreateStringHash(recording->FileName()))
       {
@@ -2493,8 +2685,13 @@ bool cVNSIClient::processRECORDINGS_DELETED_Delete() /* OPCODE 183 */
         }
         else
         {
+#if VDRVERSNUM >= 20301
+          DeletedRecordings->Del(recording);
+          DeletedRecordings->Update();
+#else
           DeletedRecordings.Del(recording);
           DeletedRecordings.Update();
+#endif
           INFOLOG("Recording \"%s\" permanent deleted", recording->FileName());
           m_resp->add_U32(VNSI_RET_OK);
         }
@@ -2569,9 +2766,17 @@ bool cVNSIClient::Undelete(cRecording* recording)
           OsdStatusMessage(*cString::sprintf("%s (%s)", tr("Error while accessing indexfile"), NewName));
         }
 
+#if VDRVERSNUM >= 20301
+        LOCK_RECORDINGS_WRITE;
+        LOCK_DELETEDRECORDINGS_WRITE;
+        DeletedRecordings->Del(recording);
+        Recordings->Update();
+        DeletedRecordings->Update();
+#else
         DeletedRecordings.Del(recording);
         Recordings.Update();
         DeletedRecordings.Update();
+#endif
       }
       else
       {
@@ -2597,9 +2802,13 @@ bool cVNSIClient::processRECORDINGS_DELETED_Undelete() /* OPCODE 184 */
   {
     uint32_t uid = m_req->extract_U32();
 
+#if VDRVERSNUM >= 20301
+    LOCK_DELETEDRECORDINGS_WRITE;
+    for (cRecording* recording = DeletedRecordings->First(); recording; recording = DeletedRecordings->Next(recording))
+#else
     cThreadLock DeletedRecordingsLock(&DeletedRecordings);
-
     for (cRecording* recording = DeletedRecordings.First(); recording; recording = DeletedRecordings.Next(recording))
+#endif
     {
       if (uid == CreateStringHash(recording->FileName()))
       {
@@ -2633,11 +2842,19 @@ bool cVNSIClient::processRECORDINGS_DELETED_DeleteAll() /* OPCODE 185 */
 
   if (LockFile.Lock())
   {
+#if VDRVERSNUM >= 20301
+    LOCK_DELETEDRECORDINGS_WRITE;
+    for (cRecording *recording = DeletedRecordings->First(); recording; )
+#else
     cThreadLock DeletedRecordingsLock(&DeletedRecordings);
-
     for (cRecording *recording = DeletedRecordings.First(); recording; )
+#endif
     {
+#if VDRVERSNUM >= 20301
+      cRecording *next = DeletedRecordings->Next(recording);
+#else
       cRecording *next = DeletedRecordings.Next(recording);
+#endif
 #if VDRVERSNUM >= 20102
       if (!cVideoDirectory::RemoveVideoFile(recording->FileName()))
 #else
@@ -2652,8 +2869,13 @@ bool cVNSIClient::processRECORDINGS_DELETED_DeleteAll() /* OPCODE 185 */
         INFOLOG("Recording \"%s\" permanent deleted", recording->FileName());
       recording = next;
     }
+#if VDRVERSNUM >= 20301
+    DeletedRecordings->Clear();
+    DeletedRecordings->Update();
+#else
     DeletedRecordings.Clear();
     DeletedRecordings.Update();
+#endif
   }
 
   m_resp->add_U32(ret);
@@ -2664,7 +2886,7 @@ bool cVNSIClient::processRECORDINGS_DELETED_DeleteAll() /* OPCODE 185 */
 }
 
 // part of this method is taken from XVDR
-cString cVNSIClient::CreatePiconRef(cChannel* channel)
+cString cVNSIClient::CreatePiconRef(const cChannel* channel)
 {
   int hash = 0;
 

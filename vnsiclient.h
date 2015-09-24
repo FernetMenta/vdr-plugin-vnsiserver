@@ -187,7 +187,7 @@ private:
   bool processOSD_Disconnect();
   bool processOSD_Hitkey();
 
-  cString CreatePiconRef(cChannel* channel);
+  cString CreatePiconRef(const cChannel* channel);
 
 private:
   /** Static callback functions to interact with wirbelscan plugin over
