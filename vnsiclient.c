@@ -252,11 +252,10 @@ void cVNSIClient::EpgChange()
     return;
 
 #if VDRVERSNUM >= 20301
-  cStateKey SchedulesStateKey;
+  cStateKey SchedulesStateKey(true);
   const cSchedules *schedules = cSchedules::GetSchedulesRead(SchedulesStateKey);
   if (!schedules)
   {
-    SchedulesStateKey.Remove();
     return;
   }
 #else
@@ -307,6 +306,7 @@ void cVNSIClient::EpgChange()
     if (!resp->initStatus(VNSI_STATUS_EPGCHANGE))
     {
       delete resp;
+      SchedulesStateKey.Remove();
       return;
     }
     resp->add_U32(channelId);
@@ -314,6 +314,9 @@ void cVNSIClient::EpgChange()
     m_socket.write(resp->getPtr(), resp->getLen());
     delete resp;
   }
+#if VDRVERSNUM >= 20301
+  SchedulesStateKey.Remove();
+#endif
 }
 
 void cVNSIClient::Recording(const cDevice *Device, const char *Name, const char *FileName, bool On)
@@ -1067,7 +1070,7 @@ bool cVNSIClient::processCHANNELS_GetChannels() /* OPCODE 63 */
   bool filter = m_req->extract_U8();
 
 #if VDRVERSNUM >= 20301
-  cStateKey ChannelsKey;
+  cStateKey ChannelsKey(true);
   const cChannels *Channels = cChannels::GetChannelsRead(ChannelsKey);
 #else
   Channels.Lock(false);
@@ -1198,7 +1201,7 @@ bool cVNSIClient::processCHANNELS_GetGroupMembers()
   std::string name;
 
 #if VDRVERSNUM >= 20301
-  cStateKey ChannelsKey;
+  cStateKey ChannelsKey(true);
   const cChannels *Channels = cChannels::GetChannelsRead(ChannelsKey);
   for (const cChannel *channel = Channels->First(); channel; channel = Channels->Next(channel))
 #else

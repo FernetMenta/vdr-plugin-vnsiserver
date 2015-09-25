@@ -153,6 +153,7 @@ void cVNSIStatus::Action(void)
           INFOLOG("Requesting clients to reload channel list");
           for (ClientList::iterator i = m_clients.begin(); i != m_clients.end(); i++)
             (*i)->ChannelsChange();
+          chanTimer.Set(5000);
         }
 #else
         int modified = Channels.Modified();
@@ -163,8 +164,8 @@ void cVNSIStatus::Action(void)
           for (ClientList::iterator i = m_clients.begin(); i != m_clients.end(); i++)
             (*i)->ChannelsChange();
         }
-#endif
         chanTimer.Set(5000);
+#endif
       }
 
 
@@ -199,6 +200,7 @@ void cVNSIStatus::Action(void)
           {
             (*i)->EpgChange();
           }
+          chanTimer.Set(5000);
         }
       }
 #else
