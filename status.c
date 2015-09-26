@@ -200,7 +200,7 @@ void cVNSIStatus::Action(void)
           {
             (*i)->EpgChange();
           }
-          chanTimer.Set(5000);
+          epgTimer.Set(5000);
         }
       }
 #else
