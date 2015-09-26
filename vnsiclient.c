@@ -306,7 +306,9 @@ void cVNSIClient::EpgChange()
     if (!resp->initStatus(VNSI_STATUS_EPGCHANGE))
     {
       delete resp;
+#if VDRVERSNUM >= 20301
       SchedulesStateKey.Remove();
+#endif
       return;
     }
     resp->add_U32(channelId);
