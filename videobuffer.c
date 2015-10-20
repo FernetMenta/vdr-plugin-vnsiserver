@@ -303,7 +303,7 @@ int cVideoBufferRAM::ReadBlock(uint8_t **buf, unsigned int size, time_t &endTime
   if (m_ReadPtr > (m_BufferSize - m_Margin))
   {
     int bytesToCopy = m_BufferSize - m_ReadPtr;
-    memmove(m_Buffer + (m_Margin - bytesToCopy), m_Buffer + m_ReadPtr, bytesToCopy);
+    memmove(m_Buffer + (m_Margin - bytesToCopy), m_BufferPtr + m_ReadPtr, bytesToCopy);
     *buf = m_Buffer + (m_Margin - bytesToCopy);
   }
   else
