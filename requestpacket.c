@@ -72,8 +72,13 @@ char* cRequestPacket::extract_String()
 {
   if (serverError()) return NULL;
 
-  int length = strlen((char*)&userData[packetPos]);
-  if ((packetPos + length) > userDataLength) return NULL;
+  const char *p = (const char *)&userData[packetPos];
+  const char *end = (const char *)memchr(p, '\0', userDataLength - packetPos);
+  if (end == NULL)
+    /* string is not terminated - fail */
+    return NULL;
+
+  int length = end - p;
   char* str = new char[length + 1];
   strcpy(str, (char*)&userData[packetPos]);
   packetPos += length + 1;
