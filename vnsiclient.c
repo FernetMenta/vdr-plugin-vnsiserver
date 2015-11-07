@@ -706,8 +706,6 @@ bool cVNSIClient::process_Login() /* OPCODE 1 */
 
   m_socket.write(m_resp->getPtr(), m_resp->getLen());
 
-  delete[] clientName;
-
   return true;
 }
 
@@ -1193,7 +1191,6 @@ bool cVNSIClient::processCHANNELS_GetGroupMembers()
   // unknown group
   if(m_channelgroups[radio].find(groupname) == m_channelgroups[radio].end())
   {
-    delete[] groupname;
     m_resp->finalise();
     m_socket.write(m_resp->getPtr(), m_resp->getLen());
     return true;
@@ -1246,7 +1243,6 @@ bool cVNSIClient::processCHANNELS_GetGroupMembers()
   Channels.Unlock();
 #endif
 
-  delete[] groupname;
   m_resp->finalise();
   m_socket.write(m_resp->getPtr(), m_resp->getLen());
   return true;
@@ -1339,7 +1335,6 @@ bool cVNSIClient::processCHANNELS_SetWhitelist()
     char *str = m_req->extract_String();
     provider.m_name = str;
     provider.m_caid = m_req->extract_U32();
-    delete [] str;
     providers->push_back(provider);
   }
   VNSIChannelFilter.StoreWhitelist(radio);
@@ -1559,9 +1554,6 @@ bool cVNSIClient::processTIMER_Add() /* OPCODE 83 */
     buffer = cString::sprintf("%u:%s:%s:%04d:%04d:%d:%d:%s:%s\n", flags, (const char*)channel->GetChannelID().ToString(), *cTimer::PrintDay(day, weekdays, true), start, stop, priority, lifetime, file, aux);
   }
 
-  delete[] file;
-  delete[] aux;
-
   cTimer *timer = new cTimer;
   if (timer->Parse(buffer))
   {
@@ -1763,9 +1755,6 @@ bool cVNSIClient::processTIMER_Update() /* OPCODE 85 */
     {
       buffer = cString::sprintf("%u:%s:%s:%04d:%04d:%d:%d:%s:%s\n", flags, (const char*)channel->GetChannelID().ToString(), *cTimer::PrintDay(day, weekdays, true), start, stop, priority, lifetime, file, aux);
     }
-
-    delete[] file;
-    delete[] aux;
 
     if (!t.Parse(buffer))
     {

@@ -72,17 +72,15 @@ char* cRequestPacket::extract_String()
 {
   if (serverError()) return NULL;
 
-  const char *p = (const char *)&userData[packetPos];
+  char *p = (char *)&userData[packetPos];
   const char *end = (const char *)memchr(p, '\0', userDataLength - packetPos);
   if (end == NULL)
     /* string is not terminated - fail */
     return NULL;
 
   int length = end - p;
-  char* str = new char[length + 1];
-  strcpy(str, (char*)&userData[packetPos]);
   packetPos += length + 1;
-  return str;
+  return p;
 }
 
 uint8_t cRequestPacket::extract_U8()
