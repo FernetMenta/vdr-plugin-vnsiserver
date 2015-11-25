@@ -27,13 +27,15 @@
 #ifndef VNSI_REQUESTPACKET_H
 #define VNSI_REQUESTPACKET_H
 
+#include <stddef.h>
+
 class cRequestPacket
 {
 public:
-  cRequestPacket(uint32_t requestID, uint32_t opcode, uint8_t* data, uint32_t dataLength);
+  cRequestPacket(uint32_t requestID, uint32_t opcode, uint8_t* data, size_t dataLength);
   ~cRequestPacket();
 
-  uint32_t  getDataLength() const { return userDataLength; }
+  size_t    getDataLength() const { return userDataLength; }
   uint32_t  getChannelID() const { return channelID; }
   uint32_t  getRequestID() const { return requestID; }
   uint32_t  getStreamID() const { return streamID; }
@@ -55,8 +57,8 @@ public:
 
 private:
   uint8_t* userData;
-  uint32_t userDataLength;
-  uint32_t packetPos;
+  size_t userDataLength;
+  size_t packetPos;
   uint32_t opCode;
 
   uint32_t channelID;

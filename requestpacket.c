@@ -40,7 +40,7 @@
 #include "requestpacket.h"
 #include "vnsicommand.h"
 
-cRequestPacket::cRequestPacket(uint32_t requestID, uint32_t opcode, uint8_t* data, uint32_t dataLength)
+cRequestPacket::cRequestPacket(uint32_t requestID, uint32_t opcode, uint8_t* data, size_t dataLength)
  : userData(data), userDataLength(dataLength), opCode(opcode), requestID(requestID)
 {
   packetPos       = 0;
