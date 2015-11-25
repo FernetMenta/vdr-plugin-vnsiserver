@@ -54,7 +54,7 @@ cRequestPacket::~cRequestPacket()
   if (userData) free(userData);
 }
 
-bool cRequestPacket::end()
+bool cRequestPacket::end() const
 {
   return (packetPos >= userDataLength);
 }

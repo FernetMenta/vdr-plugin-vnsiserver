@@ -33,12 +33,12 @@ public:
   cRequestPacket(uint32_t requestID, uint32_t opcode, uint8_t* data, uint32_t dataLength);
   ~cRequestPacket();
 
-  uint32_t  getDataLength()     { return userDataLength; }
-  uint32_t  getChannelID()      { return channelID; }
-  uint32_t  getRequestID()      { return requestID; }
-  uint32_t  getStreamID()       { return streamID; }
-  uint32_t  getFlag()           { return flag; }
-  uint32_t  getOpCode()         { return opCode; }
+  uint32_t  getDataLength() const { return userDataLength; }
+  uint32_t  getChannelID() const { return channelID; }
+  uint32_t  getRequestID() const { return requestID; }
+  uint32_t  getStreamID() const { return streamID; }
+  uint32_t  getFlag() const { return flag; }
+  uint32_t  getOpCode() const { return opCode; }
 
   char*     extract_String();
   uint8_t   extract_U8();
@@ -48,7 +48,7 @@ public:
   int32_t   extract_S32();
   double    extract_Double();
 
-  bool      end();
+  bool      end() const;
 
   // If you call this, the memory becomes yours. Free with free()
   uint8_t* getData();
