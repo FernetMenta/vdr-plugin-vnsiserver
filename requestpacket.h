@@ -33,8 +33,6 @@ public:
   cRequestPacket(uint32_t requestID, uint32_t opcode, uint8_t* data, uint32_t dataLength);
   ~cRequestPacket();
 
-  int  serverError();
-
   uint32_t  getDataLength()     { return userDataLength; }
   uint32_t  getChannelID()      { return channelID; }
   uint32_t  getRequestID()      { return requestID; }

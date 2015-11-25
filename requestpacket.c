@@ -59,16 +59,8 @@ bool cRequestPacket::end()
   return (packetPos >= userDataLength);
 }
 
-int cRequestPacket::serverError()
-{
-  if ((packetPos == 0) && (userDataLength == 4) && !ntohl(*(uint32_t*)userData)) return 1;
-  else return 0;
-}
-
 char* cRequestPacket::extract_String()
 {
-  if (serverError()) return NULL;
-
   char *p = (char *)&userData[packetPos];
   const char *end = (const char *)memchr(p, '\0', userDataLength - packetPos);
   if (end == NULL)
