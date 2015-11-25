@@ -67,8 +67,6 @@ private:
   uint32_t streamID;
 
   uint32_t flag; // stream only
-
-  bool ownBlock;
 };
 
 #endif // VNSI_REQUESTPACKET_H

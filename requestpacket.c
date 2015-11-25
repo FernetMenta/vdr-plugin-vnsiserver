@@ -44,7 +44,6 @@ cRequestPacket::cRequestPacket(uint32_t requestID, uint32_t opcode, uint8_t* dat
  : userData(data), userDataLength(dataLength), opCode(opcode), requestID(requestID)
 {
   packetPos       = 0;
-  ownBlock        = true;
   channelID       = 0;
   streamID        = 0;
   flag            = 0;
@@ -52,8 +51,6 @@ cRequestPacket::cRequestPacket(uint32_t requestID, uint32_t opcode, uint8_t* dat
 
 cRequestPacket::~cRequestPacket()
 {
-  if (!ownBlock) return; // don't free if it's a getblock
-
   if (userData) free(userData);
 }
 
@@ -145,6 +142,5 @@ int32_t cRequestPacket::extract_S32()
 
 uint8_t* cRequestPacket::getData()
 {
-  ownBlock = false;
   return userData;
 }
