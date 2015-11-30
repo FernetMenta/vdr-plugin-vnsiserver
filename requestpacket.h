@@ -30,6 +30,14 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <stdexcept>
+
+class MalformedVNSIPacket : public std::runtime_error {
+public:
+  MalformedVNSIPacket()
+    :std::runtime_error("Malformed VNSI packet") {}
+};
+
 class cRequestPacket
 {
 public:

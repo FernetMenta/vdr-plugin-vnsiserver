@@ -140,9 +140,13 @@ void cVNSIClient::Action(void)
         break;
       }
 
-      cRequestPacket req(requestID, opcode, data, dataLength);
-
-      processRequest(req);
+      try {
+        cRequestPacket req(requestID, opcode, data, dataLength);
+        processRequest(req);
+      } catch (const std::exception &e) {
+        ERRORLOG("%s", e.what());
+        break;
+      }
     }
     else
     {
