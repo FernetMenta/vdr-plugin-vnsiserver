@@ -22,8 +22,8 @@
  *
  */
 
-#include "config.h"
 #include "recordingscache.h"
+#include "config.h"
 #include "vnsiclient.h"
 #include "hash.h"
 

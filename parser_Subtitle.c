@@ -22,11 +22,11 @@
  *
  */
 
-#include <stdlib.h>
-#include <assert.h>
+#include "parser_Subtitle.h"
 #include "config.h"
 
-#include "parser_Subtitle.h"
+#include <stdlib.h>
+#include <assert.h>
 
 cParserSubtitle::cParserSubtitle(int pID, cTSStream *stream, sPtsWrap *ptsWrap, bool observePtsWraps)
  : cParser(pID, stream, ptsWrap, observePtsWraps)

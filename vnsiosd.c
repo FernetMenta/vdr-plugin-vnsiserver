@@ -22,8 +22,8 @@
  *
  */
 
-#include "config.h"
 #include "vnsiosd.h"
+#include "config.h"
 #include "vnsicommand.h"
 #include "responsepacket.h"
 #include "vnsi.h"

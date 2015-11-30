@@ -23,6 +23,21 @@
  *
  */
 
+#include "vnsiclient.h"
+#include "vnsi.h"
+#include "config.h"
+#include "vnsicommand.h"
+#include "recordingscache.h"
+#include "streamer.h"
+#include "vnsiserver.h"
+#include "recplayer.h"
+#include "vnsiosd.h"
+#include "requestpacket.h"
+#include "responsepacket.h"
+#include "hash.h"
+#include "channelfilter.h"
+#include "channelscancontrol.h"
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <map>
@@ -34,21 +49,6 @@
 #include <vdr/timers.h>
 #include <vdr/menu.h>
 #include <vdr/device.h>
-
-#include "vnsi.h"
-#include "config.h"
-#include "vnsicommand.h"
-#include "recordingscache.h"
-#include "vnsiclient.h"
-#include "streamer.h"
-#include "vnsiserver.h"
-#include "recplayer.h"
-#include "vnsiosd.h"
-#include "requestpacket.h"
-#include "responsepacket.h"
-#include "hash.h"
-#include "channelfilter.h"
-#include "channelscancontrol.h"
 
 cMutex cVNSIClient::m_timerLock;
 bool cVNSIClient::m_inhibidDataUpdates = false;

@@ -22,12 +22,12 @@
  *
  */
 
-#include <stdlib.h>
-#include <assert.h>
-#include "config.h"
-
 #include "parser_DTS.h"
 #include "bitstream.h"
+#include "config.h"
+
+#include <stdlib.h>
+#include <assert.h>
 
 cParserDTS::cParserDTS(int pID, cTSStream *stream, sPtsWrap *ptsWrap, bool observePtsWraps)
  : cParser(pID, stream, ptsWrap, observePtsWraps)

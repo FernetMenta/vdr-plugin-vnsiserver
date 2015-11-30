@@ -22,12 +22,12 @@
  *
  */
 
-#include <stdlib.h>
-#include <assert.h>
-#include "config.h"
-
 #include "parser_AC3.h"
 #include "bitstream.h"
+#include "config.h"
+
+#include <stdlib.h>
+#include <assert.h>
 
 #define AC3_HEADER_SIZE 7
 

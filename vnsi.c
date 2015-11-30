@@ -23,11 +23,12 @@
  *
  */
 
-#include <getopt.h>
-#include <vdr/plugin.h>
 #include "vnsi.h"
 #include "vnsicommand.h"
 #include "setup.h"
+
+#include <getopt.h>
+#include <vdr/plugin.h>
 
 cPluginVNSIServer* cPluginVNSIServer::VNSIServer = NULL;
 

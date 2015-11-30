@@ -22,10 +22,10 @@
  *
  */
 
-#include <stdlib.h>
+#include "parser_Teletext.h"
 #include "config.h"
 
-#include "parser_Teletext.h"
+#include <stdlib.h>
 
 cParserTeletext::cParserTeletext(int pID, cTSStream *stream, sPtsWrap *ptsWrap, bool observePtsWraps)
  : cParser(pID, stream, ptsWrap, observePtsWraps)

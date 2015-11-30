@@ -28,10 +28,13 @@
  * This code is taken from VOMP for VDR plugin.
  */
 
+#include "responsepacket.h"
+#include "vnsicommand.h"
+#include "config.h"
+
 #include <arpa/inet.h>
 #include <stdlib.h>
 #include <string.h>
-#include <inttypes.h>
 
 #ifndef __FreeBSD__
 #include <asm/byteorder.h>
@@ -40,10 +43,6 @@
 #define __be64_to_cpu be64toh
 #define __cpu_to_be64 htobe64
 #endif
-
-#include "responsepacket.h"
-#include "vnsicommand.h"
-#include "config.h"
 
 /* Packet format for an RR channel response:
 

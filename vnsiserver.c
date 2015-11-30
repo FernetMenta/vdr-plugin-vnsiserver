@@ -23,6 +23,11 @@
  *
  */
 
+#include "vnsiserver.h"
+#include "vnsiclient.h"
+#include "vnsi.h"
+#include "channelfilter.h"
+
 #include <netdb.h>
 #include <poll.h>
 #include <assert.h>
@@ -39,11 +44,6 @@
 #include <sys/stat.h>
 
 #include <vdr/plugin.h>
-
-#include "vnsi.h"
-#include "vnsiserver.h"
-#include "vnsiclient.h"
-#include "channelfilter.h"
 
 unsigned int cVNSIServer::m_IdCnt = 0;
 

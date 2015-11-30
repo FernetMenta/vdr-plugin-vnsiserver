@@ -24,8 +24,11 @@
  *
  */
 
+#include "requestpacket.h"
+#include "vnsicommand.h"
+#include "config.h"
+
 #include <stdlib.h>
-#include <stdint.h>
 #include <string.h>
 
 #ifndef __FreeBSD__
@@ -35,10 +38,6 @@
 #define __be64_to_cpu be64toh
 #define __cpu_to_be64 htobe64
 #endif
-
-#include "config.h"
-#include "requestpacket.h"
-#include "vnsicommand.h"
 
 cRequestPacket::cRequestPacket(uint32_t requestID, uint32_t opcode, uint8_t* data, size_t dataLength)
  : userData(data), userDataLength(dataLength), opCode(opcode), requestID(requestID)

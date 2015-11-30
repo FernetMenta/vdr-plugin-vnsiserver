@@ -31,6 +31,8 @@
 #ifndef VNSI_RESPONSEPACKET_H
 #define VNSI_RESPONSEPACKET_H
 
+#include <stdint.h>
+
 class cResponsePacket
 {
 public:

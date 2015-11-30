@@ -28,6 +28,7 @@
 #define VNSI_REQUESTPACKET_H
 
 #include <stddef.h>
+#include <stdint.h>
 
 class cRequestPacket
 {

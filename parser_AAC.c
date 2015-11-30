@@ -22,11 +22,11 @@
  *
  */
 
-#include <stdlib.h>
-#include <assert.h>
+#include "parser_AAC.h"
 #include "config.h"
 
-#include "parser_AAC.h"
+#include <stdlib.h>
+#include <assert.h>
 
 static int aac_sample_rates[16] =
 {

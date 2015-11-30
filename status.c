@@ -22,9 +22,10 @@
  *
  */
 
-#include "vnsi.h"
 #include "status.h"
+#include "vnsi.h"
 #include "vnsiclient.h"
+
 #include <vdr/tools.h>
 #include <vdr/recording.h>
 #include <vdr/videodir.h>
