@@ -72,7 +72,7 @@ void cResponsePacket::initBuffers()
   }
 }
 
-bool cResponsePacket::init(uint32_t requestID)
+void cResponsePacket::init(uint32_t requestID)
 {
   initBuffers();
 
@@ -86,11 +86,9 @@ bool cResponsePacket::init(uint32_t requestID)
   memcpy(&buffer[userDataLenPos], &ul, sizeof(uint32_t));
 
   bufUsed = headerLength;
-
-  return true;
 }
 
-bool cResponsePacket::initScan(uint32_t opCode)
+void cResponsePacket::initScan(uint32_t opCode)
 {
   initBuffers();
 
@@ -104,11 +102,9 @@ bool cResponsePacket::initScan(uint32_t opCode)
   memcpy(&buffer[userDataLenPos], &ul, sizeof(uint32_t));
 
   bufUsed = headerLength;
-
-  return true;
 }
 
-bool cResponsePacket::initStatus(uint32_t opCode)
+void cResponsePacket::initStatus(uint32_t opCode)
 {
   initBuffers();
 
@@ -122,11 +118,9 @@ bool cResponsePacket::initStatus(uint32_t opCode)
   memcpy(&buffer[userDataLenPos], &ul, sizeof(uint32_t));
 
   bufUsed = headerLength;
-
-  return true;
 }
 
-bool cResponsePacket::initStream(uint32_t opCode, uint32_t streamID, uint32_t duration, int64_t pts, int64_t dts, uint32_t serial)
+void cResponsePacket::initStream(uint32_t opCode, uint32_t streamID, uint32_t duration, int64_t pts, int64_t dts, uint32_t serial)
 {
   initBuffers();
 
@@ -151,11 +145,9 @@ bool cResponsePacket::initStream(uint32_t opCode, uint32_t streamID, uint32_t du
   memcpy(&buffer[userDataLenPosStream], &ul, sizeof(uint32_t));
 
   bufUsed = headerLengthStream;
-
-  return true;
 }
 
-bool cResponsePacket::initOsd(uint32_t opCode, int32_t wnd, int32_t color, int32_t x0, int32_t y0, int32_t x1, int32_t y1)
+void cResponsePacket::initOsd(uint32_t opCode, int32_t wnd, int32_t color, int32_t x0, int32_t y0, int32_t x1, int32_t y1)
 {
   initBuffers();
 
@@ -182,8 +174,6 @@ bool cResponsePacket::initOsd(uint32_t opCode, int32_t wnd, int32_t color, int32
   memcpy(&buffer[userDataLenPosOSD], &ul, sizeof(uint32_t));
 
   bufUsed = headerLengthOSD;
-
-  return true;
 }
 
 void cResponsePacket::finalise()

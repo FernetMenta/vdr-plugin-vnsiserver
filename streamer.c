@@ -350,11 +350,7 @@ void cLiveStreamer::sendStreamPacket(sStreamPacket *pkt)
   if(pkt->size == 0)
     return;
 
-  if (!m_streamHeader.initStream(VNSI_STREAM_MUXPKT, pkt->id, pkt->duration, pkt->pts, pkt->dts, pkt->serial))
-  {
-    ERRORLOG("stream response packet init fail");
-    return;
-  }
+  m_streamHeader.initStream(VNSI_STREAM_MUXPKT, pkt->id, pkt->duration, pkt->pts, pkt->dts, pkt->serial);
   m_streamHeader.setLen(m_streamHeader.getStreamHeaderLength() + pkt->size);
   m_streamHeader.finaliseStream();
 
@@ -370,12 +366,7 @@ void cLiveStreamer::sendStreamPacket(sStreamPacket *pkt)
 void cLiveStreamer::sendStreamChange()
 {
   cResponsePacket *resp = new cResponsePacket();
-  if (!resp->initStream(VNSI_STREAM_CHANGE, 0, 0, 0, 0, 0))
-  {
-    ERRORLOG("stream response packet init fail");
-    delete resp;
-    return;
-  }
+  resp->initStream(VNSI_STREAM_CHANGE, 0, 0, 0, 0, 0);
 
   uint32_t FpsScale, FpsRate, Height, Width;
   double Aspect;
@@ -508,13 +499,7 @@ void cLiveStreamer::sendSignalInfo()
   if (m_Frontend == -2)
   {
     cResponsePacket *resp = new cResponsePacket();
-    if (!resp->initStream(VNSI_STREAM_SIGNALINFO, 0, 0, 0, 0, 0))
-    {
-      ERRORLOG("stream response packet init fail");
-      delete resp;
-      return;
-    }
-
+    resp->initStream(VNSI_STREAM_SIGNALINFO, 0, 0, 0, 0, 0);
     resp->add_String(*cString::sprintf("Unknown"));
     resp->add_String(*cString::sprintf("Unknown"));
     resp->add_U32(0);
@@ -556,12 +541,7 @@ void cLiveStreamer::sendSignalInfo()
     if (m_Frontend >= 0)
     {
       cResponsePacket *resp = new cResponsePacket();
-      if (!resp->initStream(VNSI_STREAM_SIGNALINFO, 0, 0, 0, 0, 0))
-      {
-        ERRORLOG("stream response packet init fail");
-        delete resp;
-        return;
-      }
+      resp->initStream(VNSI_STREAM_SIGNALINFO, 0, 0, 0, 0, 0);
       resp->add_String(*cString::sprintf("Analog #%s - %s (%s)", *m_DeviceString, (char *) m_vcap.card, m_vcap.driver));
       resp->add_String("");
       resp->add_U32(0);
@@ -596,12 +576,7 @@ void cLiveStreamer::sendSignalInfo()
     if (m_Frontend >= 0)
     {
       cResponsePacket *resp = new cResponsePacket();
-      if (!resp->initStream(VNSI_STREAM_SIGNALINFO, 0, 0, 0, 0, 0))
-      {
-        ERRORLOG("stream response packet init fail");
-        delete resp;
-        return;
-      }
+      resp->initStream(VNSI_STREAM_SIGNALINFO, 0, 0, 0, 0, 0);
 
       fe_status_t status;
       uint16_t fe_snr;
@@ -649,12 +624,7 @@ void cLiveStreamer::sendSignalInfo()
 void cLiveStreamer::sendStreamStatus()
 {
   cResponsePacket *resp = new cResponsePacket();
-  if (!resp->initStream(VNSI_STREAM_STATUS, 0, 0, 0, 0, 0))
-  {
-    ERRORLOG("stream response packet init fail");
-    delete resp;
-    return;
-  }
+  resp->initStream(VNSI_STREAM_STATUS, 0, 0, 0, 0, 0);
   uint16_t error = m_Demuxer.GetError();
   if (error & ERROR_PES_SCRAMBLE)
   {
@@ -685,12 +655,7 @@ void cLiveStreamer::sendStreamStatus()
 void cLiveStreamer::sendBufferStatus()
 {
   cResponsePacket *resp = new cResponsePacket();
-  if (!resp->initStream(VNSI_STREAM_BUFFERSTATS, 0, 0, 0, 0, 0))
-  {
-    ERRORLOG("stream response packet init fail");
-    delete resp;
-    return;
-  }
+  resp->initStream(VNSI_STREAM_BUFFERSTATS, 0, 0, 0, 0, 0);
   uint32_t start, end;
   bool timeshift;
   m_Demuxer.BufferStatus(timeshift, start, end);
@@ -708,13 +673,7 @@ void cLiveStreamer::sendRefTime(sStreamPacket *pkt)
     return;
 
   cResponsePacket *resp = new cResponsePacket();
-  if (!resp->initStream(VNSI_STREAM_REFTIME, 0, 0, 0, 0, 0))
-  {
-    ERRORLOG("stream response packet init fail");
-    delete resp;
-    return;
-  }
-
+  resp->initStream(VNSI_STREAM_REFTIME, 0, 0, 0, 0, 0);
   resp->add_U32(pkt->reftime);
   resp->add_U64(pkt->pts);
   resp->finaliseStream();

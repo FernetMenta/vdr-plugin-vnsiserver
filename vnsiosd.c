@@ -245,11 +245,7 @@ void cVnsiOsdProvider::SendOsdPacket(int cmd, int wnd, int color, int x0, int y0
   if (!m_Socket)
     return;
 
-  if (!m_OsdPacket.initOsd(cmd, wnd, color, x0, y0, x1, y1))
-  {
-    ERRORLOG("OSD response packet init fail");
-    return;
-  }
+  m_OsdPacket.initOsd(cmd, wnd, color, x0, y0, x1, y1);
   m_OsdPacket.setLen(m_OsdPacket.getOSDHeaderLength() + size);
   m_OsdPacket.finaliseOSD();
 
