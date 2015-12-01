@@ -23,7 +23,6 @@
  */
 
 #include <vdr/osd.h>
-#include "responsepacket.h"
 
 class cxSocket;
 
@@ -37,7 +36,6 @@ public:
   static bool IsRequestFull();
   static void SendKey(unsigned int key);
 private:
-  static cResponsePacket m_OsdPacket;
   static cxSocket *m_Socket;
   static cMutex m_Mutex;
   static bool m_RequestFull;

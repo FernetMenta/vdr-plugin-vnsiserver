@@ -210,7 +210,6 @@ void cVnsiOsd::Flush(void)
 
 // --- cVnsiOsdProvider -------------------------------------------------------
 
-cResponsePacket cVnsiOsdProvider::m_OsdPacket;
 cxSocket *cVnsiOsdProvider::m_Socket;
 cMutex cVnsiOsdProvider::m_Mutex;
 bool cVnsiOsdProvider::m_RequestFull;
@@ -245,6 +244,7 @@ void cVnsiOsdProvider::SendOsdPacket(int cmd, int wnd, int color, int x0, int y0
   if (!m_Socket)
     return;
 
+  cResponsePacket m_OsdPacket;
   m_OsdPacket.initOsd(cmd, wnd, color, x0, y0, x1, y1);
   m_OsdPacket.setLen(m_OsdPacket.getOSDHeaderLength() + size);
   m_OsdPacket.finaliseOSD();
