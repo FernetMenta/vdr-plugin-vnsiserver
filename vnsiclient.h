@@ -62,7 +62,6 @@ private:
   cString          m_ClientAddress;
   cRecPlayer      *m_RecPlayer;
   cRequestPacket  *m_req;
-  cResponsePacket *m_resp;
   cCharSetConv     m_toUTF8;
   uint32_t         m_protocolVersion;
   cMutex           m_msgLock;
@@ -105,7 +104,7 @@ protected:
 
   void SetLoggedIn(bool yesNo) { m_loggedIn = yesNo; }
   void SetStatusInterface(bool yesNo) { m_StatusInterfaceEnabled = yesNo; }
-  bool StartChannelStreaming(const cChannel *channel, int32_t priority, uint8_t timeshift, uint32_t timeout);
+  bool StartChannelStreaming(cResponsePacket &resp, const cChannel *channel, int32_t priority, uint8_t timeshift, uint32_t timeout);
   void StopChannelStreaming();
 
 private:
