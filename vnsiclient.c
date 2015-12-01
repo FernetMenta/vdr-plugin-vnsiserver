@@ -193,11 +193,10 @@ void cVNSIClient::TimerChange()
 
   if (m_StatusInterfaceEnabled)
   {
-    cResponsePacket *resp = new cResponsePacket();
-    resp->initStatus(VNSI_STATUS_TIMERCHANGE);
-    resp->finalise();
-    m_socket.write(resp->getPtr(), resp->getLen());
-    delete resp;
+    cResponsePacket resp;
+    resp.initStatus(VNSI_STATUS_TIMERCHANGE);
+    resp.finalise();
+    m_socket.write(resp.getPtr(), resp.getLen());
   }
 }
 
@@ -208,11 +207,10 @@ void cVNSIClient::ChannelsChange()
   if (!m_StatusInterfaceEnabled)
     return;
 
-  cResponsePacket *resp = new cResponsePacket();
-  resp->initStatus(VNSI_STATUS_CHANNELCHANGE);
-  resp->finalise();
-  m_socket.write(resp->getPtr(), resp->getLen());
-  delete resp;
+  cResponsePacket resp;
+  resp.initStatus(VNSI_STATUS_CHANNELCHANGE);
+  resp.finalise();
+  m_socket.write(resp.getPtr(), resp.getLen());
 }
 
 void cVNSIClient::RecordingsChange()
@@ -222,11 +220,10 @@ void cVNSIClient::RecordingsChange()
   if (!m_StatusInterfaceEnabled)
     return;
 
-  cResponsePacket *resp = new cResponsePacket();
-  resp->initStatus(VNSI_STATUS_RECORDINGSCHANGE);
-  resp->finalise();
-  m_socket.write(resp->getPtr(), resp->getLen());
-  delete resp;
+  cResponsePacket resp;
+  resp.initStatus(VNSI_STATUS_RECORDINGSCHANGE);
+  resp.finalise();
+  m_socket.write(resp.getPtr(), resp.getLen());
 }
 
 void cVNSIClient::EpgChange()
@@ -287,12 +284,11 @@ void cVNSIClient::EpgChange()
 
     INFOLOG("Trigger EPG update for channel %s, id: %d", channel->Name(), channelId);
 
-    cResponsePacket *resp = new cResponsePacket();
-    resp->initStatus(VNSI_STATUS_EPGCHANGE);
-    resp->add_U32(channelId);
-    resp->finalise();
-    m_socket.write(resp->getPtr(), resp->getLen());
-    delete resp;
+    cResponsePacket resp;
+    resp.initStatus(VNSI_STATUS_EPGCHANGE);
+    resp.add_U32(channelId);
+    resp.finalise();
+    m_socket.write(resp.getPtr(), resp.getLen());
   }
 #if VDRVERSNUM >= 20301
   SchedulesStateKey.Remove();
@@ -305,23 +301,22 @@ void cVNSIClient::Recording(const cDevice *Device, const char *Name, const char 
 
   if (m_StatusInterfaceEnabled)
   {
-    cResponsePacket *resp = new cResponsePacket();
-    resp->initStatus(VNSI_STATUS_RECORDING);
-    resp->add_U32(Device->CardIndex());
-    resp->add_U32(On);
+    cResponsePacket resp;
+    resp.initStatus(VNSI_STATUS_RECORDING);
+    resp.add_U32(Device->CardIndex());
+    resp.add_U32(On);
     if (Name)
-      resp->add_String(Name);
+      resp.add_String(Name);
     else
-      resp->add_String("");
+      resp.add_String("");
 
     if (FileName)
-      resp->add_String(FileName);
+      resp.add_String(FileName);
     else
-      resp->add_String("");
+      resp.add_String("");
 
-    resp->finalise();
-    m_socket.write(resp->getPtr(), resp->getLen());
-    delete resp;
+    resp.finalise();
+    m_socket.write(resp.getPtr(), resp.getLen());
   }
 }
 
@@ -353,13 +348,12 @@ void cVNSIClient::OsdStatusMessage(const char *Message)
     else if (strcasecmp(Message, trVDR("Cutter already running - Add to cutting queue?")) == 0) return;
     else if (strcasecmp(Message, trVDR("No index-file found. Creating may take minutes. Create one?")) == 0) return;
 
-    cResponsePacket *resp = new cResponsePacket();
-    resp->initStatus(VNSI_STATUS_MESSAGE);
-    resp->add_U32(0);
-    resp->add_String(Message);
-    resp->finalise();
-    m_socket.write(resp->getPtr(), resp->getLen());
-    delete resp;
+    cResponsePacket resp;
+    resp.initStatus(VNSI_STATUS_MESSAGE);
+    resp.add_U32(0);
+    resp.add_String(Message);
+    resp.finalise();
+    m_socket.write(resp.getPtr(), resp.getLen());
   }
 }
 
@@ -377,8 +371,9 @@ bool cVNSIClient::processRequest(cRequestPacket* req)
   cMutexLock lock(&m_msgLock);
 
   m_req = req;
-  m_resp = new cResponsePacket();
-  m_resp->init(m_req->getRequestID());
+  cResponsePacket resp;
+  resp.init(m_req->getRequestID());
+  m_resp = &resp;
 
   bool result = false;
   switch(m_req->getOpCode())
@@ -615,7 +610,6 @@ bool cVNSIClient::processRequest(cRequestPacket* req)
       break;
   }
 
-  delete m_resp;
   m_resp = NULL;
 
   delete m_req;
@@ -2329,75 +2323,68 @@ bool cVNSIClient::processSCAN_Stop() /* OPCODE 144 */
 
 void cVNSIClient::processSCAN_SetPercentage(int percent)
 {
-  cResponsePacket *resp = new cResponsePacket();
-  resp->initScan(VNSI_SCANNER_PERCENTAGE);
-  resp->add_U32(percent);
-  resp->finalise();
-  m_socket.write(resp->getPtr(), resp->getLen());
-  delete resp;
+  cResponsePacket resp;
+  resp.initScan(VNSI_SCANNER_PERCENTAGE);
+  resp.add_U32(percent);
+  resp.finalise();
+  m_socket.write(resp.getPtr(), resp.getLen());
 }
 
 void cVNSIClient::processSCAN_SetSignalStrength(int strength, bool locked)
 {
-  cResponsePacket *resp = new cResponsePacket();
-  resp->initScan(VNSI_SCANNER_SIGNAL);
-  resp->add_U32(strength);
-  resp->add_U32(locked);
-  resp->finalise();
-  m_socket.write(resp->getPtr(), resp->getLen());
-  delete resp;
+  cResponsePacket resp;
+  resp.initScan(VNSI_SCANNER_SIGNAL);
+  resp.add_U32(strength);
+  resp.add_U32(locked);
+  resp.finalise();
+  m_socket.write(resp.getPtr(), resp.getLen());
 }
 
 void cVNSIClient::processSCAN_SetDeviceInfo(const char *Info)
 {
-  cResponsePacket *resp = new cResponsePacket();
-  resp->initScan(VNSI_SCANNER_DEVICE);
-  resp->add_String(Info);
-  resp->finalise();
-  m_socket.write(resp->getPtr(), resp->getLen());
-  delete resp;
+  cResponsePacket resp;
+  resp.initScan(VNSI_SCANNER_DEVICE);
+  resp.add_String(Info);
+  resp.finalise();
+  m_socket.write(resp.getPtr(), resp.getLen());
 }
 
 void cVNSIClient::processSCAN_SetTransponder(const char *Info)
 {
-  cResponsePacket *resp = new cResponsePacket();
-  resp->initScan(VNSI_SCANNER_TRANSPONDER);
-  resp->add_String(Info);
-  resp->finalise();
-  m_socket.write(resp->getPtr(), resp->getLen());
-  delete resp;
+  cResponsePacket resp;
+  resp.initScan(VNSI_SCANNER_TRANSPONDER);
+  resp.add_String(Info);
+  resp.finalise();
+  m_socket.write(resp.getPtr(), resp.getLen());
 }
 
 void cVNSIClient::processSCAN_NewChannel(const char *Name, bool isRadio, bool isEncrypted, bool isHD)
 {
-  cResponsePacket *resp = new cResponsePacket();
-  resp->initScan(VNSI_SCANNER_NEWCHANNEL);
-  resp->add_U32(isRadio);
-  resp->add_U32(isEncrypted);
-  resp->add_U32(isHD);
-  resp->add_String(Name);
-  resp->finalise();
-  m_socket.write(resp->getPtr(), resp->getLen());
-  delete resp;
+  cResponsePacket resp;
+  resp.initScan(VNSI_SCANNER_NEWCHANNEL);
+  resp.add_U32(isRadio);
+  resp.add_U32(isEncrypted);
+  resp.add_U32(isHD);
+  resp.add_String(Name);
+  resp.finalise();
+  m_socket.write(resp.getPtr(), resp.getLen());
 }
 
 void cVNSIClient::processSCAN_IsFinished()
 {
-  cResponsePacket *resp = new cResponsePacket();
-  resp->initScan(VNSI_SCANNER_FINISHED);
-  resp->finalise();
-  m_socket.write(resp->getPtr(), resp->getLen());
-  delete resp;
+  cResponsePacket resp;
+  resp.initScan(VNSI_SCANNER_FINISHED);
+  resp.finalise();
+  m_socket.write(resp.getPtr(), resp.getLen());
 }
 
 void cVNSIClient::processSCAN_SetStatus(int status)
 {
-  cResponsePacket *resp = new cResponsePacket();
-  resp->initScan(VNSI_SCANNER_STATUS);
-  resp->add_U32(status);
-  resp->finalise();
-  m_socket.write(resp->getPtr(), resp->getLen());
-  delete resp;
+  cResponsePacket resp;
+  resp.initScan(VNSI_SCANNER_STATUS);
+  resp.add_U32(status);
+  resp.finalise();
+  m_socket.write(resp.getPtr(), resp.getLen());
 }
 
 bool cVNSIClient::processOSD_Connect() /* OPCODE 160 */
