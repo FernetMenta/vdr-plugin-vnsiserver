@@ -140,9 +140,9 @@ void cVNSIClient::Action(void)
         break;
       }
 
-      cRequestPacket* req = new cRequestPacket(requestID, opcode, data, dataLength);
+      cRequestPacket req(requestID, opcode, data, dataLength);
 
-      processRequest(req);
+      processRequest(&req);
     }
     else
     {
@@ -606,7 +606,6 @@ bool cVNSIClient::processRequest(cRequestPacket* req)
       break;
   }
 
-  delete m_req;
   m_req = NULL;
 
   return result;
