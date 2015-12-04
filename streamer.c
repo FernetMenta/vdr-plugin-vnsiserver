@@ -350,11 +350,7 @@ void cLiveStreamer::sendStreamPacket(sStreamPacket *pkt)
   if(pkt->size == 0)
     return;
 
-  if (!m_streamHeader.initStream(VNSI_STREAM_MUXPKT, pkt->id, pkt->duration, pkt->pts, pkt->dts, pkt->serial))
-  {
-    ERRORLOG("stream response packet init fail");
-    return;
-  }
+  m_streamHeader.initStream(VNSI_STREAM_MUXPKT, pkt->id, pkt->duration, pkt->pts, pkt->dts, pkt->serial);
   m_streamHeader.setLen(m_streamHeader.getStreamHeaderLength() + pkt->size);
   m_streamHeader.finaliseStream();
 
@@ -369,136 +365,130 @@ void cLiveStreamer::sendStreamPacket(sStreamPacket *pkt)
 
 void cLiveStreamer::sendStreamChange()
 {
-  cResponsePacket *resp = new cResponsePacket();
-  if (!resp->initStream(VNSI_STREAM_CHANGE, 0, 0, 0, 0, 0))
-  {
-    ERRORLOG("stream response packet init fail");
-    delete resp;
-    return;
-  }
+  cResponsePacket resp;
+  resp.initStream(VNSI_STREAM_CHANGE, 0, 0, 0, 0, 0);
 
   uint32_t FpsScale, FpsRate, Height, Width;
   double Aspect;
   uint32_t Channels, SampleRate, BitRate, BitsPerSample, BlockAlign;
   for (cTSStream* stream = m_Demuxer.GetFirstStream(); stream; stream = m_Demuxer.GetNextStream())
   {
-    resp->add_U32(stream->GetPID());
+    resp.add_U32(stream->GetPID());
     if (stream->Type() == stMPEG2AUDIO)
     {
       stream->GetAudioInformation(Channels, SampleRate, BitRate, BitsPerSample, BlockAlign);
-      resp->add_String("MPEG2AUDIO");
-      resp->add_String(stream->GetLanguage());
-      resp->add_U32(Channels);
-      resp->add_U32(SampleRate);
-      resp->add_U32(BlockAlign);
-      resp->add_U32(BitRate);
-      resp->add_U32(BitsPerSample);
+      resp.add_String("MPEG2AUDIO");
+      resp.add_String(stream->GetLanguage());
+      resp.add_U32(Channels);
+      resp.add_U32(SampleRate);
+      resp.add_U32(BlockAlign);
+      resp.add_U32(BitRate);
+      resp.add_U32(BitsPerSample);
 
       for (unsigned int i = 0; i < stream->GetSideDataTypes()->size(); i++)
       {
-        resp->add_U32(stream->GetSideDataTypes()->at(i).first);
+        resp.add_U32(stream->GetSideDataTypes()->at(i).first);
         if (stream->GetSideDataTypes()->at(i).second == scRDS)
         {
-          resp->add_String("RDS");
-          resp->add_String(stream->GetLanguage());
-          resp->add_U32(stream->GetPID());
+          resp.add_String("RDS");
+          resp.add_String(stream->GetLanguage());
+          resp.add_U32(stream->GetPID());
         }
       }
     }
     else if (stream->Type() == stMPEG2VIDEO)
     {
       stream->GetVideoInformation(FpsScale, FpsRate, Height, Width, Aspect);
-      resp->add_String("MPEG2VIDEO");
-      resp->add_U32(FpsScale);
-      resp->add_U32(FpsRate);
-      resp->add_U32(Height);
-      resp->add_U32(Width);
-      resp->add_double(Aspect);
+      resp.add_String("MPEG2VIDEO");
+      resp.add_U32(FpsScale);
+      resp.add_U32(FpsRate);
+      resp.add_U32(Height);
+      resp.add_U32(Width);
+      resp.add_double(Aspect);
     }
     else if (stream->Type() == stAC3)
     {
       stream->GetAudioInformation(Channels, SampleRate, BitRate, BitsPerSample, BlockAlign);
-      resp->add_String("AC3");
-      resp->add_String(stream->GetLanguage());
-      resp->add_U32(Channels);
-      resp->add_U32(SampleRate);
-      resp->add_U32(BlockAlign);
-      resp->add_U32(BitRate);
-      resp->add_U32(BitsPerSample);
+      resp.add_String("AC3");
+      resp.add_String(stream->GetLanguage());
+      resp.add_U32(Channels);
+      resp.add_U32(SampleRate);
+      resp.add_U32(BlockAlign);
+      resp.add_U32(BitRate);
+      resp.add_U32(BitsPerSample);
     }
     else if (stream->Type() == stH264)
     {
       stream->GetVideoInformation(FpsScale, FpsRate, Height, Width, Aspect);
-      resp->add_String("H264");
-      resp->add_U32(FpsScale);
-      resp->add_U32(FpsRate);
-      resp->add_U32(Height);
-      resp->add_U32(Width);
-      resp->add_double(Aspect);
+      resp.add_String("H264");
+      resp.add_U32(FpsScale);
+      resp.add_U32(FpsRate);
+      resp.add_U32(Height);
+      resp.add_U32(Width);
+      resp.add_double(Aspect);
     }
     else if (stream->Type() == stDVBSUB)
     {
-      resp->add_String("DVBSUB");
-      resp->add_String(stream->GetLanguage());
-      resp->add_U32(stream->CompositionPageId());
-      resp->add_U32(stream->AncillaryPageId());
+      resp.add_String("DVBSUB");
+      resp.add_String(stream->GetLanguage());
+      resp.add_U32(stream->CompositionPageId());
+      resp.add_U32(stream->AncillaryPageId());
     }
     else if (stream->Type() == stTELETEXT)
     {
-      resp->add_String("TELETEXT");
-      resp->add_String(stream->GetLanguage());
-      resp->add_U32(stream->CompositionPageId());
-      resp->add_U32(stream->AncillaryPageId());
+      resp.add_String("TELETEXT");
+      resp.add_String(stream->GetLanguage());
+      resp.add_U32(stream->CompositionPageId());
+      resp.add_U32(stream->AncillaryPageId());
     }
     else if (stream->Type() == stAACADTS)
     {
       stream->GetAudioInformation(Channels, SampleRate, BitRate, BitsPerSample, BlockAlign);
-      resp->add_String("AAC");
-      resp->add_String(stream->GetLanguage());
-      resp->add_U32(Channels);
-      resp->add_U32(SampleRate);
-      resp->add_U32(BlockAlign);
-      resp->add_U32(BitRate);
-      resp->add_U32(BitsPerSample);
+      resp.add_String("AAC");
+      resp.add_String(stream->GetLanguage());
+      resp.add_U32(Channels);
+      resp.add_U32(SampleRate);
+      resp.add_U32(BlockAlign);
+      resp.add_U32(BitRate);
+      resp.add_U32(BitsPerSample);
     }
     else if (stream->Type() == stAACLATM)
     {
       stream->GetAudioInformation(Channels, SampleRate, BitRate, BitsPerSample, BlockAlign);
-      resp->add_String("AAC_LATM");
-      resp->add_String(stream->GetLanguage());
-      resp->add_U32(Channels);
-      resp->add_U32(SampleRate);
-      resp->add_U32(BlockAlign);
-      resp->add_U32(BitRate);
-      resp->add_U32(BitsPerSample);
+      resp.add_String("AAC_LATM");
+      resp.add_String(stream->GetLanguage());
+      resp.add_U32(Channels);
+      resp.add_U32(SampleRate);
+      resp.add_U32(BlockAlign);
+      resp.add_U32(BitRate);
+      resp.add_U32(BitsPerSample);
     }
     else if (stream->Type() == stEAC3)
     {
       stream->GetAudioInformation(Channels, SampleRate, BitRate, BitsPerSample, BlockAlign);
-      resp->add_String("EAC3");
-      resp->add_String(stream->GetLanguage());
-      resp->add_U32(Channels);
-      resp->add_U32(SampleRate);
-      resp->add_U32(BlockAlign);
-      resp->add_U32(BitRate);
-      resp->add_U32(BitsPerSample);
+      resp.add_String("EAC3");
+      resp.add_String(stream->GetLanguage());
+      resp.add_U32(Channels);
+      resp.add_U32(SampleRate);
+      resp.add_U32(BlockAlign);
+      resp.add_U32(BitRate);
+      resp.add_U32(BitsPerSample);
     }
     else if (stream->Type() == stDTS)
     {
       stream->GetAudioInformation(Channels, SampleRate, BitRate, BitsPerSample, BlockAlign);
-      resp->add_String("DTS");
-      resp->add_String(stream->GetLanguage());
-      resp->add_U32(Channels);
-      resp->add_U32(SampleRate);
-      resp->add_U32(BlockAlign);
-      resp->add_U32(BitRate);
-      resp->add_U32(BitsPerSample);
+      resp.add_String("DTS");
+      resp.add_String(stream->GetLanguage());
+      resp.add_U32(Channels);
+      resp.add_U32(SampleRate);
+      resp.add_U32(BlockAlign);
+      resp.add_U32(BitRate);
+      resp.add_U32(BitsPerSample);
     }
   }
 
-  resp->finaliseStream();
-  m_Socket->write(resp->getPtr(), resp->getLen());
-  delete resp;
+  resp.finaliseStream();
+  m_Socket->write(resp.getPtr(), resp.getLen());
 }
 
 void cLiveStreamer::sendSignalInfo()
@@ -507,24 +497,17 @@ void cLiveStreamer::sendSignalInfo()
      return a empty signalinfo package */
   if (m_Frontend == -2)
   {
-    cResponsePacket *resp = new cResponsePacket();
-    if (!resp->initStream(VNSI_STREAM_SIGNALINFO, 0, 0, 0, 0, 0))
-    {
-      ERRORLOG("stream response packet init fail");
-      delete resp;
-      return;
-    }
+    cResponsePacket resp;
+    resp.initStream(VNSI_STREAM_SIGNALINFO, 0, 0, 0, 0, 0);
+    resp.add_String(*cString::sprintf("Unknown"));
+    resp.add_String(*cString::sprintf("Unknown"));
+    resp.add_U32(0);
+    resp.add_U32(0);
+    resp.add_U32(0);
+    resp.add_U32(0);
 
-    resp->add_String(*cString::sprintf("Unknown"));
-    resp->add_String(*cString::sprintf("Unknown"));
-    resp->add_U32(0);
-    resp->add_U32(0);
-    resp->add_U32(0);
-    resp->add_U32(0);
-
-    resp->finaliseStream();
-    m_Socket->write(resp->getPtr(), resp->getLen());
-    delete resp;
+    resp.finaliseStream();
+    m_Socket->write(resp.getPtr(), resp.getLen());
     return;
   }
 
@@ -555,23 +538,17 @@ void cLiveStreamer::sendSignalInfo()
 
     if (m_Frontend >= 0)
     {
-      cResponsePacket *resp = new cResponsePacket();
-      if (!resp->initStream(VNSI_STREAM_SIGNALINFO, 0, 0, 0, 0, 0))
-      {
-        ERRORLOG("stream response packet init fail");
-        delete resp;
-        return;
-      }
-      resp->add_String(*cString::sprintf("Analog #%s - %s (%s)", *m_DeviceString, (char *) m_vcap.card, m_vcap.driver));
-      resp->add_String("");
-      resp->add_U32(0);
-      resp->add_U32(0);
-      resp->add_U32(0);
-      resp->add_U32(0);
+      cResponsePacket resp;
+      resp.initStream(VNSI_STREAM_SIGNALINFO, 0, 0, 0, 0, 0);
+      resp.add_String(*cString::sprintf("Analog #%s - %s (%s)", *m_DeviceString, (char *) m_vcap.card, m_vcap.driver));
+      resp.add_String("");
+      resp.add_U32(0);
+      resp.add_U32(0);
+      resp.add_U32(0);
+      resp.add_U32(0);
 
-      resp->finaliseStream();
-      m_Socket->write(resp->getPtr(), resp->getLen());
-      delete resp;
+      resp.finaliseStream();
+      m_Socket->write(resp.getPtr(), resp.getLen());
     }
   }
   else
@@ -595,13 +572,8 @@ void cLiveStreamer::sendSignalInfo()
 
     if (m_Frontend >= 0)
     {
-      cResponsePacket *resp = new cResponsePacket();
-      if (!resp->initStream(VNSI_STREAM_SIGNALINFO, 0, 0, 0, 0, 0))
-      {
-        ERRORLOG("stream response packet init fail");
-        delete resp;
-        return;
-      }
+      cResponsePacket resp;
+      resp.initStream(VNSI_STREAM_SIGNALINFO, 0, 0, 0, 0, 0);
 
       fe_status_t status;
       uint16_t fe_snr;
@@ -624,82 +596,69 @@ void cLiveStreamer::sendSignalInfo()
       switch (m_Channel->Source() & cSource::st_Mask)
       {
         case cSource::stSat:
-          resp->add_String(*cString::sprintf("DVB-S%s #%d - %s", (m_FrontendInfo.caps & 0x10000000) ? "2" : "",  cDevice::ActualDevice()->CardIndex(), m_FrontendInfo.name));
+          resp.add_String(*cString::sprintf("DVB-S%s #%d - %s", (m_FrontendInfo.caps & 0x10000000) ? "2" : "",  cDevice::ActualDevice()->CardIndex(), m_FrontendInfo.name));
           break;
         case cSource::stCable:
-          resp->add_String(*cString::sprintf("DVB-C #%d - %s", cDevice::ActualDevice()->CardIndex(), m_FrontendInfo.name));
+          resp.add_String(*cString::sprintf("DVB-C #%d - %s", cDevice::ActualDevice()->CardIndex(), m_FrontendInfo.name));
           break;
         case cSource::stTerr:
-          resp->add_String(*cString::sprintf("DVB-T #%d - %s", cDevice::ActualDevice()->CardIndex(), m_FrontendInfo.name));
+          resp.add_String(*cString::sprintf("DVB-T #%d - %s", cDevice::ActualDevice()->CardIndex(), m_FrontendInfo.name));
           break;
       }
-      resp->add_String(*cString::sprintf("%s:%s:%s:%s:%s", (status & FE_HAS_LOCK) ? "LOCKED" : "-", (status & FE_HAS_SIGNAL) ? "SIGNAL" : "-", (status & FE_HAS_CARRIER) ? "CARRIER" : "-", (status & FE_HAS_VITERBI) ? "VITERBI" : "-", (status & FE_HAS_SYNC) ? "SYNC" : "-"));
-      resp->add_U32(fe_snr);
-      resp->add_U32(fe_signal);
-      resp->add_U32(fe_ber);
-      resp->add_U32(fe_unc);
+      resp.add_String(*cString::sprintf("%s:%s:%s:%s:%s", (status & FE_HAS_LOCK) ? "LOCKED" : "-", (status & FE_HAS_SIGNAL) ? "SIGNAL" : "-", (status & FE_HAS_CARRIER) ? "CARRIER" : "-", (status & FE_HAS_VITERBI) ? "VITERBI" : "-", (status & FE_HAS_SYNC) ? "SYNC" : "-"));
+      resp.add_U32(fe_snr);
+      resp.add_U32(fe_signal);
+      resp.add_U32(fe_ber);
+      resp.add_U32(fe_unc);
 
-      resp->finaliseStream();
-      m_Socket->write(resp->getPtr(), resp->getLen());
-      delete resp;
+      resp.finaliseStream();
+      m_Socket->write(resp.getPtr(), resp.getLen());
     }
   }
 }
 
 void cLiveStreamer::sendStreamStatus()
 {
-  cResponsePacket *resp = new cResponsePacket();
-  if (!resp->initStream(VNSI_STREAM_STATUS, 0, 0, 0, 0, 0))
-  {
-    ERRORLOG("stream response packet init fail");
-    delete resp;
-    return;
-  }
+  cResponsePacket resp;
+  resp.initStream(VNSI_STREAM_STATUS, 0, 0, 0, 0, 0);
   uint16_t error = m_Demuxer.GetError();
   if (error & ERROR_PES_SCRAMBLE)
   {
     INFOLOG("Channel: scrambled %d", error);
-    resp->add_String(cString::sprintf("Channel: scrambled (%d)", error));
+    resp.add_String(cString::sprintf("Channel: scrambled (%d)", error));
   }
   else if (error & ERROR_PES_STARTCODE)
   {
     INFOLOG("Channel: startcode %d", error);
-    resp->add_String(cString::sprintf("Channel: encrypted? (%d)", error));
+    resp.add_String(cString::sprintf("Channel: encrypted? (%d)", error));
   }
   else if (error & ERROR_DEMUX_NODATA)
   {
     INFOLOG("Channel: no data %d", error);
-    resp->add_String(cString::sprintf("Channel: no data"));
+    resp.add_String(cString::sprintf("Channel: no data"));
   }
   else
   {
     INFOLOG("Channel: unknown error %d", error);
-    resp->add_String(cString::sprintf("Channel: unknown error (%d)", error));
+    resp.add_String(cString::sprintf("Channel: unknown error (%d)", error));
   }
 
-  resp->finaliseStream();
-  m_Socket->write(resp->getPtr(), resp->getLen());
-  delete resp;
+  resp.finaliseStream();
+  m_Socket->write(resp.getPtr(), resp.getLen());
 }
 
 void cLiveStreamer::sendBufferStatus()
 {
-  cResponsePacket *resp = new cResponsePacket();
-  if (!resp->initStream(VNSI_STREAM_BUFFERSTATS, 0, 0, 0, 0, 0))
-  {
-    ERRORLOG("stream response packet init fail");
-    delete resp;
-    return;
-  }
+  cResponsePacket resp;
+  resp.initStream(VNSI_STREAM_BUFFERSTATS, 0, 0, 0, 0, 0);
   uint32_t start, end;
   bool timeshift;
   m_Demuxer.BufferStatus(timeshift, start, end);
-  resp->add_U8(timeshift);
-  resp->add_U32(start);
-  resp->add_U32(end);
-  resp->finaliseStream();
-  m_Socket->write(resp->getPtr(), resp->getLen());
-  delete resp;
+  resp.add_U8(timeshift);
+  resp.add_U32(start);
+  resp.add_U32(end);
+  resp.finaliseStream();
+  m_Socket->write(resp.getPtr(), resp.getLen());
 }
 
 void cLiveStreamer::sendRefTime(sStreamPacket *pkt)
@@ -707,19 +666,12 @@ void cLiveStreamer::sendRefTime(sStreamPacket *pkt)
   if(pkt == NULL)
     return;
 
-  cResponsePacket *resp = new cResponsePacket();
-  if (!resp->initStream(VNSI_STREAM_REFTIME, 0, 0, 0, 0, 0))
-  {
-    ERRORLOG("stream response packet init fail");
-    delete resp;
-    return;
-  }
-
-  resp->add_U32(pkt->reftime);
-  resp->add_U64(pkt->pts);
-  resp->finaliseStream();
-  m_Socket->write(resp->getPtr(), resp->getLen());
-  delete resp;
+  cResponsePacket resp;
+  resp.initStream(VNSI_STREAM_REFTIME, 0, 0, 0, 0, 0);
+  resp.add_U32(pkt->reftime);
+  resp.add_U64(pkt->pts);
+  resp.finaliseStream();
+  m_Socket->write(resp.getPtr(), resp.getLen());
 }
 
 bool cLiveStreamer::SeekTime(int64_t time, uint32_t &serial)

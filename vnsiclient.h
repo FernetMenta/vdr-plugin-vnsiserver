@@ -61,8 +61,6 @@ private:
   bool             m_bSupportRDS;
   cString          m_ClientAddress;
   cRecPlayer      *m_RecPlayer;
-  cRequestPacket  *m_req;
-  cResponsePacket *m_resp;
   cCharSetConv     m_toUTF8;
   uint32_t         m_protocolVersion;
   cMutex           m_msgLock;
@@ -79,7 +77,7 @@ private:
 
 protected:
 
-  bool processRequest(cRequestPacket* req);
+  bool processRequest(cRequestPacket &req);
 
   virtual void Action(void);
 
@@ -105,7 +103,7 @@ protected:
 
   void SetLoggedIn(bool yesNo) { m_loggedIn = yesNo; }
   void SetStatusInterface(bool yesNo) { m_StatusInterfaceEnabled = yesNo; }
-  bool StartChannelStreaming(const cChannel *channel, int32_t priority, uint8_t timeshift, uint32_t timeout);
+  bool StartChannelStreaming(cResponsePacket &resp, const cChannel *channel, int32_t priority, uint8_t timeshift, uint32_t timeout);
   void StopChannelStreaming();
 
 private:
@@ -118,74 +116,74 @@ private:
 
   std::map<std::string, ChannelGroup> m_channelgroups[2];
 
-  bool process_Login();
-  bool process_GetTime();
-  bool process_EnableStatusInterface();
-  bool process_Ping();
-  bool process_GetSetup();
-  bool process_StoreSetup();
+  bool process_Login(cRequestPacket &r);
+  bool process_GetTime(cRequestPacket &r);
+  bool process_EnableStatusInterface(cRequestPacket &r);
+  bool process_Ping(cRequestPacket &r);
+  bool process_GetSetup(cRequestPacket &r);
+  bool process_StoreSetup(cRequestPacket &r);
 
-  bool processChannelStream_Open();
+  bool processChannelStream_Open(cRequestPacket &r);
   bool processChannelStream_Close();
-  bool processChannelStream_Seek();
+  bool processChannelStream_Seek(cRequestPacket &r);
 
-  bool processRecStream_Open();
-  bool processRecStream_Close();
-  bool processRecStream_GetBlock();
-  bool processRecStream_PositionFromFrameNumber();
-  bool processRecStream_FrameNumberFromPosition();
-  bool processRecStream_GetIFrame();
-  bool processRecStream_GetLength();
+  bool processRecStream_Open(cRequestPacket &r);
+  bool processRecStream_Close(cRequestPacket &r);
+  bool processRecStream_GetBlock(cRequestPacket &r);
+  bool processRecStream_PositionFromFrameNumber(cRequestPacket &r);
+  bool processRecStream_FrameNumberFromPosition(cRequestPacket &r);
+  bool processRecStream_GetIFrame(cRequestPacket &r);
+  bool processRecStream_GetLength(cRequestPacket &r);
 
-  bool processCHANNELS_GroupsCount();
-  bool processCHANNELS_ChannelsCount();
-  bool processCHANNELS_GroupList();
-  bool processCHANNELS_GetChannels();
-  bool processCHANNELS_GetGroupMembers();
-  bool processCHANNELS_GetCaids();
-  bool processCHANNELS_GetWhitelist();
-  bool processCHANNELS_GetBlacklist();
-  bool processCHANNELS_SetWhitelist();
-  bool processCHANNELS_SetBlacklist();
+  bool processCHANNELS_GroupsCount(cRequestPacket &r);
+  bool processCHANNELS_ChannelsCount(cRequestPacket &r);
+  bool processCHANNELS_GroupList(cRequestPacket &r);
+  bool processCHANNELS_GetChannels(cRequestPacket &r);
+  bool processCHANNELS_GetGroupMembers(cRequestPacket &r);
+  bool processCHANNELS_GetCaids(cRequestPacket &r);
+  bool processCHANNELS_GetWhitelist(cRequestPacket &r);
+  bool processCHANNELS_GetBlacklist(cRequestPacket &r);
+  bool processCHANNELS_SetWhitelist(cRequestPacket &r);
+  bool processCHANNELS_SetBlacklist(cRequestPacket &r);
 
   void CreateChannelGroups(bool automatic);
 
-  bool processTIMER_GetCount();
-  bool processTIMER_Get();
-  bool processTIMER_GetList();
-  bool processTIMER_Add();
-  bool processTIMER_Delete();
-  bool processTIMER_Update();
+  bool processTIMER_GetCount(cRequestPacket &r);
+  bool processTIMER_Get(cRequestPacket &r);
+  bool processTIMER_GetList(cRequestPacket &r);
+  bool processTIMER_Add(cRequestPacket &r);
+  bool processTIMER_Delete(cRequestPacket &r);
+  bool processTIMER_Update(cRequestPacket &r);
 
-  bool processRECORDINGS_GetDiskSpace();
-  bool processRECORDINGS_GetCount();
-  bool processRECORDINGS_GetList();
-  bool processRECORDINGS_GetInfo();
-  bool processRECORDINGS_Rename();
-  bool processRECORDINGS_Delete();
-  bool processRECORDINGS_Move();
-  bool processRECORDINGS_GetEdl();
-  bool processRECORDINGS_DELETED_Supported();
-  bool processRECORDINGS_DELETED_GetCount();
-  bool processRECORDINGS_DELETED_GetList();
-  bool processRECORDINGS_DELETED_Delete();
-  bool processRECORDINGS_DELETED_Undelete();
-  bool processRECORDINGS_DELETED_DeleteAll();
+  bool processRECORDINGS_GetDiskSpace(cRequestPacket &r);
+  bool processRECORDINGS_GetCount(cRequestPacket &r);
+  bool processRECORDINGS_GetList(cRequestPacket &r);
+  bool processRECORDINGS_GetInfo(cRequestPacket &r);
+  bool processRECORDINGS_Rename(cRequestPacket &r);
+  bool processRECORDINGS_Delete(cRequestPacket &r);
+  bool processRECORDINGS_Move(cRequestPacket &r);
+  bool processRECORDINGS_GetEdl(cRequestPacket &r);
+  bool processRECORDINGS_DELETED_Supported(cRequestPacket &r);
+  bool processRECORDINGS_DELETED_GetCount(cRequestPacket &r);
+  bool processRECORDINGS_DELETED_GetList(cRequestPacket &r);
+  bool processRECORDINGS_DELETED_Delete(cRequestPacket &r);
+  bool processRECORDINGS_DELETED_Undelete(cRequestPacket &r);
+  bool processRECORDINGS_DELETED_DeleteAll(cRequestPacket &r);
 
-  bool processEPG_GetForChannel();
+  bool processEPG_GetForChannel(cRequestPacket &r);
 
-  bool processSCAN_ScanSupported();
-  bool processSCAN_GetSupportedTypes();
-  bool processSCAN_GetCountries();
-  bool processSCAN_GetSatellites();
-  bool processSCAN_Start();
-  bool processSCAN_Stop();
+  bool processSCAN_ScanSupported(cRequestPacket &r);
+  bool processSCAN_GetSupportedTypes(cRequestPacket &r);
+  bool processSCAN_GetCountries(cRequestPacket &r);
+  bool processSCAN_GetSatellites(cRequestPacket &r);
+  bool processSCAN_Start(cRequestPacket &r);
+  bool processSCAN_Stop(cRequestPacket &r);
 
   bool Undelete(cRecording* recording);
 
-  bool processOSD_Connect();
+  bool processOSD_Connect(cRequestPacket &req);
   bool processOSD_Disconnect();
-  bool processOSD_Hitkey();
+  bool processOSD_Hitkey(cRequestPacket &req);
 
   cString CreatePiconRef(const cChannel* channel);
 

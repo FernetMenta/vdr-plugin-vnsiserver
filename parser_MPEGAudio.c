@@ -22,12 +22,12 @@
  *
  */
 
-#include <stdlib.h>
-#include <assert.h>
-#include "config.h"
-
 #include "parser_MPEGAudio.h"
 #include "bitstream.h"
+#include "config.h"
+
+#include <stdlib.h>
+#include <assert.h>
 
 #define MAX_RDS_BUFFER_SIZE 100000
 

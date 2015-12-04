@@ -22,11 +22,11 @@
  *
  */
 
-#include <vdr/menu.h>
-#include <vdr/status.h>
-
 #include "channelscancontrol.h"
 #include "vnsiclient.h"
+
+#include <vdr/menu.h>
+#include <vdr/status.h>
 
 using namespace WIRBELSCAN_SERVICE;
 

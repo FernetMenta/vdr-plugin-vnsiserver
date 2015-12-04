@@ -22,12 +22,12 @@
  *
  */
 
+#include "parser_MPEGVideo.h"
+#include "bitstream.h"
+#include "config.h"
+
 #include <stdlib.h>
 #include <assert.h>
-#include "config.h"
-#include "bitstream.h"
-
-#include "parser_MPEGVideo.h"
 
 using namespace std;
 

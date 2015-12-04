@@ -31,6 +31,9 @@
  *
  */
 
+#include "cxsocket.h"
+#include "config.h"
+
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 
@@ -45,9 +48,6 @@
 
 #include <vdr/config.h>
 #include <vdr/tools.h>
-
-#include "config.h"
-#include "cxsocket.h"
 
 #ifndef MSG_MORE
 #define MSG_MORE 0

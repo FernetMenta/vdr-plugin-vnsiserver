@@ -27,20 +27,21 @@
 #ifndef VNSI_REQUESTPACKET_H
 #define VNSI_REQUESTPACKET_H
 
+#include <stddef.h>
+#include <stdint.h>
+
 class cRequestPacket
 {
 public:
-  cRequestPacket(uint32_t requestID, uint32_t opcode, uint8_t* data, uint32_t dataLength);
+  cRequestPacket(uint32_t requestID, uint32_t opcode, uint8_t* data, size_t dataLength);
   ~cRequestPacket();
 
-  int  serverError();
-
-  uint32_t  getDataLength()     { return userDataLength; }
-  uint32_t  getChannelID()      { return channelID; }
-  uint32_t  getRequestID()      { return requestID; }
-  uint32_t  getStreamID()       { return streamID; }
-  uint32_t  getFlag()           { return flag; }
-  uint32_t  getOpCode()         { return opCode; }
+  size_t    getDataLength() const { return userDataLength; }
+  uint32_t  getChannelID() const { return channelID; }
+  uint32_t  getRequestID() const { return requestID; }
+  uint32_t  getStreamID() const { return streamID; }
+  uint32_t  getFlag() const { return flag; }
+  uint32_t  getOpCode() const { return opCode; }
 
   char*     extract_String();
   uint8_t   extract_U8();
@@ -50,15 +51,15 @@ public:
   int32_t   extract_S32();
   double    extract_Double();
 
-  bool      end();
+  bool      end() const;
 
   // If you call this, the memory becomes yours. Free with free()
   uint8_t* getData();
 
 private:
   uint8_t* userData;
-  uint32_t userDataLength;
-  uint32_t packetPos;
+  size_t userDataLength;
+  size_t packetPos;
   uint32_t opCode;
 
   uint32_t channelID;
@@ -67,8 +68,6 @@ private:
   uint32_t streamID;
 
   uint32_t flag; // stream only
-
-  bool ownBlock;
 };
 
 #endif // VNSI_REQUESTPACKET_H

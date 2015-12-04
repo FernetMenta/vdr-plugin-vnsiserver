@@ -31,17 +31,19 @@
 #ifndef VNSI_RESPONSEPACKET_H
 #define VNSI_RESPONSEPACKET_H
 
+#include <stdint.h>
+
 class cResponsePacket
 {
 public:
   cResponsePacket();
   ~cResponsePacket();
 
-  bool init(uint32_t requestID);
-  bool initScan(uint32_t opCode);
-  bool initStatus(uint32_t opCode);
-  bool initStream(uint32_t opCode, uint32_t streamID, uint32_t duration, int64_t pts, int64_t dts, uint32_t serial);
-  bool initOsd(uint32_t opCode, int32_t wnd, int32_t color, int32_t x0, int32_t y0, int32_t x1, int32_t y1);
+  void init(uint32_t requestID);
+  void initScan(uint32_t opCode);
+  void initStatus(uint32_t opCode);
+  void initStream(uint32_t opCode, uint32_t streamID, uint32_t duration, int64_t pts, int64_t dts, uint32_t serial);
+  void initOsd(uint32_t opCode, int32_t wnd, int32_t color, int32_t x0, int32_t y0, int32_t x1, int32_t y1);
   void finalise();
   void finaliseStream();
   void finaliseOSD();

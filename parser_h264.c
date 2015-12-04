@@ -22,12 +22,12 @@
  *
  */
 
+#include "parser_h264.h"
+#include "bitstream.h"
+#include "config.h"
+
 #include <stdlib.h>
 #include <assert.h>
-#include "config.h"
-#include "bitstream.h"
-
-#include "parser_h264.h"
 
 static const int h264_lev2cpbsize[][2] =
 {

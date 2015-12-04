@@ -24,8 +24,11 @@
  *
  */
 
+#include "requestpacket.h"
+#include "vnsicommand.h"
+#include "config.h"
+
 #include <stdlib.h>
-#include <stdint.h>
 #include <string.h>
 
 #ifndef __FreeBSD__
@@ -36,15 +39,10 @@
 #define __cpu_to_be64 htobe64
 #endif
 
-#include "config.h"
-#include "requestpacket.h"
-#include "vnsicommand.h"
-
-cRequestPacket::cRequestPacket(uint32_t requestID, uint32_t opcode, uint8_t* data, uint32_t dataLength)
+cRequestPacket::cRequestPacket(uint32_t requestID, uint32_t opcode, uint8_t* data, size_t dataLength)
  : userData(data), userDataLength(dataLength), opCode(opcode), requestID(requestID)
 {
   packetPos       = 0;
-  ownBlock        = true;
   channelID       = 0;
   streamID        = 0;
   flag            = 0;
@@ -52,26 +50,16 @@ cRequestPacket::cRequestPacket(uint32_t requestID, uint32_t opcode, uint8_t* dat
 
 cRequestPacket::~cRequestPacket()
 {
-  if (!ownBlock) return; // don't free if it's a getblock
-
   if (userData) free(userData);
 }
 
-bool cRequestPacket::end()
+bool cRequestPacket::end() const
 {
   return (packetPos >= userDataLength);
 }
 
-int cRequestPacket::serverError()
-{
-  if ((packetPos == 0) && (userDataLength == 4) && !ntohl(*(uint32_t*)userData)) return 1;
-  else return 0;
-}
-
 char* cRequestPacket::extract_String()
 {
-  if (serverError()) return NULL;
-
   char *p = (char *)&userData[packetPos];
   const char *end = (const char *)memchr(p, '\0', userDataLength - packetPos);
   if (end == NULL)
@@ -145,6 +133,5 @@ int32_t cRequestPacket::extract_S32()
 
 uint8_t* cRequestPacket::getData()
 {
-  ownBlock = false;
   return userData;
 }

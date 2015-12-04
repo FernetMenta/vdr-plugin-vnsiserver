@@ -25,6 +25,8 @@
 #ifndef VNSI_BITSTREAM_H
 #define VNSI_BITSTREAM_H
 
+#include <stdint.h>
+
 class cBitstream
 {
 private:
