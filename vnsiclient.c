@@ -1973,34 +1973,28 @@ bool cVNSIClient::processRECORDINGS_Rename(cRequestPacket &req) /* OPCODE 103 */
 
   if(recording != NULL) {
     // get filename and remove last part (recording time)
-    char* filename_old = strdup((const char*)recording->FileName());
-    char* sep = strrchr(filename_old, '/');
-    if(sep != NULL) {
-      *sep = 0;
-    }
+    std::string filename_old(recording->FileName());
+    std::string::size_type i = filename_old.rfind('/');
+    if (i != filename_old.npos)
+      filename_old.erase(i);
 
     // replace spaces in newtitle
     strreplace(newtitle, ' ', '_');
-    char* filename_new = new char[1024];
-    strncpy(filename_new, filename_old, 512);
-    sep = strrchr(filename_new, '/');
-    if(sep != NULL) {
-      sep++;
-      *sep = 0;
-    }
-    strncat(filename_new, newtitle, 512);
+    std::string filename_new(filename_old);
+    i = filename_new.rfind('/');
+    if (i != filename_new.npos)
+      filename_new.erase(i + 1);
 
-    INFOLOG("renaming recording '%s' to '%s'", filename_old, filename_new);
-    r = rename(filename_old, filename_new);
+    filename_new += newtitle;
+
+    INFOLOG("renaming recording '%s' to '%s'", filename_old.c_str(), filename_new.c_str());
+    r = rename(filename_old.c_str(), filename_new.c_str());
 
 #if VDRVERSNUM >= 20301
     Recordings->Update();
 #else
     Recordings.Update();
 #endif
-
-    free(filename_old);
-    delete[] filename_new;
   }
 
   cResponsePacket resp;
