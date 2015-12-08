@@ -40,20 +40,19 @@
 
 cRecPlayer::cRecPlayer(const cRecording* rec, bool inProgress)
   :m_inProgress(inProgress),
+   m_recordingFilename(rec->FileName()),
 #if VDRVERSNUM < 10703
    m_pesrecording(true),
-   m_indexFile(new cIndexFile(m_recordingFilename, false)),
+   m_indexFile(new cIndexFile(m_recordingFilename.c_str(), false)),
 #else
    m_pesrecording(rec->IsPesRecording()),
-   m_indexFile(new cIndexFile(m_recordingFilename, false, m_pesrecording)),
+   m_indexFile(new cIndexFile(m_recordingFilename.c_str(), false, m_pesrecording)),
 #endif
    m_file(-1), m_fileOpen(-1)
 {
-  m_recordingFilename = strdup(rec->FileName());
-
   // FIXME find out max file path / name lengths
 #if VDRVERSNUM >= 10703
-  if(m_pesrecording) INFOLOG("recording '%s' is a PES recording", m_recordingFilename);
+  if(m_pesrecording) INFOLOG("recording '%s' is a PES recording", m_recordingFilename.c_str());
 #endif
 
   scan();
@@ -134,14 +133,13 @@ cRecPlayer::~cRecPlayer()
 {
   cleanup();
   closeFile();
-  free(m_recordingFilename);
 }
 
 char* cRecPlayer::fileNameFromIndex(int index) {
   if (m_pesrecording)
-    snprintf(m_fileName, sizeof(m_fileName), "%s/%03i.vdr", m_recordingFilename, index+1);
+    snprintf(m_fileName, sizeof(m_fileName), "%s/%03i.vdr", m_recordingFilename.c_str(), index+1);
   else
-    snprintf(m_fileName, sizeof(m_fileName), "%s/%05i.ts", m_recordingFilename, index+1);
+    snprintf(m_fileName, sizeof(m_fileName), "%s/%05i.ts", m_recordingFilename.c_str(), index+1);
 
   return m_fileName;
 }

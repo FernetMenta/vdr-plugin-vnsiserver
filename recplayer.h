@@ -37,6 +37,7 @@
 #include "config.h"
 
 #include <vector>
+#include <string>
 
 class cSegment
 {
@@ -71,7 +72,7 @@ private:
   const bool m_inProgress;
   const bool m_pesrecording;
   char        m_fileName[512];
-  char       *m_recordingFilename;
+  const std::string m_recordingFilename;
   cIndexFile *const m_indexFile;
   int         m_file;
   int         m_fileOpen;
