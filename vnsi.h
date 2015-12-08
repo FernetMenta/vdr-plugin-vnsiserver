@@ -39,7 +39,11 @@ extern char TimeshiftBufferDir[PATH_MAX];
 extern int PlayRecording;
 extern int AvoidEPGScan;
 
-class cDvbVsniDeviceProbe;
+class cDvbVsniDeviceProbe : public cDvbDeviceProbe
+{
+public:
+  virtual bool Probe(int Adapter, int Frontend);
+};
 
 class cPluginVNSIServer : public cPlugin {
 private:
@@ -70,12 +74,6 @@ public:
   virtual cString SVDRPCommand(const char *Command, const char *Option, int &ReplyCode);
 
   static void StoreSetup(const char *Name, int Value);
-};
-
-class cDvbVsniDeviceProbe : public cDvbDeviceProbe
-{
-public:
-  virtual bool Probe(int Adapter, int Frontend);
 };
 
 class cDvbVnsiDevice : public cDvbDevice
