@@ -2725,7 +2725,7 @@ bool cVNSIClient::Undelete(cRecording* recording)
   char *ext = strrchr(NewName, '.');
   if (ext && strcmp(ext, ".del") == 0)
   {
-    strncpy(ext, ".rec", strlen(ext));
+    strcpy(ext, ".rec");
     if (!access(NewName, F_OK))
     {
       ERRORLOG("Recording with the same name exists (%s)", NewName);
