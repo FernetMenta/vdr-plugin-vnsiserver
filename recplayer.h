@@ -67,16 +67,16 @@ private:
   char* fileNameFromIndex(int index);
   void checkBufferSize(int s);
 
+  const bool m_inProgress;
+  const bool m_pesrecording;
   char        m_fileName[512];
-  cIndexFile *m_indexFile;
+  char       *m_recordingFilename;
+  cIndexFile *const m_indexFile;
   int         m_file;
   int         m_fileOpen;
   cVector<cSegment*> m_segments;
   uint64_t    m_totalLength;
   uint32_t    m_totalFrames;
-  char       *m_recordingFilename;
-  bool        m_pesrecording;
-  bool        m_inProgress;
 };
 
 #endif // VNSI_RECPLAYER_H
