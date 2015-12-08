@@ -67,7 +67,7 @@ cParserMPEG2Audio::~cParserMPEG2Audio()
 {
   if (m_RDSBuffer)
   {
-    delete m_RDSBuffer;
+    free(m_RDSBuffer);
     m_RDSBuffer = NULL;
   }
 }
