@@ -162,6 +162,7 @@ void cVNSIClient::Action(void)
 
 bool cVNSIClient::StartChannelStreaming(cResponsePacket &resp, const cChannel *channel, int32_t priority, uint8_t timeshift, uint32_t timeout)
 {
+  delete m_Streamer;
   m_Streamer    = new cLiveStreamer(m_Id, m_bSupportRDS, timeshift, timeout);
   m_isStreaming = m_Streamer->StreamChannel(channel, priority, &m_socket, &resp);
   return m_isStreaming;
@@ -2482,6 +2483,7 @@ void cVNSIClient::processSCAN_SetStatus(int status)
 
 bool cVNSIClient::processOSD_Connect(cRequestPacket &req) /* OPCODE 160 */
 {
+  delete m_Osd;
   m_Osd = new cVnsiOsdProvider(&m_socket);
   int osdWidth, osdHeight;
   double aspect;
