@@ -73,7 +73,7 @@ private:
   const bool m_pesrecording;
   char        m_fileName[512];
   const std::string m_recordingFilename;
-  cIndexFile *const m_indexFile;
+  cIndexFile m_indexFile;
   int         m_file;
   int         m_fileOpen;
   std::vector<cSegment> m_segments;

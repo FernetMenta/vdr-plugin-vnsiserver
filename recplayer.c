@@ -43,10 +43,10 @@ cRecPlayer::cRecPlayer(const cRecording* rec, bool inProgress)
    m_recordingFilename(rec->FileName()),
 #if VDRVERSNUM < 10703
    m_pesrecording(true),
-   m_indexFile(new cIndexFile(m_recordingFilename.c_str(), false)),
+   m_indexFile(m_recordingFilename.c_str(), false),
 #else
    m_pesrecording(rec->IsPesRecording()),
-   m_indexFile(new cIndexFile(m_recordingFilename.c_str(), false, m_pesrecording)),
+   m_indexFile(m_recordingFilename.c_str(), false, m_pesrecording),
 #endif
    m_file(-1), m_fileOpen(-1)
 {
@@ -92,7 +92,7 @@ void cRecPlayer::scan()
     INFOLOG("File %i found, size: %lu, totalLength now %lu", i, s.st_size, m_totalLength);
   }
 
-  m_totalFrames = m_indexFile->Last();
+  m_totalFrames = m_indexFile.Last();
   INFOLOG("total frames: %u", m_totalFrames);
 }
 
@@ -125,7 +125,7 @@ void cRecPlayer::reScan()
     m_totalLength += s.st_size;
   }
 
-  m_totalFrames = m_indexFile->Last();
+  m_totalFrames = m_indexFile.Last();
 }
 
 
@@ -260,8 +260,6 @@ int cRecPlayer::getBlock(unsigned char* buffer, uint64_t position, int amount)
 
 uint64_t cRecPlayer::positionFromFrameNumber(uint32_t frameNumber)
 {
-  if (!m_indexFile)
-    return 0;
 #if VDRVERSNUM < 10703
   unsigned char retFileNumber;
   int retFileOffset;
@@ -274,7 +272,7 @@ uint64_t cRecPlayer::positionFromFrameNumber(uint32_t frameNumber)
   int retLength;
 
 
-  if (!m_indexFile->Get((int)frameNumber, &retFileNumber, &retFileOffset, &retPicType, &retLength))
+  if (!m_indexFile.Get((int)frameNumber, &retFileNumber, &retFileOffset, &retPicType, &retLength))
     return 0;
 
   if (retFileNumber >= m_segments.size()) 
@@ -286,8 +284,6 @@ uint64_t cRecPlayer::positionFromFrameNumber(uint32_t frameNumber)
 
 uint32_t cRecPlayer::frameNumberFromPosition(uint64_t position)
 {
-  if (!m_indexFile) return 0;
-
   if (position >= m_totalLength)
   {
     DEBUGLOG("Client asked for data starting past end of recording!");
@@ -308,7 +304,7 @@ uint32_t cRecPlayer::frameNumberFromPosition(uint64_t position)
 
   uint32_t askposition = position - segmentIterator->start;
   int segmentNumber = std::distance(begin, segmentIterator);
-  return m_indexFile->Get((int)segmentNumber, askposition);
+  return m_indexFile.Get((int)segmentNumber, askposition);
 }
 
 
@@ -316,8 +312,6 @@ bool cRecPlayer::getNextIFrame(uint32_t frameNumber, uint32_t direction, uint64_
 {
   // 0 = backwards
   // 1 = forwards
-
-  if (!m_indexFile) return false;
 
 #if VDRVERSNUM < 10703
   unsigned char waste1;
@@ -330,7 +324,7 @@ bool cRecPlayer::getNextIFrame(uint32_t frameNumber, uint32_t direction, uint64_
   int iframeLength;
   int indexReturnFrameNumber;
 
-  indexReturnFrameNumber = (uint32_t)m_indexFile->GetNextIFrame(frameNumber, (direction==1 ? true : false), &waste1, &waste2, &iframeLength);
+  indexReturnFrameNumber = (uint32_t)m_indexFile.GetNextIFrame(frameNumber, (direction==1 ? true : false), &waste1, &waste2, &iframeLength);
   DEBUGLOG("GNIF input framenumber:%u, direction=%u, output:framenumber=%i, framelength=%i", frameNumber, direction, indexReturnFrameNumber, iframeLength);
 
   if (indexReturnFrameNumber == -1) return false;
