@@ -156,11 +156,8 @@ void cVNSIClient::Action(void)
   m_ChannelScanControl.StopScan();
 
   // Shutdown OSD
-  if (m_Osd)
-  {
-    delete m_Osd;
-    m_Osd = NULL;
-  }
+  delete m_Osd;
+  m_Osd = NULL;
 }
 
 bool cVNSIClient::StartChannelStreaming(cResponsePacket &resp, const cChannel *channel, int32_t priority, uint8_t timeshift, uint32_t timeout)
@@ -173,11 +170,8 @@ bool cVNSIClient::StartChannelStreaming(cResponsePacket &resp, const cChannel *c
 void cVNSIClient::StopChannelStreaming()
 {
   m_isStreaming = false;
-  if (m_Streamer)
-  {
-    delete m_Streamer;
-    m_Streamer = NULL;
-  }
+  delete m_Streamer;
+  m_Streamer = NULL;
 }
 
 void cVNSIClient::TimerChange(const cTimer *Timer, eTimerChange Change)
@@ -876,11 +870,8 @@ bool cVNSIClient::processRecStream_Open(cRequestPacket &req) /* OPCODE 40 */
 
 bool cVNSIClient::processRecStream_Close(cRequestPacket &req) /* OPCODE 41 */
 {
-  if (m_RecPlayer)
-  {
-    delete m_RecPlayer;
-    m_RecPlayer = NULL;
-  }
+  delete m_RecPlayer;
+  m_RecPlayer = NULL;
 
   cResponsePacket resp;
   resp.init(req.getRequestID());
@@ -2507,11 +2498,8 @@ bool cVNSIClient::processOSD_Connect(cRequestPacket &req) /* OPCODE 160 */
 
 bool cVNSIClient::processOSD_Disconnect() /* OPCODE 161 */
 {
-  if (m_Osd)
-  {
-    delete m_Osd;
-    m_Osd = NULL;
-  }
+  delete m_Osd;
+  m_Osd = NULL;
   return true;
 }
 
