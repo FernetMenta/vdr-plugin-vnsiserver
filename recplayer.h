@@ -75,7 +75,7 @@ private:
   cIndexFile *const m_indexFile;
   int         m_file;
   int         m_fileOpen;
-  std::vector<cSegment*> m_segments;
+  std::vector<cSegment> m_segments;
   uint64_t    m_totalLength;
   uint32_t    m_totalFrames;
 };

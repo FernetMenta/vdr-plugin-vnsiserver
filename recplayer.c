@@ -60,8 +60,6 @@ cRecPlayer::cRecPlayer(const cRecording* rec, bool inProgress)
 }
 
 void cRecPlayer::cleanup() {
-  for (std::vector<cSegment*>::iterator i = m_segments.begin(), end = m_segments.end(); i != end; ++i)
-    delete *i;
   m_segments.clear();
 }
 
@@ -85,9 +83,9 @@ void cRecPlayer::scan()
       break;
     }
 
-    cSegment* segment = new cSegment();
-    segment->start = m_totalLength;
-    segment->end = segment->start + s.st_size;
+    cSegment segment;
+    segment.start = m_totalLength;
+    segment.end = segment.start + s.st_size;
 
     m_segments.push_back(segment);
 
@@ -116,12 +114,12 @@ void cRecPlayer::reScan()
     cSegment* segment;
     if (m_segments.size() < i+1)
     {
-      segment = new cSegment();
-      m_segments.push_back(segment);
+      m_segments.push_back(cSegment());
+      segment = &m_segments.back();
       segment->start = m_totalLength;
     }
     else
-      segment = m_segments[i];
+      segment = &m_segments[i];
 
     segment->end = segment->start + s.st_size;
 
@@ -212,10 +210,10 @@ int cRecPlayer::getBlock(unsigned char* buffer, uint64_t position, int amount)
     amount = m_totalLength - position;
 
   // work out what block "position" is in
-  std::vector<cSegment*>::iterator begin = m_segments.begin(),
+  std::vector<cSegment>::iterator begin = m_segments.begin(),
     end = m_segments.end(), segmentIterator = end;
-  for (std::vector<cSegment*>::iterator i = begin; i != end; ++i) {
-    if ((position >= (*i)->start) && (position < (*i)->end)) {
+  for (std::vector<cSegment>::iterator i = begin; i != end; ++i) {
+    if ((position >= i->start) && (position < i->end)) {
       segmentIterator = i;
       break;
     }
@@ -230,7 +228,7 @@ int cRecPlayer::getBlock(unsigned char* buffer, uint64_t position, int amount)
     return 0;
 
   // work out position in current file
-  uint64_t filePosition = position - (*segmentIterator)->start;
+  uint64_t filePosition = position - segmentIterator->start;
 
   // seek to position
   if(lseek(m_file, filePosition, SEEK_SET) == -1)
@@ -284,7 +282,7 @@ uint64_t cRecPlayer::positionFromFrameNumber(uint32_t frameNumber)
   if (retFileNumber >= m_segments.size()) 
     return 0;
 
-  uint64_t position = m_segments[retFileNumber]->start + retFileOffset;
+  uint64_t position = m_segments[retFileNumber].start + retFileOffset;
   return position;
 }
 
@@ -298,10 +296,10 @@ uint32_t cRecPlayer::frameNumberFromPosition(uint64_t position)
     return m_totalFrames;
   }
 
-  std::vector<cSegment*>::iterator begin = m_segments.begin(),
+  std::vector<cSegment>::iterator begin = m_segments.begin(),
     end = m_segments.end(), segmentIterator = end;
-  for (std::vector<cSegment*>::iterator i = begin; i != end; ++i) {
-    if ((position >= (*i)->start) && (position < (*i)->end)) {
+  for (std::vector<cSegment>::iterator i = begin; i != end; ++i) {
+    if ((position >= i->start) && (position < i->end)) {
       segmentIterator = i;
       break;
     }
@@ -310,7 +308,7 @@ uint32_t cRecPlayer::frameNumberFromPosition(uint64_t position)
   if (segmentIterator == end)
     return m_totalFrames;
 
-  uint32_t askposition = position - (*segmentIterator)->start;
+  uint32_t askposition = position - segmentIterator->start;
   int segmentNumber = std::distance(begin, segmentIterator);
   return m_indexFile->Get((int)segmentNumber, askposition);
 }
