@@ -50,7 +50,7 @@ cRequestPacket::cRequestPacket(uint32_t requestID, uint32_t opcode, uint8_t* dat
 
 cRequestPacket::~cRequestPacket()
 {
-  if (userData) free(userData);
+  delete[] userData;
 }
 
 bool cRequestPacket::end() const

@@ -111,9 +111,9 @@ void cVNSIClient::Action(void)
 
       if (dataLength)
       {
-        data = (uint8_t*)malloc(dataLength);
-        if (!data)
-        {
+        try {
+          data = new uint8_t[dataLength];
+        } catch (const std::bad_alloc &) {
           ERRORLOG("Extra data buffer malloc error");
           break;
         }
