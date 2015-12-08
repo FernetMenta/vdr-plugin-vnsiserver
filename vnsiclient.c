@@ -41,6 +41,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <map>
+#include <memory>
 
 #include <vdr/recording.h>
 #include <vdr/channels.h>
@@ -1560,29 +1561,29 @@ bool cVNSIClient::processTIMER_Add(cRequestPacket &req) /* OPCODE 83 */
   cResponsePacket resp;
   resp.init(req.getRequestID());
 
-  cTimer *timer = new cTimer;
+  std::auto_ptr<cTimer> timer(new cTimer);
   if (timer->Parse(buffer))
   {
 #if VDRVERSNUM >= 20301
     LOCK_TIMERS_WRITE;
-    const cTimer *t = Timers->GetTimer(timer);
+    const cTimer *t = Timers->GetTimer(timer.get());
     if (!t)
     {
-      Timers->Add(timer);
-      Timers->SetModified();
       INFOLOG("Timer %s added", *timer->ToDescr());
+      Timers->Add(timer.release());
+      Timers->SetModified();
       resp.add_U32(VNSI_RET_OK);
       resp.finalise();
       m_socket.write(resp.getPtr(), resp.getLen());
       return true;
     }
 #else
-    cTimer *t = Timers.GetTimer(timer);
+    cTimer *t = Timers.GetTimer(timer.get());
     if (!t)
     {
-      Timers.Add(timer);
-      Timers.SetModified();
       INFOLOG("Timer %s added", *timer->ToDescr());
+      Timers.Add(timer.release());
+      Timers.SetModified();
       resp.add_U32(VNSI_RET_OK);
       resp.finalise();
       m_socket.write(resp.getPtr(), resp.getLen());
@@ -1600,8 +1601,6 @@ bool cVNSIClient::processTIMER_Add(cRequestPacket &req) /* OPCODE 83 */
     ERRORLOG("Error in timer settings");
     resp.add_U32(VNSI_RET_DATAINVALID);
   }
-
-  delete timer;
 
   resp.finalise();
   m_socket.write(resp.getPtr(), resp.getLen());
