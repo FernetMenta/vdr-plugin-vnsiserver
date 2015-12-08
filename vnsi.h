@@ -49,11 +49,10 @@ class cPluginVNSIServer : public cPlugin {
 private:
   cVNSIServer *Server;
   static cPluginVNSIServer *VNSIServer;
-  cDvbVsniDeviceProbe *probe;
+  cDvbVsniDeviceProbe probe;
 
 public:
   cPluginVNSIServer(void);
-  virtual ~cPluginVNSIServer();
   virtual const char *Version(void) { return VERSION; }
   virtual const char *Description(void) { return DESCRIPTION; }
   virtual const char *CommandLineHelp(void);

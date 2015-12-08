@@ -36,13 +36,6 @@ cPluginVNSIServer::cPluginVNSIServer(void)
 {
   Server = NULL;
   VNSIServer = NULL;
-  probe = new cDvbVsniDeviceProbe();
-}
-
-cPluginVNSIServer::~cPluginVNSIServer()
-{
-  // Clean up after yourself!
-  delete probe;
 }
 
 const char *cPluginVNSIServer::CommandLineHelp(void)
