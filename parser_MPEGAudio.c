@@ -65,11 +65,7 @@ cParserMPEG2Audio::cParserMPEG2Audio(int pID, cTSStream *stream, sPtsWrap *ptsWr
 
 cParserMPEG2Audio::~cParserMPEG2Audio()
 {
-  if (m_RDSBuffer)
-  {
-    free(m_RDSBuffer);
-    m_RDSBuffer = NULL;
-  }
+  free(m_RDSBuffer);
 }
 
 void cParserMPEG2Audio::Parse(sStreamPacket *pkt, sStreamPacket *pkt_side_data)

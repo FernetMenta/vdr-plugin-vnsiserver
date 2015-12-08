@@ -58,8 +58,7 @@ cParser::cParser(int pID, cTSStream *stream, sPtsWrap *ptsWrap, bool observePtsW
 
 cParser::~cParser()
 {
-  if (m_PesBuffer)
-    free(m_PesBuffer);
+  free(m_PesBuffer);
 }
 
 void cParser::Reset()
