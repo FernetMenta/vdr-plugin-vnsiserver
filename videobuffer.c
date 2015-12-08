@@ -210,8 +210,7 @@ cVideoBufferRAM::cVideoBufferRAM()
 
 cVideoBufferRAM::~cVideoBufferRAM()
 {
-  if (m_Buffer)
-    free(m_Buffer);
+  free(m_Buffer);
 }
 
 bool cVideoBufferRAM::Init()
