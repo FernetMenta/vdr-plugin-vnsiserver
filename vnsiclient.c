@@ -2750,14 +2750,13 @@ bool cVNSIClient::Undelete(cRecording* recording)
           ERRORLOG("Error while rename deleted recording (%s) to (%s)", recording->FileName(), NewName);
         }
 
-        cIndexFile *index = new cIndexFile(NewName, false, recording->IsPesRecording());
-        int LastFrame = index->Last() - 1;
+        cIndexFile index(NewName, false, recording->IsPesRecording());
+        int LastFrame = index.Last() - 1;
         if (LastFrame > 0)
         {
           uint16_t FileNumber = 0;
           off_t FileOffset = 0;
-          index->Get(LastFrame, &FileNumber, &FileOffset);
-          delete index;
+          index.Get(LastFrame, &FileNumber, &FileOffset);
           if (FileNumber == 0)
           {
             ERRORLOG("while read last filenumber (%s)", NewName);
@@ -2778,7 +2777,6 @@ bool cVNSIClient::Undelete(cRecording* recording)
         }
         else
         {
-          delete index;
           ERRORLOG("accessing indexfile (%s)", NewName);
           OsdStatusMessage(*cString::sprintf("%s (%s)", tr("Error while accessing indexfile"), NewName));
         }
