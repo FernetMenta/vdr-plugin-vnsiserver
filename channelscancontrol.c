@@ -54,8 +54,6 @@ using namespace WIRBELSCAN_SERVICE;
 #define SCANDONE 2
 #define CHECKVERSION(a,b,c) p=strchr((char *) m_scanInformation->a,'#') + 1; sscanf(p,"%d ",&version); if (version < b) c = true;
 #define CHECKLIMITS(a,v,_min,_max,_def) a=v; if ((a<_min) || (a>_max)) a=_def;
-#define freeAndNull(p)   if(p) { free(p);   p=NULL; }
-#define deleteAndNull(p) if(p) { delete(p); p=NULL; }
 
 CScanControl::CScanControl(cVNSIClient *client)
   : m_client(client),
@@ -71,10 +69,9 @@ CScanControl::CScanControl(cVNSIClient *client)
 
 CScanControl::~CScanControl()
 {
-  if (m_scanInformation)
-    delete m_scanInformation;
-  freeAndNull(m_cbuf);
-  freeAndNull(m_sbuf);
+  delete m_scanInformation;
+  free(m_cbuf);
+  free(m_sbuf);
 }
 
 bool CScanControl::IsSupported()

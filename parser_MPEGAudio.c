@@ -65,11 +65,7 @@ cParserMPEG2Audio::cParserMPEG2Audio(int pID, cTSStream *stream, sPtsWrap *ptsWr
 
 cParserMPEG2Audio::~cParserMPEG2Audio()
 {
-  if (m_RDSBuffer)
-  {
-    delete m_RDSBuffer;
-    m_RDSBuffer = NULL;
-  }
+  free(m_RDSBuffer);
 }
 
 void cParserMPEG2Audio::Parse(sStreamPacket *pkt, sStreamPacket *pkt_side_data)
@@ -140,14 +136,16 @@ void cParserMPEG2Audio::Parse(sStreamPacket *pkt, sStreamPacket *pkt_side_data)
             return;
           }
           m_RDSBufferSize += m_RDSBufferInitialSize / 10;
-          m_RDSBuffer = (uint8_t*)realloc(m_RDSBuffer, m_RDSBufferSize);
-          if (m_RDSBuffer == NULL)
+          uint8_t *new_buffer = (uint8_t *)realloc(m_RDSBuffer, m_RDSBufferSize);
+          if (new_buffer == NULL)
           {
             ERRORLOG("PVR Parser MPEG2-Audio - %s - realloc for RDS data failed", __FUNCTION__);
             m_RDSEnabled = false;
             return;
           }
-        }
+
+          m_RDSBuffer = new_buffer;
+      }
 
         int pes_buffer_ptr = 0;
         for (int i = m_FrameSize-3; i > m_FrameSize-3-rdsl; i--)    // <-- data reverse, from end to start

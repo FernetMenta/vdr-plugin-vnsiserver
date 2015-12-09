@@ -44,7 +44,7 @@ void cVNSIStatus::Shutdown()
   {
     delete (*i);
   }
-  m_clients.erase(m_clients.begin(), m_clients.end());
+  m_clients.clear();
 }
 
 void cVNSIStatus::AddClient(cVNSIClient* client)

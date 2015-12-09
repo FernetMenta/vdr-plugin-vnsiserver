@@ -50,7 +50,7 @@ cRequestPacket::cRequestPacket(uint32_t requestID, uint32_t opcode, uint8_t* dat
 
 cRequestPacket::~cRequestPacket()
 {
-  if (userData) free(userData);
+  delete[] userData;
 }
 
 bool cRequestPacket::end() const
@@ -64,7 +64,7 @@ char* cRequestPacket::extract_String()
   const char *end = (const char *)memchr(p, '\0', userDataLength - packetPos);
   if (end == NULL)
     /* string is not terminated - fail */
-    return NULL;
+    throw MalformedVNSIPacket();
 
   int length = end - p;
   packetPos += length + 1;
@@ -73,7 +73,8 @@ char* cRequestPacket::extract_String()
 
 uint8_t cRequestPacket::extract_U8()
 {
-  if ((packetPos + sizeof(uint8_t)) > userDataLength) return 0;
+  if ((packetPos + sizeof(uint8_t)) > userDataLength)
+    throw MalformedVNSIPacket();
   uint8_t uc = userData[packetPos];
   packetPos += sizeof(uint8_t);
   return uc;
@@ -81,7 +82,8 @@ uint8_t cRequestPacket::extract_U8()
 
 uint32_t cRequestPacket::extract_U32()
 {
-  if ((packetPos + sizeof(uint32_t)) > userDataLength) return 0;
+  if ((packetPos + sizeof(uint32_t)) > userDataLength)
+    throw MalformedVNSIPacket();
   uint32_t ul;
   memcpy(&ul, &userData[packetPos], sizeof(uint32_t));
   ul = ntohl(ul);
@@ -91,7 +93,8 @@ uint32_t cRequestPacket::extract_U32()
 
 uint64_t cRequestPacket::extract_U64()
 {
-  if ((packetPos + sizeof(uint64_t)) > userDataLength) return 0;
+  if ((packetPos + sizeof(uint64_t)) > userDataLength)
+    throw MalformedVNSIPacket();
   uint64_t ull;
   memcpy(&ull, &userData[packetPos], sizeof(uint64_t));
   ull = __be64_to_cpu(ull);
@@ -101,7 +104,8 @@ uint64_t cRequestPacket::extract_U64()
 
 int64_t cRequestPacket::extract_S64()
 {
-  if ((packetPos + sizeof(int64_t)) > userDataLength) return 0;
+  if ((packetPos + sizeof(int64_t)) > userDataLength)
+    throw MalformedVNSIPacket();
   int64_t ll;
   memcpy(&ll, &userData[packetPos], sizeof(int64_t));
   ll = __be64_to_cpu(ll);
@@ -111,7 +115,8 @@ int64_t cRequestPacket::extract_S64()
 
 double cRequestPacket::extract_Double()
 {
-  if ((packetPos + sizeof(uint64_t)) > userDataLength) return 0;
+  if ((packetPos + sizeof(uint64_t)) > userDataLength)
+    throw MalformedVNSIPacket();
   uint64_t ull;
   memcpy(&ull, &userData[packetPos], sizeof(uint64_t));
   ull = __be64_to_cpu(ull);
@@ -123,7 +128,8 @@ double cRequestPacket::extract_Double()
 
 int32_t cRequestPacket::extract_S32()
 {
-  if ((packetPos + sizeof(int32_t)) > userDataLength) return 0;
+  if ((packetPos + sizeof(int32_t)) > userDataLength)
+    throw MalformedVNSIPacket();
   int32_t l;
   memcpy(&l, &userData[packetPos], sizeof(int32_t));
   l = ntohl(l);

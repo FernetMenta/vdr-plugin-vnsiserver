@@ -45,27 +45,20 @@ public:
 
 protected:
   cVideoBufferSimple();
-  virtual ~cVideoBufferSimple();
-  cRingBufferLinear *m_Buffer;
+  cRingBufferLinear m_Buffer;
   int m_BytesConsumed;
 };
 
 cVideoBufferSimple::cVideoBufferSimple()
+  :m_Buffer(MEGABYTE(3), TS_SIZE * 2, false)
 {
-  m_Buffer = new cRingBufferLinear(MEGABYTE(3), TS_SIZE * 2, false);
-  m_Buffer->SetTimeouts(0, 100);
+  m_Buffer.SetTimeouts(0, 100);
   m_BytesConsumed = 0;
-}
-
-cVideoBufferSimple::~cVideoBufferSimple()
-{
-  if (m_Buffer)
-    delete m_Buffer;
 }
 
 void cVideoBufferSimple::Put(const uint8_t *buf, unsigned int size)
 {
-  m_Buffer->Put(buf, size);
+  m_Buffer.Put(buf, size);
 }
 
 int cVideoBufferSimple::ReadBlock(uint8_t **buf, unsigned int size, time_t &endTime, time_t &wrapTime)
@@ -73,10 +66,10 @@ int cVideoBufferSimple::ReadBlock(uint8_t **buf, unsigned int size, time_t &endT
   int  readBytes;
   if (m_BytesConsumed)
   {
-    m_Buffer->Del(m_BytesConsumed);
+    m_Buffer.Del(m_BytesConsumed);
   }
   m_BytesConsumed = 0;
-  *buf = m_Buffer->Get(readBytes);
+  *buf = m_Buffer.Get(readBytes);
   if (!(*buf) || readBytes < TS_SIZE)
   {
     usleep(100);
@@ -94,7 +87,7 @@ int cVideoBufferSimple::ReadBlock(uint8_t **buf, unsigned int size, time_t &endT
 
   if ((*buf)[0] != TS_SYNC_BYTE)
   {
-    m_Buffer->Del(m_BytesConsumed);
+    m_Buffer.Del(m_BytesConsumed);
     m_BytesConsumed = 0;
     return 0;
   }
@@ -217,8 +210,7 @@ cVideoBufferRAM::cVideoBufferRAM()
 
 cVideoBufferRAM::~cVideoBufferRAM()
 {
-  if (m_Buffer)
-    free(m_Buffer);
+  free(m_Buffer);
 }
 
 bool cVideoBufferRAM::Init()

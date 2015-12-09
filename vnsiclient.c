@@ -41,6 +41,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <map>
+#include <memory>
 
 #include <vdr/recording.h>
 #include <vdr/channels.h>
@@ -111,9 +112,9 @@ void cVNSIClient::Action(void)
 
       if (dataLength)
       {
-        data = (uint8_t*)malloc(dataLength);
-        if (!data)
-        {
+        try {
+          data = new uint8_t[dataLength];
+        } catch (const std::bad_alloc &) {
           ERRORLOG("Extra data buffer malloc error");
           break;
         }
@@ -139,9 +140,13 @@ void cVNSIClient::Action(void)
         break;
       }
 
-      cRequestPacket req(requestID, opcode, data, dataLength);
-
-      processRequest(req);
+      try {
+        cRequestPacket req(requestID, opcode, data, dataLength);
+        processRequest(req);
+      } catch (const std::exception &e) {
+        ERRORLOG("%s", e.what());
+        break;
+      }
     }
     else
     {
@@ -156,15 +161,13 @@ void cVNSIClient::Action(void)
   m_ChannelScanControl.StopScan();
 
   // Shutdown OSD
-  if (m_Osd)
-  {
-    delete m_Osd;
-    m_Osd = NULL;
-  }
+  delete m_Osd;
+  m_Osd = NULL;
 }
 
 bool cVNSIClient::StartChannelStreaming(cResponsePacket &resp, const cChannel *channel, int32_t priority, uint8_t timeshift, uint32_t timeout)
 {
+  delete m_Streamer;
   m_Streamer    = new cLiveStreamer(m_Id, m_bSupportRDS, timeshift, timeout);
   m_isStreaming = m_Streamer->StreamChannel(channel, priority, &m_socket, &resp);
   return m_isStreaming;
@@ -173,11 +176,8 @@ bool cVNSIClient::StartChannelStreaming(cResponsePacket &resp, const cChannel *c
 void cVNSIClient::StopChannelStreaming()
 {
   m_isStreaming = false;
-  if (m_Streamer)
-  {
-    delete m_Streamer;
-    m_Streamer = NULL;
-  }
+  delete m_Streamer;
+  m_Streamer = NULL;
 }
 
 void cVNSIClient::TimerChange(const cTimer *Timer, eTimerChange Change)
@@ -876,11 +876,8 @@ bool cVNSIClient::processRecStream_Open(cRequestPacket &req) /* OPCODE 40 */
 
 bool cVNSIClient::processRecStream_Close(cRequestPacket &req) /* OPCODE 41 */
 {
-  if (m_RecPlayer)
-  {
-    delete m_RecPlayer;
-    m_RecPlayer = NULL;
-  }
+  delete m_RecPlayer;
+  m_RecPlayer = NULL;
 
   cResponsePacket resp;
   resp.init(req.getRequestID());
@@ -1568,29 +1565,29 @@ bool cVNSIClient::processTIMER_Add(cRequestPacket &req) /* OPCODE 83 */
   cResponsePacket resp;
   resp.init(req.getRequestID());
 
-  cTimer *timer = new cTimer;
+  std::auto_ptr<cTimer> timer(new cTimer);
   if (timer->Parse(buffer))
   {
 #if VDRVERSNUM >= 20301
     LOCK_TIMERS_WRITE;
-    const cTimer *t = Timers->GetTimer(timer);
+    const cTimer *t = Timers->GetTimer(timer.get());
     if (!t)
     {
-      Timers->Add(timer);
-      Timers->SetModified();
       INFOLOG("Timer %s added", *timer->ToDescr());
+      Timers->Add(timer.release());
+      Timers->SetModified();
       resp.add_U32(VNSI_RET_OK);
       resp.finalise();
       m_socket.write(resp.getPtr(), resp.getLen());
       return true;
     }
 #else
-    cTimer *t = Timers.GetTimer(timer);
+    cTimer *t = Timers.GetTimer(timer.get());
     if (!t)
     {
-      Timers.Add(timer);
-      Timers.SetModified();
       INFOLOG("Timer %s added", *timer->ToDescr());
+      Timers.Add(timer.release());
+      Timers.SetModified();
       resp.add_U32(VNSI_RET_OK);
       resp.finalise();
       m_socket.write(resp.getPtr(), resp.getLen());
@@ -1608,8 +1605,6 @@ bool cVNSIClient::processTIMER_Add(cRequestPacket &req) /* OPCODE 83 */
     ERRORLOG("Error in timer settings");
     resp.add_U32(VNSI_RET_DATAINVALID);
   }
-
-  delete timer;
 
   resp.finalise();
   m_socket.write(resp.getPtr(), resp.getLen());
@@ -1982,34 +1977,28 @@ bool cVNSIClient::processRECORDINGS_Rename(cRequestPacket &req) /* OPCODE 103 */
 
   if(recording != NULL) {
     // get filename and remove last part (recording time)
-    char* filename_old = strdup((const char*)recording->FileName());
-    char* sep = strrchr(filename_old, '/');
-    if(sep != NULL) {
-      *sep = 0;
-    }
+    std::string filename_old(recording->FileName());
+    std::string::size_type i = filename_old.rfind('/');
+    if (i != filename_old.npos)
+      filename_old.erase(i);
 
     // replace spaces in newtitle
     strreplace(newtitle, ' ', '_');
-    char* filename_new = new char[1024];
-    strncpy(filename_new, filename_old, 512);
-    sep = strrchr(filename_new, '/');
-    if(sep != NULL) {
-      sep++;
-      *sep = 0;
-    }
-    strncat(filename_new, newtitle, 512);
+    std::string filename_new(filename_old);
+    i = filename_new.rfind('/');
+    if (i != filename_new.npos)
+      filename_new.erase(i + 1);
 
-    INFOLOG("renaming recording '%s' to '%s'", filename_old, filename_new);
-    r = rename(filename_old, filename_new);
+    filename_new += newtitle;
+
+    INFOLOG("renaming recording '%s' to '%s'", filename_old.c_str(), filename_new.c_str());
+    r = rename(filename_old.c_str(), filename_new.c_str());
 
 #if VDRVERSNUM >= 20301
     Recordings->Update();
 #else
     Recordings.Update();
 #endif
-
-    free(filename_old);
-    delete[] filename_new;
   }
 
   cResponsePacket resp;
@@ -2491,6 +2480,7 @@ void cVNSIClient::processSCAN_SetStatus(int status)
 
 bool cVNSIClient::processOSD_Connect(cRequestPacket &req) /* OPCODE 160 */
 {
+  delete m_Osd;
   m_Osd = new cVnsiOsdProvider(&m_socket);
   int osdWidth, osdHeight;
   double aspect;
@@ -2507,11 +2497,8 @@ bool cVNSIClient::processOSD_Connect(cRequestPacket &req) /* OPCODE 160 */
 
 bool cVNSIClient::processOSD_Disconnect() /* OPCODE 161 */
 {
-  if (m_Osd)
-  {
-    delete m_Osd;
-    m_Osd = NULL;
-  }
+  delete m_Osd;
+  m_Osd = NULL;
   return true;
 }
 
@@ -2742,7 +2729,7 @@ bool cVNSIClient::Undelete(cRecording* recording)
   char *ext = strrchr(NewName, '.');
   if (ext && strcmp(ext, ".del") == 0)
   {
-    strncpy(ext, ".rec", strlen(ext));
+    strcpy(ext, ".rec");
     if (!access(NewName, F_OK))
     {
       ERRORLOG("Recording with the same name exists (%s)", NewName);
@@ -2761,14 +2748,13 @@ bool cVNSIClient::Undelete(cRecording* recording)
           ERRORLOG("Error while rename deleted recording (%s) to (%s)", recording->FileName(), NewName);
         }
 
-        cIndexFile *index = new cIndexFile(NewName, false, recording->IsPesRecording());
-        int LastFrame = index->Last() - 1;
+        cIndexFile index(NewName, false, recording->IsPesRecording());
+        int LastFrame = index.Last() - 1;
         if (LastFrame > 0)
         {
           uint16_t FileNumber = 0;
           off_t FileOffset = 0;
-          index->Get(LastFrame, &FileNumber, &FileOffset);
-          delete index;
+          index.Get(LastFrame, &FileNumber, &FileOffset);
           if (FileNumber == 0)
           {
             ERRORLOG("while read last filenumber (%s)", NewName);
@@ -2789,7 +2775,6 @@ bool cVNSIClient::Undelete(cRecording* recording)
         }
         else
         {
-          delete index;
           ERRORLOG("accessing indexfile (%s)", NewName);
           OsdStatusMessage(*cString::sprintf("%s (%s)", tr("Error while accessing indexfile"), NewName));
         }

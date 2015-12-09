@@ -58,8 +58,7 @@ cParser::cParser(int pID, cTSStream *stream, sPtsWrap *ptsWrap, bool observePtsW
 
 cParser::~cParser()
 {
-  if (m_PesBuffer)
-    free(m_PesBuffer);
+  free(m_PesBuffer);
 }
 
 void cParser::Reset()
@@ -370,13 +369,15 @@ bool cParser::AddPESPacket(uint8_t *data, int size)
       return false;
     }
     m_PesBufferSize += m_PesBufferInitialSize / 10;
-    m_PesBuffer = (uint8_t*)realloc(m_PesBuffer, m_PesBufferSize);
-    if (m_PesBuffer == NULL)
+    uint8_t *new_buffer = (uint8_t*)realloc(m_PesBuffer, m_PesBufferSize);
+    if (new_buffer == NULL)
     {
       ERRORLOG("cParser::AddPESPacket - realloc failed");
       Reset();
       return false;
     }
+
+    m_PesBuffer = new_buffer;
   }
 
   // copy first packet of new frame to front
