@@ -757,10 +757,9 @@ bool cVNSIClient::processChannelStream_Open(cRequestPacket &req) /* OPCODE 20 */
   uint32_t uid = req.extract_U32();
   int32_t priority = req.extract_S32();
   uint8_t timeshift = req.extract_U8();
-  uint32_t timeout = req.extract_U32();
-
-  if(timeout == 0)
-    timeout = VNSIServerConfig.stream_timeout;
+  uint32_t timeout = req.end()
+    ? VNSIServerConfig.stream_timeout
+    : req.extract_U32();
 
   if (m_isStreaming)
     StopChannelStreaming();
