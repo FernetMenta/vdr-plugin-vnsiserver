@@ -76,8 +76,9 @@ cVNSIClient::~cVNSIClient()
   DEBUGLOG("%s", __FUNCTION__);
   StopChannelStreaming();
   m_ChannelScanControl.StopScan();
-  m_socket.close(); // force closing connection
+  m_socket.Shutdown();
   Cancel(10);
+  m_socket.close();
   DEBUGLOG("done");
 }
 
