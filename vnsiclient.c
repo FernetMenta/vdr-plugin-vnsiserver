@@ -67,6 +67,7 @@ cVNSIClient::cVNSIClient(int fd, unsigned int id, const char *ClientAdr)
     m_ChannelScanControl(this)
 {
   m_socket.SetHandle(fd);
+  SetDescription("VNSI Client %u->%s", id, ClientAdr);
 
   Start();
 }

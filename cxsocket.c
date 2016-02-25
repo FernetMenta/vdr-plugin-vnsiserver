@@ -99,7 +99,7 @@ ssize_t cxSocket::write(const void *buffer, size_t size, int timeout_ms, bool mo
   {
     if(!m_pollerWrite->Poll(timeout_ms))
     {
-      ERRORLOG("cxSocket::write: poll() failed");
+      ERRORLOG("cxSocket::write(fd=%d): poll() failed", m_fd);
       return written-size;
     }
 
@@ -109,11 +109,11 @@ ssize_t cxSocket::write(const void *buffer, size_t size, int timeout_ms, bool mo
     {
       if (errno == EINTR || errno == EAGAIN)
       {
-        DEBUGLOG("cxSocket::write: EINTR during write(), retrying");
+        DEBUGLOG("cxSocket::write(fd=%d): EINTR during write(), retrying", m_fd);
         continue;
       }
       else if (errno != EPIPE)
-        ERRORLOG("cxSocket::write: write() error");
+        ERRORLOG("cxSocket::write(fd=%d): write() error", m_fd);
       return p;
     }
 
@@ -138,7 +138,7 @@ ssize_t cxSocket::read(void *buffer, size_t size, int timeout_ms)
   {
     if(!m_pollerRead->Poll(timeout_ms))
     {
-      ERRORLOG("cxSocket::read: poll() failed at %d/%d", (int)(size-missing), (int)size);
+      ERRORLOG("cxSocket::read(fd=%d): poll() failed at %d/%d", m_fd, (int)(size-missing), (int)size);
       return size-missing;
     }
 
@@ -148,16 +148,16 @@ ssize_t cxSocket::read(void *buffer, size_t size, int timeout_ms)
     {
       if (retryCounter < 10 && (errno == EINTR || errno == EAGAIN))
       {
-        DEBUGLOG("cxSocket::read: EINTR/EAGAIN during read(), retrying");
+        DEBUGLOG("cxSocket::read(fd=%d): EINTR/EAGAIN during read(), retrying", m_fd);
         retryCounter++;
         continue;
       }
-      ERRORLOG("cxSocket::read: read() error at %d/%d", (int)(size-missing), (int)size);
+      ERRORLOG("cxSocket::read(fd=%d): read() error at %d/%d", m_fd, (int)(size-missing), (int)size);
       return 0;
     }
     else if (p == 0)
     {
-      INFOLOG("cxSocket::read: eof, connection closed");
+      INFOLOG("cxSocket::read(fd=%d): eof, connection closed", m_fd);
       return 0;
     }
 

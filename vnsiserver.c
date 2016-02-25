@@ -69,7 +69,7 @@ public:
   }
 };
 
-cVNSIServer::cVNSIServer(int listenPort) : cThread("VDR VNSI Server")
+cVNSIServer::cVNSIServer(int listenPort) : cThread("VNSI Server")
 {
   m_ServerPort  = listenPort;
 

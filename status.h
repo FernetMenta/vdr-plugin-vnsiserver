@@ -34,6 +34,7 @@ typedef std::list<cVNSIClient*> ClientList;
 class cVNSIStatus : public cThread
 {
 public:
+  cVNSIStatus() : cThread("VNSI Status") {};
   virtual ~cVNSIStatus();
   void Shutdown();
   void AddClient(cVNSIClient* client);
