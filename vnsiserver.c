@@ -82,8 +82,8 @@ cVNSIServer::cVNSIServer(int listenPort) : cThread("VDR VNSI Server")
 
 cVNSIServer::~cVNSIServer()
 {
-  m_Status.Shutdown();
   Cancel();
+  m_Status.Shutdown();
   INFOLOG("VNSI Server stopped");
 }
 
