@@ -2017,10 +2017,6 @@ bool cVNSIClient::processRECORDINGS_Delete(cRequestPacket &req) /* OPCODE 104 */
   cString recName;
   cRecording* recording = NULL;
 
-#if VDRVERSNUM >= 20301
-  LOCK_RECORDINGS_WRITE;
-#endif
-
   uint32_t uid = req.extract_U32();
   recording = cRecordingsCache::GetInstance().LookupWrite(uid);
 
@@ -2038,6 +2034,7 @@ bool cVNSIClient::processRECORDINGS_Delete(cRequestPacket &req) /* OPCODE 104 */
       {
         // Copy svdrdeveldevelp's way of doing this, see if it works
 #if VDRVERSNUM >= 20301
+        LOCK_RECORDINGS_WRITE;
         Recordings->DelByName(recording->FileName());
 #else
         Recordings.DelByName(recording->FileName());
