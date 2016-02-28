@@ -1459,6 +1459,15 @@ bool cVNSIClient::processTIMER_Get(cRequestPacket &req) /* OPCODE 81 */
       {
         resp.add_U32(VNSI_RET_OK);
 
+        if (m_protocolVersion >= 9)
+        {
+          uint32_t type;
+          if (timer->HasFlags(tfVps))
+            type = VNSI_TIMER_TYPE_VPS;
+          else
+            type = VNSI_TIMER_TYPE_MAN;
+          resp.add_U32(type);
+        }
         resp.add_U32(timer->Index()+1);
         resp.add_U32(timer->HasFlags(tfActive));
         resp.add_U32(timer->Recording());
@@ -1472,6 +1481,10 @@ bool cVNSIClient::processTIMER_Get(cRequestPacket &req) /* OPCODE 81 */
         resp.add_U32(timer->Day());
         resp.add_U32(timer->WeekDays());
         resp.add_String(m_toUTF8.Convert(timer->File()));
+        if (m_protocolVersion >= 9)
+        {
+          resp.add_String("");
+        }
       }
       else
         resp.add_U32(VNSI_RET_DATAUNKNOWN);
@@ -1508,6 +1521,15 @@ bool cVNSIClient::processTIMER_GetList(cRequestPacket &req) /* OPCODE 82 */
     if (!timer)
       continue;
 
+    if (m_protocolVersion >= 9)
+    {
+      uint32_t type;
+      if (timer->HasFlags(tfVps))
+        type = VNSI_TIMER_TYPE_VPS;
+      else
+        type = VNSI_TIMER_TYPE_MAN;
+      resp.add_U32(type);
+    }
     resp.add_U32(timer->Index()+1);
     resp.add_U32(timer->HasFlags(tfActive));
     resp.add_U32(timer->Recording());
@@ -1521,6 +1543,10 @@ bool cVNSIClient::processTIMER_GetList(cRequestPacket &req) /* OPCODE 82 */
     resp.add_U32(timer->Day());
     resp.add_U32(timer->WeekDays());
     resp.add_String(m_toUTF8.Convert(timer->File()));
+    if (m_protocolVersion >= 9)
+    {
+      resp.add_String("");
+    }
   }
 
   resp.finalise();
@@ -1532,6 +1558,13 @@ bool cVNSIClient::processTIMER_Add(cRequestPacket &req) /* OPCODE 83 */
 {
   cMutexLock lock(&m_timerLock);
 
+  bool vps = false;
+  if (m_protocolVersion >= 9)
+  {
+    uint32_t type = req.extract_U32();
+    if (type == VNSI_TIMER_TYPE_VPS)
+      vps = true;
+  }
   uint32_t flags      = req.extract_U32() > 0 ? tfActive : tfNone;
   uint32_t priority   = req.extract_U32();
   uint32_t lifetime   = req.extract_U32();
@@ -1542,6 +1575,8 @@ bool cVNSIClient::processTIMER_Add(cRequestPacket &req) /* OPCODE 83 */
   uint32_t weekdays   = req.extract_U32();
   const char *file    = req.extract_String();
   const char *aux     = req.extract_String();
+  if (m_protocolVersion >= 9)
+    const char *search  = req.extract_String();
 
   // handle instant timers
   if(startTime == -1 || startTime == 0)
@@ -1556,6 +1591,9 @@ bool cVNSIClient::processTIMER_Add(cRequestPacket &req) /* OPCODE 83 */
   int start = time->tm_hour * 100 + time->tm_min;
   time = localtime_r(&stopTime, &tm_r);
   int stop = time->tm_hour * 100 + time->tm_min;
+
+  if (vps)
+    flags |= tfVps;
 
   cString buffer;
   const cChannel* channel = FindChannelByUID(channelid);
@@ -1713,8 +1751,15 @@ bool cVNSIClient::processTIMER_Update(cRequestPacket &req) /* OPCODE 85 */
 {
   cMutexLock lock(&m_timerLock);
 
+  bool vps = false;
   int length      = req.getDataLength();
   uint32_t index  = req.extract_U32();
+  if (m_protocolVersion >= 9)
+  {
+    uint32_t type  = req.extract_U32();
+    if (type == VNSI_TIMER_TYPE_VPS)
+      vps = true;
+  }
   bool active     = req.extract_U32();
 
 #if VDRVERSNUM >= 20301
@@ -1757,6 +1802,8 @@ bool cVNSIClient::processTIMER_Update(cRequestPacket &req) /* OPCODE 85 */
     uint32_t weekdays   = req.extract_U32();
     const char *file    = req.extract_String();
     const char *aux     = req.extract_String();
+    if (m_protocolVersion >= 9)
+      const char *search  = req.extract_String();
 
     struct tm tm_r;
     struct tm *time = localtime_r(&startTime, &tm_r);
@@ -1765,6 +1812,9 @@ bool cVNSIClient::processTIMER_Update(cRequestPacket &req) /* OPCODE 85 */
     int start = time->tm_hour * 100 + time->tm_min;
     time = localtime_r(&stopTime, &tm_r);
     int stop = time->tm_hour * 100 + time->tm_min;
+
+    if (vps)
+      flags |= tfVps;
 
     cString buffer;
     const cChannel* channel = FindChannelByUID(channelid);
@@ -1911,15 +1961,28 @@ bool cVNSIClient::processRECORDINGS_GetList(cRequestPacket &req) /* OPCODE 102 *
 
     // channel_name
     resp.add_String(recording->Info()->ChannelName() ? m_toUTF8.Convert(recording->Info()->ChannelName()) : "");
+    if (m_protocolVersion >= 9)
+    {
+      // channel uuid
+      const cChannel *channel = NULL;
+      LOCK_CHANNELS_READ;
+      channel = Channels->GetByChannelID(recording->Info()->ChannelID());
+      if (channel)
+        resp.add_S32(CreateChannelUID(channel));
+      else
+        resp.add_S32(-1);
+    }
 
     char* fullname = strdup(recording->Name());
     char* recname = strrchr(fullname, FOLDERDELIMCHAR);
     char* directory = NULL;
 
-    if(recname == NULL) {
+    if(recname == NULL)
+    {
       recname = fullname;
     }
-    else {
+    else
+    {
       *recname = 0;
       recname++;
       directory = fullname;
@@ -1941,7 +2004,8 @@ bool cVNSIClient::processRECORDINGS_GetList(cRequestPacket &req) /* OPCODE 102 *
       resp.add_String("");
 
     // directory
-    if(directory != NULL) {
+    if(directory != NULL)
+    {
       char* p = directory;
       while(*p != 0) {
         if(*p == FOLDERDELIMCHAR) *p = '/';

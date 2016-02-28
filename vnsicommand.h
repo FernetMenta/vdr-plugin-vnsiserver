@@ -27,7 +27,7 @@
 #define VNSI_COMMAND_H
 
 /** Current VNSI Protocol Version number */
-#define VNSI_PROTOCOLVERSION 8
+#define VNSI_PROTOCOLVERSION 9
 
 /** Start of RDS support protocol Version */
 #define VNSI_RDS_PROTOCOLVERSION 8
@@ -95,6 +95,7 @@
 #define VNSI_TIMER_ADD             83
 #define VNSI_TIMER_DELETE          84
 #define VNSI_TIMER_UPDATE          85
+#define VNSI_TIMER_GETTYPES        86
 
 /* OPCODE 100 - 119: VNSI network functions for recording access */
 #define VNSI_RECORDINGS_DISKSIZE   100
@@ -170,6 +171,13 @@
 #define VNSI_SCAN_SUPPORT_ANALOG_TV  0x08
 #define VNSI_SCAN_SUPPORT_ANALOG_RADIO 0x10
 #define VNSI_SCAN_SUPPORT_ATSC       0x20
+
+/** Timer */
+#define VNSI_TIMER_TYPE_MAN          1
+#define VNSI_TIMER_TYPE_MAN_REPEAT   2
+#define VNSI_TIMER_TYPE_EPG          3
+#define VNSI_TIMER_TYPE_VPS          4
+#define VNSI_TIMER_TYPE_EPG_SEARCH   5
 
 /** Packet return codes */
 #define VNSI_RET_OK              0
