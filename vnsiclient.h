@@ -124,7 +124,7 @@ private:
   bool process_StoreSetup(cRequestPacket &r);
 
   bool processChannelStream_Open(cRequestPacket &r);
-  bool processChannelStream_Close();
+  bool processChannelStream_Close(cRequestPacket &req);
   bool processChannelStream_Seek(cRequestPacket &r);
 
   bool processRecStream_Open(cRequestPacket &r);

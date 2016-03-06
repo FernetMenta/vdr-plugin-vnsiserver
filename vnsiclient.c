@@ -405,7 +405,7 @@ bool cVNSIClient::processRequest(cRequestPacket &req)
       break;
 
     case VNSI_CHANNELSTREAM_CLOSE:
-      result = processChannelStream_Close();
+      result = processChannelStream_Close(req);
       break;
 
     case VNSI_CHANNELSTREAM_SEEK:
@@ -807,10 +807,15 @@ bool cVNSIClient::processChannelStream_Open(cRequestPacket &req) /* OPCODE 20 */
   return false;
 }
 
-bool cVNSIClient::processChannelStream_Close() /* OPCODE 21 */
+bool cVNSIClient::processChannelStream_Close(cRequestPacket &req) /* OPCODE 21 */
 {
   if (m_isStreaming)
     StopChannelStreaming();
+
+  cResponsePacket resp;
+  resp.init(req.getRequestID());
+  resp.finalise();
+  m_socket.write(resp.getPtr(), resp.getLen());
 
   return true;
 }
