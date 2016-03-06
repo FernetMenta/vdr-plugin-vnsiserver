@@ -92,10 +92,12 @@ const cRecording* cRecordingsCache::Lookup(uint32_t uid) {
   return r;
 }
 
-cRecording* cRecordingsCache::LookupWrite(uint32_t uid) {
+cRecording* cRecordingsCache::LookupWrite(uint32_t uid)
+{
   DEBUGLOG("%s - lookup uid: %08x", __FUNCTION__, uid);
 
-  if(m_recordings.find(uid) == m_recordings.end()) {
+  if(m_recordings.find(uid) == m_recordings.end())
+  {
     DEBUGLOG("%s - not found !", __FUNCTION__);
     return NULL;
   }
