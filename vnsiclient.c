@@ -1969,9 +1969,14 @@ bool cVNSIClient::processRECORDINGS_GetList(cRequestPacket &req) /* OPCODE 102 *
     if (m_protocolVersion >= 9)
     {
       // channel uuid
-      const cChannel *channel = NULL;
+#if VDRVERSNUM >= 20301
       LOCK_CHANNELS_READ;
-      channel = Channels->GetByChannelID(recording->Info()->ChannelID());
+      const cChannel *channel = Channels->GetByChannelID(recording->Info()->ChannelID());
+#else
+      Channels.Lock(false);
+      const cChannel *channel = Channels.GetByChannelID(recording->Info()->ChannelID());
+      Channels.Unlock();
+#endif
       if (channel)
         resp.add_S32(CreateChannelUID(channel));
       else
