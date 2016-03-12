@@ -508,6 +508,9 @@ bool cVNSIClient::processRequest(cRequestPacket &req)
       result = processTIMER_Update(req);
       break;
 
+    case VNSI_TIMER_GETTYPES:
+      result = processTIMER_GetTypes(req);
+      break;
 
     /** OPCODE 100 - 119: VNSI network functions for recording access */
     case VNSI_RECORDINGS_DISKSIZE:
@@ -1851,6 +1854,15 @@ bool cVNSIClient::processTIMER_Update(cRequestPacket &req) /* OPCODE 85 */
   return true;
 }
 
+bool cVNSIClient::processTIMER_GetTypes(cRequestPacket &req) /* OPCODE 80 */
+{
+  cResponsePacket resp;
+  resp.init(req.getRequestID());
+  resp.add_U32(0);
+  resp.finalise();
+  m_socket.write(resp.getPtr(), resp.getLen());
+  return true;
+}
 
 /** OPCODE 100 - 119: VNSI network functions for recording access */
 
@@ -1978,9 +1990,15 @@ bool cVNSIClient::processRECORDINGS_GetList(cRequestPacket &req) /* OPCODE 102 *
       Channels.Unlock();
 #endif
       if (channel)
-        resp.add_S32(CreateChannelUID(channel));
+      {
+        resp.add_U32(CreateChannelUID(channel));
+        resp.add_U8(cVNSIChannelFilter::IsRadio(channel) ? 1 : 2);
+      }
       else
-        resp.add_S32(-1);
+      {
+        resp.add_U32(0);
+        resp.add_U8(0);
+      }
     }
 
     char* fullname = strdup(recording->Name());

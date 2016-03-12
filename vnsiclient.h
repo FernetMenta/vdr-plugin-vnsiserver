@@ -154,6 +154,7 @@ private:
   bool processTIMER_Add(cRequestPacket &r);
   bool processTIMER_Delete(cRequestPacket &r);
   bool processTIMER_Update(cRequestPacket &r);
+  bool processTIMER_GetTypes(cRequestPacket &r);
 
   bool processRECORDINGS_GetDiskSpace(cRequestPacket &r);
   bool processRECORDINGS_GetCount(cRequestPacket &r);
