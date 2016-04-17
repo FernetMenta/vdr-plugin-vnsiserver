@@ -32,6 +32,7 @@ int TimeshiftBufferFileSize = 6;
 char TimeshiftBufferDir[PATH_MAX] = "\0";
 int PlayRecording = 0;
 int AvoidEPGScan = 1;
+int DisableScrambleTimeout = 0;
 
 cMenuSetupVNSI::cMenuSetupVNSI(void)
 {
@@ -58,6 +59,9 @@ cMenuSetupVNSI::cMenuSetupVNSI(void)
 
   newAvoidEPGScan = AvoidEPGScan;
   Add(new cMenuEditBoolItem( tr("Avoid EPG scan while streaming"), &newAvoidEPGScan));
+
+  newDisableScrambleTimeout = DisableScrambleTimeout;
+  Add(new cMenuEditBoolItem( tr("Disable scramble timeout"), &newDisableScrambleTimeout));
 }
 
 void cMenuSetupVNSI::Store(void)
@@ -85,4 +89,6 @@ void cMenuSetupVNSI::Store(void)
   SetupStore(CONFNAME_PLAYRECORDING, PlayRecording = newPlayRecording);
 
   SetupStore(CONFNAME_AVOIDEPGSCAN, AvoidEPGScan = newAvoidEPGScan);
+
+  SetupStore(CONFNAME_DISABLESCRAMBLETIMEOUT, DisableScrambleTimeout = newDisableScrambleTimeout);
 }

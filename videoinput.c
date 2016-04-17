@@ -446,15 +446,25 @@ bool cVideoInput::Open(const cChannel *channel, int priority, cVideoBuffer *vide
     {
       DEBUGLOG("Creating new live Receiver");
       //m_Device->SetCurrentChannel(m_Channel);
+      int priority = m_Priority;
+      if (DisableScrambleTimeout)
+      {
+        priority = MINPRIORITY;
+      }
       m_SeenPmt = false;
       m_PatFilter = new cLivePatFilter(this, m_Channel);
-      m_Receiver0 = new cLiveReceiver(this, m_Channel, m_Priority);
-      m_Receiver = new cLiveReceiver(this, m_Channel, m_Priority);
+      m_Receiver0 = new cLiveReceiver(this, m_Channel, priority);
+      m_Receiver = new cLiveReceiver(this, m_Channel, priority);
       m_Device->AttachReceiver(m_Receiver0);
       m_Device->AttachFilter(m_PatFilter);
-      cCamSlot *cs = m_Device->CamSlot();
-      if (m_Priority <= MINPRIORITY && cs)
-        cs->StartDecrypting();
+      if (DisableScrambleTimeout)
+      {
+        cCamSlot *cs = m_Device->CamSlot();
+        if (cs)
+          cs->StartDecrypting();
+        m_Receiver0->SetPriority(m_Priority);
+        m_Receiver->SetPriority(m_Priority);
+      }
       m_VideoBuffer->AttachInput(true);
       Start();
       return true;
@@ -519,13 +529,6 @@ void cVideoInput::Close()
     }
 
     //m_Device->SetCurrentChannel(NULL);
-    cCamSlot *cs = m_Device->CamSlot();
-    if (m_Priority <= MINPRIORITY && cs)
-    {
-      cs->StartDecrypting();
-      if (!cs->IsDecrypting())
-        cs->Assign(NULL);
-    }
   }
   m_Channel = NULL;
   m_Device = NULL;
@@ -559,10 +562,21 @@ void cVideoInput::PmtChange(int pidChange)
     m_Receiver->SetPids(NULL);
     m_Receiver->SetPids(&m_Receiver->m_PmtChannel);
     m_Receiver->AddPid(m_Receiver->m_PmtChannel.Tpid());
-    m_Device->AttachReceiver(m_Receiver);
-    cCamSlot *cs = m_Device->CamSlot();
-    if (m_Priority <= MINPRIORITY && cs)
-      cs->StartDecrypting();
+
+    if (DisableScrambleTimeout)
+    {
+      m_Receiver->SetPriority(MINPRIORITY);
+      m_Device->AttachReceiver(m_Receiver);
+      cCamSlot *cs = m_Device->CamSlot();
+      if (cs)
+        cs->StartDecrypting();
+      m_Receiver->SetPriority(m_Priority);
+    }
+    else
+    {
+      m_Device->AttachReceiver(m_Receiver);
+    }
+
     m_SeenPmt = true;
   }
 }

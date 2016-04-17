@@ -38,6 +38,7 @@ extern int TimeshiftBufferFileSize;
 extern char TimeshiftBufferDir[PATH_MAX];
 extern int PlayRecording;
 extern int AvoidEPGScan;
+extern int DisableScrambleTimeout;
 
 class cDvbVsniDeviceProbe : public cDvbDeviceProbe
 {

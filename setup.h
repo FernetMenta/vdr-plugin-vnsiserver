@@ -38,6 +38,7 @@ private:
   char newTimeshiftBufferDir[PATH_MAX];
   int newPlayRecording;
   int newAvoidEPGScan;
+  int newDisableScrambleTimeout;
 protected:
   virtual void Store(void);
 public:

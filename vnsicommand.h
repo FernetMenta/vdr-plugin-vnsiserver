@@ -53,6 +53,7 @@
 #define CONFNAME_TIMESHIFTBUFFERDIR "TimeshiftBufferDir"
 #define CONFNAME_PLAYRECORDING "PlayRecording"
 #define CONFNAME_AVOIDEPGSCAN "AvoidEPGScan"
+#define CONFNAME_DISABLESCRAMBLETIMEOUT "DisableScrambleTimeout"
 
 /* OPCODE 1 - 19: VNSI network functions for general purpose */
 #define VNSI_LOGIN                 1

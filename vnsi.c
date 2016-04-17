@@ -154,6 +154,8 @@ bool cPluginVNSIServer::SetupParse(const char *Name, const char *Value)
     PlayRecording = atoi(Value);
   else if (!strcasecmp(Name, CONFNAME_AVOIDEPGSCAN))
     AvoidEPGScan = atoi(Value);
+  else if (!strcasecmp(Name, CONFNAME_DISABLESCRAMBLETIMEOUT))
+    DisableScrambleTimeout = atoi(Value);
   else
     return false;
   return true;
