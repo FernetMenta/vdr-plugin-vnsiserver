@@ -81,7 +81,7 @@ void cLiveReceiver::Receive(uchar *Data, int Length)
 
 inline void cLiveReceiver::Activate(bool On)
 {
-  DEBUGLOG("activate live receiver: %d", On);
+  INFOLOG("activate live receiver: %d, pmt change: %d", On, m_VideoInput->m_PmtChange);
   if (!On && !m_VideoInput->m_PmtChange)
   {
     m_VideoInput->Retune();
@@ -598,7 +598,6 @@ inline void cVideoInput::Receive(const uchar *data, int length)
 
 void cVideoInput::Retune()
 {
-  INFOLOG("call retune ...");
   cMutexLock lock(&m_Mutex);
   m_IsRetune = true;
   m_Event.Broadcast();
