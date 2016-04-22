@@ -36,9 +36,6 @@ int DisableScrambleTimeout = 0;
 
 cMenuSetupVNSI::cMenuSetupVNSI(void)
 {
-  newPmtTimeout = PmtTimeout;
-  Add(new cMenuEditIntItem( tr("PMT Timeout (0-10)"), &newPmtTimeout));
-
   timeshiftModesTexts[0] = tr("Off");
   timeshiftModesTexts[1] = tr("RAM");
   timeshiftModesTexts[2] = tr("File");

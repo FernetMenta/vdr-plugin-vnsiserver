@@ -24,15 +24,15 @@
 
 #pragma once
 
+#include <vdr/channels.h>
 #include <vdr/thread.h>
 
 class cLivePatFilter;
 class cLiveReceiver;
 class cVideoBuffer;
-class cChannel;
 class cDevice;
 
-class cVideoInput : public cThread
+class cVideoInput
 {
 friend class cLivePatFilter;
 friend class cLiveReceiver;
@@ -44,21 +44,18 @@ public:
   bool IsOpen();
 
 protected:
-  virtual void Action(void);
-  void PmtChange(int pidChange);
   cChannel *PmtChannel();
   void Receive(const uchar *data, int length);
   void Retune();
   cDevice          *m_Device;
   cLivePatFilter   *m_PatFilter;
   cLiveReceiver    *m_Receiver;
-  cLiveReceiver    *m_Receiver0;
   const cChannel   *m_Channel;
   cVideoBuffer     *m_VideoBuffer;
   int               m_Priority;
   bool              m_PmtChange;
-  bool              m_SeenPmt;
   cCondVar          &m_Event;
   cMutex            &m_Mutex;
   bool              &m_IsRetune;
+  cChannel m_PmtChannel;
 };

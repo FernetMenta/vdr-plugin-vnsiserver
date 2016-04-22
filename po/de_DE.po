@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: VNSI-Server 1.0.0\n"
 "Report-Msgid-Bugs-To: <see README>\n"
-"POT-Creation-Date: 2016-04-17 18:32+0200\n"
+"POT-Creation-Date: 2016-04-23 09:08+0200\n"
 "PO-Revision-Date: 2015-01-23 21:46+0100\n"
 "Last-Translator: Alwin Esch\n"
 "Language-Team: German\n"
@@ -20,9 +20,6 @@ msgstr ""
 
 msgid "Your scanner version is to old - Please upgrade."
 msgstr ""
-
-msgid "PMT Timeout (0-10)"
-msgstr "PMT Auszeit (0-10)"
 
 msgid "Off"
 msgstr "Aus"
@@ -68,3 +65,6 @@ msgstr "Fehler beim Zugriff der Indexdatei"
 
 msgid "Deleted recording vanished"
 msgstr "Gelöschte Aufnahme verschwunden"
+
+#~ msgid "PMT Timeout (0-10)"
+#~ msgstr "PMT Auszeit (0-10)"

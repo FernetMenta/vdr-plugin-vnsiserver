@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: VNSI-Server 1.0.0\n"
 "Report-Msgid-Bugs-To: <see README>\n"
-"POT-Creation-Date: 2016-04-17 18:32+0200\n"
+"POT-Creation-Date: 2016-04-23 09:08+0200\n"
 "PO-Revision-Date: 2015-02-11 22:30+0200\n"
 "Last-Translator: Valdemaras Pipiras\n"
 "Language-Team: Lithuanian\n"
@@ -20,9 +20,6 @@ msgstr ""
 
 msgid "Your scanner version is to old - Please upgrade."
 msgstr ""
-
-msgid "PMT Timeout (0-10)"
-msgstr "PMT  (0-10)"
 
 msgid "Off"
 msgstr "Išjungta"
@@ -68,3 +65,6 @@ msgstr "Klaida bandant atidaryti index failą"
 
 msgid "Deleted recording vanished"
 msgstr "Ištrintas įrašas galutinai išvalytas"
+
+#~ msgid "PMT Timeout (0-10)"
+#~ msgstr "PMT  (0-10)"

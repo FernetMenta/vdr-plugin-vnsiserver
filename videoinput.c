@@ -29,7 +29,6 @@
 #include "vnsi.h"
 
 #include <vdr/remux.h>
-#include <vdr/channels.h>
 #include <vdr/device.h>
 #include <vdr/receiver.h>
 #include <vdr/ci.h>
@@ -44,7 +43,6 @@ class cLiveReceiver: public cReceiver
 public:
   cLiveReceiver(cVideoInput *VideoInput, const cChannel *Channel, int Priority);
   virtual ~cLiveReceiver();
-  cChannel m_PmtChannel;
 
 protected:
   virtual void Activate(bool On);
@@ -407,7 +405,8 @@ void cLivePatFilter::Process(u_short Pid, u_char Tid, const u_char *Data, int Le
        pmtChannel->Modification();
        pmtChannel->SetPids(Vpid, Ppid, Vtype, Apids, Atypes, ALangs, Dpids, Dtypes, DLangs, Spids, SLangs, Tpid);
        pmtChannel->SetSubtitlingDescriptors(SubtitlingTypes, CompositionPageIds, AncillaryPageIds);
-       m_VideoInput->PmtChange(pmtChannel->Modification(CHANNELMOD_PIDS));
+       if (pmtChannel->Modification(CHANNELMOD_PIDS))
+         m_VideoInput->Retune();
     }
   }
 }
@@ -444,29 +443,35 @@ bool cVideoInput::Open(const cChannel *channel, int priority, cVideoBuffer *vide
 
     if (m_Device->SwitchChannel(m_Channel, false))
     {
-      DEBUGLOG("Creating new live Receiver");
-      //m_Device->SetCurrentChannel(m_Channel);
-      int priority = m_Priority;
-      if (DisableScrambleTimeout)
-      {
-        priority = MINPRIORITY;
-      }
-      m_SeenPmt = false;
+
+#if VDRVERSNUM < 20104
       m_PatFilter = new cLivePatFilter(this, m_Channel);
-      m_Receiver0 = new cLiveReceiver(this, m_Channel, priority);
-      m_Receiver = new cLiveReceiver(this, m_Channel, priority);
-      m_Device->AttachReceiver(m_Receiver0);
       m_Device->AttachFilter(m_PatFilter);
+#endif
+
+      m_PmtChannel = *m_Channel;
+      m_PmtChange = true;
+
+      m_Receiver = new cLiveReceiver(this, m_Channel, m_Priority);
+      m_Receiver->SetPids(NULL);
+      m_Receiver->SetPids(&m_PmtChannel);
+      m_Receiver->AddPid(m_PmtChannel.Tpid());
+
       if (DisableScrambleTimeout)
       {
+        m_Receiver->SetPriority(MINPRIORITY);
+        m_Device->AttachReceiver(m_Receiver);
         cCamSlot *cs = m_Device->CamSlot();
         if (cs)
           cs->StartDecrypting();
-        m_Receiver0->SetPriority(m_Priority);
         m_Receiver->SetPriority(m_Priority);
       }
+      else
+      {
+        m_Device->AttachReceiver(m_Receiver);
+      }
+
       m_VideoBuffer->AttachInput(true);
-      Start();
       return true;
     }
   }
@@ -476,7 +481,6 @@ bool cVideoInput::Open(const cChannel *channel, int priority, cVideoBuffer *vide
 void cVideoInput::Close()
 {
   INFOLOG("close video input ...");
-  Cancel(5);
 
   if (m_Device)
   {
@@ -484,16 +488,6 @@ void cVideoInput::Close()
     {
       DEBUGLOG("Detaching Live Receiver");
       m_Device->Detach(m_Receiver);
-    }
-    else
-    {
-      DEBUGLOG("No live receiver present");
-    }
-
-    if (m_Receiver0)
-    {
-      DEBUGLOG("Detaching Live Receiver0");
-      m_Device->Detach(m_Receiver0);
     }
     else
     {
@@ -516,19 +510,11 @@ void cVideoInput::Close()
       DELETENULL(m_Receiver);
     }
 
-    if (m_Receiver0)
-    {
-      DEBUGLOG("Deleting Live Receiver0");
-      DELETENULL(m_Receiver0);
-    }
-
     if (m_PatFilter)
     {
       DEBUGLOG("Deleting Live Filter");
       DELETENULL(m_PatFilter);
     }
-
-    //m_Device->SetCurrentChannel(NULL);
   }
   m_Channel = NULL;
   m_Device = NULL;
@@ -549,36 +535,7 @@ bool cVideoInput::IsOpen()
 
 cChannel *cVideoInput::PmtChannel()
 {
-  return &m_Receiver->m_PmtChannel;
-}
-
-void cVideoInput::PmtChange(int pidChange)
-{
-  if (pidChange)
-  {
-    INFOLOG("Video Input - new pmt, attaching receiver");
-    m_PmtChange = true;
-    m_Device->Detach(m_Receiver);
-    m_Receiver->SetPids(NULL);
-    m_Receiver->SetPids(&m_Receiver->m_PmtChannel);
-    m_Receiver->AddPid(m_Receiver->m_PmtChannel.Tpid());
-
-    if (DisableScrambleTimeout)
-    {
-      m_Receiver->SetPriority(MINPRIORITY);
-      m_Device->AttachReceiver(m_Receiver);
-      cCamSlot *cs = m_Device->CamSlot();
-      if (cs)
-        cs->StartDecrypting();
-      m_Receiver->SetPriority(m_Priority);
-    }
-    else
-    {
-      m_Device->AttachReceiver(m_Receiver);
-    }
-
-    m_SeenPmt = true;
-  }
+  return &m_PmtChannel;
 }
 
 inline void cVideoInput::Receive(const uchar *data, int length)
@@ -586,7 +543,7 @@ inline void cVideoInput::Receive(const uchar *data, int length)
   if (m_PmtChange)
   {
      // generate pat/pmt so we can configure parsers later
-     cPatPmtGenerator patPmtGenerator(&m_Receiver->m_PmtChannel);
+     cPatPmtGenerator patPmtGenerator(&m_PmtChannel);
      m_VideoBuffer->Put(patPmtGenerator.GetPat(), TS_SIZE);
      int Index = 0;
      while (uchar *pmt = patPmtGenerator.GetPmt(Index))
@@ -601,23 +558,4 @@ void cVideoInput::Retune()
   cMutexLock lock(&m_Mutex);
   m_IsRetune = true;
   m_Event.Broadcast();
-}
-
-void cVideoInput::Action()
-{
-  cTimeMs starttime;
-
-  while (Running())
-  {
-    if (starttime.Elapsed() > (unsigned int)PmtTimeout*1000)
-    {
-      INFOLOG("VideoInput: no pat/pmt within timeout, falling back to channel pids");
-      m_Receiver->m_PmtChannel = *m_Channel;
-      PmtChange(true);
-    }
-    if (m_SeenPmt)
-      break;
-
-    usleep(1000);
-  }
 }
