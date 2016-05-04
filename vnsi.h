@@ -28,7 +28,7 @@
 #include <vdr/thread.h>
 #include "vnsiserver.h"
 
-static const char *VERSION        = "1.3.1";
+static const char *VERSION        = "1.4.0";
 static const char *DESCRIPTION    = "VDR-Network-Streaming-Interface (VNSI) Server";
 
 extern int PmtTimeout;
@@ -38,6 +38,7 @@ extern int TimeshiftBufferFileSize;
 extern char TimeshiftBufferDir[PATH_MAX];
 extern int PlayRecording;
 extern int AvoidEPGScan;
+extern int DisableScrambleTimeout;
 
 class cDvbVsniDeviceProbe : public cDvbDeviceProbe
 {

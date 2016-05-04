@@ -50,7 +50,7 @@ protected:
 };
 
 cVideoBufferSimple::cVideoBufferSimple()
-  :m_Buffer(MEGABYTE(3), TS_SIZE * 2, false)
+  :m_Buffer(MEGABYTE(5), TS_SIZE * 2, false)
 {
   m_Buffer.SetTimeouts(0, 100);
   m_BytesConsumed = 0;
