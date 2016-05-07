@@ -79,6 +79,8 @@ INCLUDES += -I$(VDRSRC)/include
 endif
 
 DEFINES += -D_GNU_SOURCE -DPLUGIN_NAME_I18N='"$(PLUGIN)"' -DVNSI_SERVER_VERSION='"$(VERSION)"'
+CXXFLAGS += -std=c++11
+export CXXFLAGS
 
 ifeq ($(DEBUG),1)
 DEFINES += -DDEBUG
@@ -90,7 +92,7 @@ OBJS = vnsi.o bitstream.o vnsiclient.o channelscancontrol.o config.o cxsocket.o 
        parser_AC3.o parser_DTS.o parser_h264.o parser_MPEGAudio.o parser_MPEGVideo.o \
        parser_Subtitle.o parser_Teletext.o streamer.o recplayer.o requestpacket.o responsepacket.o \
        vnsiserver.o hash.o recordingscache.o setup.o vnsiosd.o demuxer.o videobuffer.o \
-       videoinput.o channelfilter.o status.o
+       videoinput.o channelfilter.o status.o vnsitimer.o
 
 ### The main target:
 

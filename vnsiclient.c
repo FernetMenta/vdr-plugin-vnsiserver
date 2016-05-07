@@ -54,7 +54,7 @@
 cMutex cVNSIClient::m_timerLock;
 bool cVNSIClient::m_inhibidDataUpdates = false;
 
-cVNSIClient::cVNSIClient(int fd, unsigned int id, const char *ClientAdr)
+cVNSIClient::cVNSIClient(int fd, unsigned int id, const char *ClientAdr, CVNSITimers &timers)
   : m_Id(id),
     m_loggedIn(false),
     m_StatusInterfaceEnabled(false),
@@ -64,7 +64,8 @@ cVNSIClient::cVNSIClient(int fd, unsigned int id, const char *ClientAdr)
     m_ClientAddress(ClientAdr),
     m_RecPlayer(NULL),
     m_Osd(NULL),
-    m_ChannelScanControl(this)
+    m_ChannelScanControl(this),
+    m_vnsiTimers(timers)
 {
   m_socket.SetHandle(fd);
   SetDescription("VNSI Client %u->%s", id, ClientAdr);
@@ -182,12 +183,7 @@ void cVNSIClient::StopChannelStreaming()
   m_Streamer = NULL;
 }
 
-void cVNSIClient::TimerChange(const cTimer *Timer, eTimerChange Change)
-{
-  TimerChange();
-}
-
-void cVNSIClient::TimerChange()
+void cVNSIClient::SignalTimerChange()
 {
   cMutexLock lock(&m_msgLock);
 
@@ -1428,7 +1424,7 @@ bool cVNSIClient::processTIMER_GetCount(cRequestPacket &req) /* OPCODE 80 */
 
 #if VDRVERSNUM >= 20301
   LOCK_TIMERS_READ;
-  int count = Timers->Count();
+  int count = Timers->Count() + m_vnsiTimers.GetTimersCount();
 #else
   int count = Timers.Count();
 #endif
@@ -1451,12 +1447,42 @@ bool cVNSIClient::processTIMER_Get(cRequestPacket &req) /* OPCODE 81 */
   cResponsePacket resp;
   resp.init(req.getRequestID());
 
-#if VDRVERSNUM >= 20301
-  LOCK_TIMERS_READ;
-  int numTimers = Timers->Count();
-  if (numTimers > 0)
+  if (number & m_vnsiTimers.INDEX_MASK)
   {
-    const cTimer *timer = Timers->Get(number-1);
+    CVNSITimer timer;
+    if (m_vnsiTimers.GetTimer(number, timer))
+    {
+      resp.add_U32(VNSI_RET_OK);
+
+      resp.add_U32(VNSI_TIMER_TYPE_EPG_SEARCH);
+      resp.add_U32(number);
+      resp.add_U32(timer.m_enabled);
+      resp.add_U32(0);
+      resp.add_U32(0);
+      resp.add_U32(timer.m_priority);
+      resp.add_U32(timer.m_lifetime);
+      resp.add_U32(0);
+      resp.add_U32(timer.m_channelUID);
+      resp.add_U32(0);
+      resp.add_U32(0);
+      resp.add_U32(0);
+      resp.add_U32(0);
+      resp.add_String(timer.m_name.c_str());
+      resp.add_String(timer.m_search.c_str());
+    }
+    else
+    {
+      resp.add_U32(VNSI_RET_DATAUNKNOWN);
+    }
+  }
+  else
+  {
+#if VDRVERSNUM >= 20301
+    LOCK_TIMERS_READ;
+    int numTimers = Timers->Count();
+    if (numTimers > 0)
+    {
+      const cTimer *timer = Timers->Get(number-1);
 #else
     int numTimers = Timers.Count();
     if (numTimers > 0)
@@ -1499,6 +1525,7 @@ bool cVNSIClient::processTIMER_Get(cRequestPacket &req) /* OPCODE 81 */
     }
     else
       resp.add_U32(VNSI_RET_DATAUNKNOWN);
+  }
 
   resp.finalise();
   m_socket.write(resp.getPtr(), resp.getLen());
@@ -1514,13 +1541,14 @@ bool cVNSIClient::processTIMER_GetList(cRequestPacket &req) /* OPCODE 82 */
 
 #if VDRVERSNUM >= 20301
   LOCK_TIMERS_READ;
-  int numTimers = Timers->Count();
+  int numVdrTimers = Timers->Count();
+  int numTimers = numVdrTimers + m_vnsiTimers.GetTimersCount();
   resp.add_U32(numTimers);
-  for (int i = 0; i < numTimers; i++)
+  for (int i = 0; i < numVdrTimers; i++)
   {
     const cTimer *timer = Timers->Get(i);
 #else
-  int numTimers = Timers.Count();
+  int numTimers = Timers.Count() + m_vnsiTimers.GetTimersCount();
   resp.add_U32(numTimers);
   for (int i = 0; i < numTimers; i++)
   {
@@ -1557,6 +1585,27 @@ bool cVNSIClient::processTIMER_GetList(cRequestPacket &req) /* OPCODE 82 */
     }
   }
 
+  std::vector<CVNSITimer> vnsitimers = m_vnsiTimers.GetTimers();
+  int idx = m_vnsiTimers.INDEX_MASK;
+  for (auto &vnsitimer : vnsitimers)
+  {
+    resp.add_U32(VNSI_TIMER_TYPE_EPG_SEARCH);
+    resp.add_U32(idx);
+    resp.add_U32(vnsitimer.m_enabled);
+    resp.add_U32(0);
+    resp.add_U32(0);
+    resp.add_U32(vnsitimer.m_priority);
+    resp.add_U32(vnsitimer.m_lifetime);
+    resp.add_U32(0);
+    resp.add_U32(vnsitimer.m_channelUID);
+    resp.add_U32(0);
+    resp.add_U32(0);
+    resp.add_U32(0);
+    resp.add_U32(0);
+    resp.add_String(vnsitimer.m_name.c_str());
+    resp.add_String(vnsitimer.m_search.c_str());
+    idx++;
+  }
   resp.finalise();
   m_socket.write(resp.getPtr(), resp.getLen());
   return true;
@@ -1566,12 +1615,11 @@ bool cVNSIClient::processTIMER_Add(cRequestPacket &req) /* OPCODE 83 */
 {
   cMutexLock lock(&m_timerLock);
 
-  bool vps = false;
+  uint32_t type = 0;
+  std::string epgsearch;
   if (m_protocolVersion >= 9)
   {
-    uint32_t type = req.extract_U32();
-    if (type == VNSI_TIMER_TYPE_VPS)
-      vps = true;
+    type = req.extract_U32();
   }
   uint32_t flags      = req.extract_U32() > 0 ? tfActive : tfNone;
   uint32_t priority   = req.extract_U32();
@@ -1584,7 +1632,7 @@ bool cVNSIClient::processTIMER_Add(cRequestPacket &req) /* OPCODE 83 */
   const char *file    = req.extract_String();
   const char *aux     = req.extract_String();
   if (m_protocolVersion >= 9)
-    const char *search  = req.extract_String();
+    epgsearch = req.extract_String();
 
   // handle instant timers
   if(startTime == -1 || startTime == 0)
@@ -1600,7 +1648,7 @@ bool cVNSIClient::processTIMER_Add(cRequestPacket &req) /* OPCODE 83 */
   time = localtime_r(&stopTime, &tm_r);
   int stop = time->tm_hour * 100 + time->tm_min;
 
-  if (vps)
+  if (type == VNSI_TIMER_TYPE_VPS)
     flags |= tfVps;
 
   cString buffer;
@@ -1613,45 +1661,59 @@ bool cVNSIClient::processTIMER_Add(cRequestPacket &req) /* OPCODE 83 */
   cResponsePacket resp;
   resp.init(req.getRequestID());
 
-  std::auto_ptr<cTimer> timer(new cTimer);
-  if (timer->Parse(buffer))
+  if (type == VNSI_TIMER_TYPE_EPG_SEARCH)
   {
-#if VDRVERSNUM >= 20301
-    LOCK_TIMERS_WRITE;
-    const cTimer *t = Timers->GetTimer(timer.get());
-    if (!t)
-    {
-      INFOLOG("Timer %s added", *timer->ToDescr());
-      Timers->Add(timer.release());
-      Timers->SetModified();
-      resp.add_U32(VNSI_RET_OK);
-      resp.finalise();
-      m_socket.write(resp.getPtr(), resp.getLen());
-      return true;
-    }
-#else
-    cTimer *t = Timers.GetTimer(timer.get());
-    if (!t)
-    {
-      INFOLOG("Timer %s added", *timer->ToDescr());
-      Timers.Add(timer.release());
-      Timers.SetModified();
-      resp.add_U32(VNSI_RET_OK);
-      resp.finalise();
-      m_socket.write(resp.getPtr(), resp.getLen());
-      return true;
-    }
-#endif
-    else
-    {
-      ERRORLOG("Timer already defined: %d %s", t->Index() + 1, *t->ToText());
-      resp.add_U32(VNSI_RET_DATALOCKED);
-    }
+    CVNSITimer vnsitimer;
+    vnsitimer.m_name = aux;
+    vnsitimer.m_channelUID = channelid;
+    vnsitimer.m_search = epgsearch;
+    vnsitimer.m_enabled = flags;
+    vnsitimer.m_lifetime = lifetime;
+    m_vnsiTimers.Add(vnsitimer);
+    resp.add_U32(VNSI_RET_OK);
   }
   else
   {
-    ERRORLOG("Error in timer settings");
-    resp.add_U32(VNSI_RET_DATAINVALID);
+    std::unique_ptr<cTimer> timer(new cTimer);
+    if (timer->Parse(buffer))
+    {
+#if VDRVERSNUM >= 20301
+      LOCK_TIMERS_WRITE;
+      const cTimer *t = Timers->GetTimer(timer.get());
+      if (!t)
+      {
+        INFOLOG("Timer %s added", *timer->ToDescr());
+        Timers->Add(timer.release());
+        Timers->SetModified();
+        resp.add_U32(VNSI_RET_OK);
+        resp.finalise();
+        m_socket.write(resp.getPtr(), resp.getLen());
+        return true;
+      }
+#else
+      cTimer *t = Timers.GetTimer(timer.get());
+      if (!t)
+      {
+        INFOLOG("Timer %s added", *timer->ToDescr());
+        Timers.Add(timer.release());
+        Timers.SetModified();
+        resp.add_U32(VNSI_RET_OK);
+        resp.finalise();
+        m_socket.write(resp.getPtr(), resp.getLen());
+        return true;
+      }
+#endif
+      else
+      {
+        ERRORLOG("Timer already defined: %d %s", t->Index() + 1, *t->ToText());
+        resp.add_U32(VNSI_RET_DATALOCKED);
+      }
+    }
+    else
+    {
+      ERRORLOG("Error in timer settings");
+      resp.add_U32(VNSI_RET_DATAINVALID);
+    }
   }
 
   resp.finalise();
@@ -1663,91 +1725,107 @@ bool cVNSIClient::processTIMER_Delete(cRequestPacket &req) /* OPCODE 84 */
 {
   cMutexLock lock(&m_timerLock);
 
-#if VDRVERSNUM >= 20301
-  LOCK_TIMERS_WRITE;
-  int timersCount = Timers->Count();
-#else
-  int timersCount = Timers.Count();
-#endif
-
   uint32_t number = req.extract_U32();
   bool     force  = req.extract_U32();
 
   cResponsePacket resp;
   resp.init(req.getRequestID());
 
-  if (number <= 0 || number > (uint32_t)timersCount)
+  if (number & m_vnsiTimers.INDEX_MASK)
   {
-    ERRORLOG("Unable to delete timer - invalid timer identifier");
-    resp.add_U32(VNSI_RET_DATAINVALID);
-  }
-  else
-  {
-#if VDRVERSNUM >= 20301
-    cTimer *timer = Timers->Get(number-1);
-    if (timer)
+    if (m_vnsiTimers.DeleteTimer(number))
     {
-      Timers->SetExplicitModify();
-      {
-        if (timer->Recording())
-        {
-          if (force)
-          {
-            timer->Skip();
-            cRecordControls::Process(Timers, time(NULL));
-          }
-          else
-          {
-            ERRORLOG("Timer \"%i\" is recording and can be deleted (use force=1 to stop it)", number);
-            resp.add_U32(VNSI_RET_RECRUNNING);
-            resp.finalise();
-            m_socket.write(resp.getPtr(), resp.getLen());
-            return true;
-          }
-        }
-        INFOLOG("Deleting timer %s", *timer->ToDescr());
-        Timers->Del(timer);
-        Timers->SetModified();
-        resp.add_U32(VNSI_RET_OK);
-      }
-#else
-    cTimer *timer = Timers.Get(number-1);
-    if (timer)
-    {
-      if (!Timers.BeingEdited())
-      {
-        if (timer->Recording())
-        {
-          if (force)
-          {
-            timer->Skip();
-            cRecordControls::Process(time(NULL));
-          }
-          else
-          {
-            ERRORLOG("Timer \"%i\" is recording and can be deleted (use force=1 to stop it)", number);
-            resp.add_U32(VNSI_RET_RECRUNNING);
-            resp.finalise();
-            m_socket.write(resp.getPtr(), resp.getLen());
-            return true;
-          }
-        }
-        INFOLOG("Deleting timer %s", *timer->ToDescr());
-        Timers.Del(timer);
-        Timers.SetModified();
-        resp.add_U32(VNSI_RET_OK);
-      }
-      else
-      {
-        ERRORLOG("Unable to delete timer - timers being edited at VDR");
-        resp.add_U32(VNSI_RET_DATALOCKED);
-      }
-#endif
+      INFOLOG("Deleting vnsitimer %d", number);
+      resp.add_U32(VNSI_RET_OK);
     }
     else
     {
       ERRORLOG("Unable to delete timer - invalid timer identifier");
       resp.add_U32(VNSI_RET_DATAINVALID);
+    }
+  }
+  else
+  {
+#if VDRVERSNUM >= 20301
+    LOCK_TIMERS_WRITE;
+    int timersCount = Timers->Count();
+#else
+    int timersCount = Timers.Count();
+#endif
+
+    if (number <= 0 || number > (uint32_t)timersCount)
+    {
+      ERRORLOG("Unable to delete timer - invalid timer identifier");
+      resp.add_U32(VNSI_RET_DATAINVALID);
+    }
+    else
+    {
+#if VDRVERSNUM >= 20301
+      cTimer *timer = Timers->Get(number-1);
+      if (timer)
+      {
+        Timers->SetExplicitModify();
+        {
+          if (timer->Recording())
+          {
+            if (force)
+            {
+              timer->Skip();
+              cRecordControls::Process(Timers, time(NULL));
+            }
+            else
+            {
+              ERRORLOG("Timer \"%i\" is recording and can be deleted (use force=1 to stop it)", number);
+              resp.add_U32(VNSI_RET_RECRUNNING);
+              resp.finalise();
+              m_socket.write(resp.getPtr(), resp.getLen());
+              return true;
+            }
+          }
+          INFOLOG("Deleting timer %s", *timer->ToDescr());
+          Timers->Del(timer);
+          Timers->SetModified();
+          resp.add_U32(VNSI_RET_OK);
+        }
+#else
+      cTimer *timer = Timers.Get(number-1);
+      if (timer)
+      {
+        if (!Timers.BeingEdited())
+        {
+          if (timer->Recording())
+          {
+            if (force)
+            {
+              timer->Skip();
+              cRecordControls::Process(time(NULL));
+            }
+            else
+            {
+              ERRORLOG("Timer \"%i\" is recording and can be deleted (use force=1 to stop it)", number);
+              resp.add_U32(VNSI_RET_RECRUNNING);
+              resp.finalise();
+              m_socket.write(resp.getPtr(), resp.getLen());
+              return true;
+            }
+          }
+          INFOLOG("Deleting timer %s", *timer->ToDescr());
+          Timers.Del(timer);
+          Timers.SetModified();
+          resp.add_U32(VNSI_RET_OK);
+        }
+        else
+        {
+          ERRORLOG("Unable to delete timer - timers being edited at VDR");
+          resp.add_U32(VNSI_RET_DATALOCKED);
+        }
+#endif
+      }
+      else
+      {
+        ERRORLOG("Unable to delete timer - invalid timer identifier");
+        resp.add_U32(VNSI_RET_DATAINVALID);
+      }
     }
   }
   resp.finalise();
@@ -1759,59 +1837,74 @@ bool cVNSIClient::processTIMER_Update(cRequestPacket &req) /* OPCODE 85 */
 {
   cMutexLock lock(&m_timerLock);
 
-  bool vps = false;
-  int length      = req.getDataLength();
-  uint32_t index  = req.extract_U32();
-  if (m_protocolVersion >= 9)
-  {
-    uint32_t type  = req.extract_U32();
-    if (type == VNSI_TIMER_TYPE_VPS)
-      vps = true;
-  }
-  bool active     = req.extract_U32();
+  bool active;
+  uint32_t priority, lifetime, channelid, weekdays, type;
+  time_t startTime, stopTime, day;
+  const char *file;
+  const char *aux;
+  std::string epgsearch;
 
-#if VDRVERSNUM >= 20301
-  LOCK_TIMERS_WRITE;
-  cTimer *timer = Timers->Get(index - 1);
-#else
-  cTimer *timer = Timers.Get(index - 1);
-#endif
+  uint32_t index  = req.extract_U32();
 
   cResponsePacket resp;
   resp.init(req.getRequestID());
 
-  if (!timer)
+  if (m_protocolVersion >= 9)
   {
-    ERRORLOG("Timer \"%u\" not defined", index);
-    resp.add_U32(VNSI_RET_DATAUNKNOWN);
-    resp.finalise();
-    m_socket.write(resp.getPtr(), resp.getLen());
-    return true;
+    type  = req.extract_U32();
+  }
+  active = req.extract_U32();
+  priority = req.extract_U32();
+  lifetime = req.extract_U32();
+  channelid = req.extract_U32();
+  startTime = req.extract_U32();
+  stopTime = req.extract_U32();
+  day = req.extract_U32();
+  weekdays = req.extract_U32();
+  file = req.extract_String();
+  aux = req.extract_String();
+  if (m_protocolVersion >= 9)
+  {
+    epgsearch = req.extract_String();
   }
 
-  cTimer t = *timer;
-
-  if (length == 8)
+  if (index & m_vnsiTimers.INDEX_MASK)
   {
-    if (active)
-      t.SetFlags(tfActive);
-    else
-      t.ClrFlags(tfActive);
+    CVNSITimer vnsitimer;
+    vnsitimer.m_name = aux;
+    vnsitimer.m_channelUID = channelid;
+    vnsitimer.m_search = epgsearch;
+    vnsitimer.m_enabled = active;
+    vnsitimer.m_priority = priority;
+    vnsitimer.m_lifetime = lifetime;
+    if (!m_vnsiTimers.UpdateTimer(index, vnsitimer))
+    {
+      ERRORLOG("Timer \"%u\" not defined", index);
+      resp.add_U32(VNSI_RET_DATAUNKNOWN);
+      resp.finalise();
+      m_socket.write(resp.getPtr(), resp.getLen());
+      return true;
+    }
   }
   else
   {
-    uint32_t flags      = active ? tfActive : tfNone;
-    uint32_t priority   = req.extract_U32();
-    uint32_t lifetime   = req.extract_U32();
-    uint32_t channelid  = req.extract_U32();
-    time_t startTime    = req.extract_U32();
-    time_t stopTime     = req.extract_U32();
-    time_t day          = req.extract_U32();
-    uint32_t weekdays   = req.extract_U32();
-    const char *file    = req.extract_String();
-    const char *aux     = req.extract_String();
-    if (m_protocolVersion >= 9)
-      const char *search  = req.extract_String();
+#if VDRVERSNUM >= 20301
+    LOCK_TIMERS_WRITE;
+    cTimer *timer = Timers->Get(index - 1);
+#else
+    cTimer *timer = Timers.Get(index - 1);
+#endif
+
+    if (!timer)
+    {
+      ERRORLOG("Timer \"%u\" not defined", index);
+      resp.add_U32(VNSI_RET_DATAUNKNOWN);
+      resp.finalise();
+      m_socket.write(resp.getPtr(), resp.getLen());
+      return true;
+    }
+
+    cTimer t = *timer;
 
     struct tm tm_r;
     struct tm *time = localtime_r(&startTime, &tm_r);
@@ -1821,7 +1914,8 @@ bool cVNSIClient::processTIMER_Update(cRequestPacket &req) /* OPCODE 85 */
     time = localtime_r(&stopTime, &tm_r);
     int stop = time->tm_hour * 100 + time->tm_min;
 
-    if (vps)
+    uint32_t flags = active > 0 ? tfActive : tfNone;
+    if (type == VNSI_TIMER_TYPE_VPS)
       flags |= tfVps;
 
     cString buffer;
@@ -1839,14 +1933,15 @@ bool cVNSIClient::processTIMER_Update(cRequestPacket &req) /* OPCODE 85 */
       m_socket.write(resp.getPtr(), resp.getLen());
       return true;
     }
-  }
 
-  *timer = t;
+    *timer = t;
 #if VDRVERSNUM >= 20301
-  Timers->SetModified();
+    Timers->SetModified();
 #else
-  Timers.SetModified();
+    Timers.SetModified();
 #endif
+
+  }
 
   resp.add_U32(VNSI_RET_OK);
   resp.finalise();
@@ -1858,7 +1953,11 @@ bool cVNSIClient::processTIMER_GetTypes(cRequestPacket &req) /* OPCODE 80 */
 {
   cResponsePacket resp;
   resp.init(req.getRequestID());
-  resp.add_U32(0);
+#if VDRVERSNUM >= 20301
+  resp.add_U32(VNSI_TIMER_TYPE_EPG_SEARCH);
+#else
+  resp.add_U32();
+#endif
   resp.finalise();
   m_socket.write(resp.getPtr(), resp.getLen());
   return true;

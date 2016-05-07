@@ -31,9 +31,19 @@
 #include <vdr/videodir.h>
 #include <vdr/shutdown.h>
 
+cVNSIStatus::cVNSIStatus() : cThread("VNSIStatus")
+{
+}
+
 cVNSIStatus::~cVNSIStatus()
 {
   Shutdown();
+}
+
+void cVNSIStatus::Init(CVNSITimers *timers)
+{
+  m_vnsiTimers = timers;
+  Start();
 }
 
 void cVNSIStatus::Shutdown()
@@ -84,6 +94,10 @@ void cVNSIStatus::Action(void)
   int timerState = -1;
   Timers.Modified(timerState);
 #endif
+
+  // vnsitimer
+  int vnsitimerState;
+  m_vnsiTimers->StateChange(vnsitimerState);
 
   // last update of epg
 #if VDRVERSNUM >= 20301
@@ -139,7 +153,7 @@ void cVNSIStatus::Action(void)
      * Don't to updates during running channel scan, KODI's PVR manager becomes
      * restarted of finished scan.
      */
-    if (!cVNSIClient::InhibidDataUpdates() && m_clients.size() > 0)
+    if (!cVNSIClient::InhibidDataUpdates())
     {
       // reset inactivity timeout as long as there are clients connected
       ShutdownHandler.SetUserInactiveTimeout();
@@ -187,7 +201,16 @@ void cVNSIStatus::Action(void)
         INFOLOG("Requesting clients to reload timers");
         for (ClientList::iterator i = m_clients.begin(); i != m_clients.end(); i++)
         {
-          (*i)->TimerChange();
+          (*i)->SignalTimerChange();
+        }
+      }
+
+      if (m_vnsiTimers->StateChange(vnsitimerState))
+      {
+        INFOLOG("Requesting clients to reload timers");
+        for (ClientList::iterator i = m_clients.begin(); i != m_clients.end(); i++)
+        {
+          (*i)->SignalTimerChange();
         }
       }
 
@@ -202,6 +225,7 @@ void cVNSIStatus::Action(void)
             (*i)->EpgChange();
           }
           epgTimer.Set(5000);
+          m_vnsiTimers->Scan();
         }
       }
 #else
