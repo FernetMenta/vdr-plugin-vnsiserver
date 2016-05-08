@@ -84,6 +84,7 @@ cVNSIServer::~cVNSIServer()
 {
   Cancel();
   m_Status.Shutdown();
+  m_timers.Shutdown();
   INFOLOG("VNSI Server stopped");
 }
 
@@ -133,7 +134,7 @@ void cVNSIServer::NewClientConnected(int fd)
 #endif
 
   INFOLOG("Client with ID %d connected: %s", m_IdCnt, cxSocket::ip2txt(sin.sin_addr.s_addr, sin.sin_port, buf));
-  cVNSIClient *connection = new cVNSIClient(fd, m_IdCnt, cxSocket::ip2txt(sin.sin_addr.s_addr, sin.sin_port, buf));
+  cVNSIClient *connection = new cVNSIClient(fd, m_IdCnt, cxSocket::ip2txt(sin.sin_addr.s_addr, sin.sin_port, buf), m_timers);
   m_Status.AddClient(connection);
   m_IdCnt++;
 }
@@ -155,7 +156,9 @@ void cVNSIServer::Action(void)
 
   VNSIChannelFilter.Load();
   VNSIChannelFilter.SortChannels();
-  m_Status.Start();
+  m_Status.Init(&m_timers);
+  m_timers.Load();
+  m_timers.Start();
 
   m_ServerFD = socket(AF_INET, SOCK_STREAM, 0);
   if(m_ServerFD == -1)

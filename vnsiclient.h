@@ -46,6 +46,7 @@ class cResponsePacket;
 class cRecPlayer;
 class cCmdControl;
 class cVnsiOsdProvider;
+class CVNSITimers;
 
 class cVNSIClient : public cThread
                   , public cStatus
@@ -74,26 +75,25 @@ private:
     time_t lastEvent;
   } sEpgUpdate;
   std::map<int, sEpgUpdate> m_epgUpdate;
+  CVNSITimers &m_vnsiTimers;
 
 protected:
 
   bool processRequest(cRequestPacket &req);
 
-  virtual void Action(void);
-
-  virtual void TimerChange(const cTimer *Timer, eTimerChange Change);
-  virtual void Recording(const cDevice *Device, const char *Name, const char *FileName, bool On);
-  virtual void OsdStatusMessage(const char *Message);
-  virtual void ChannelChange(const cChannel *Channel);
+  virtual void Action(void) override;
+  virtual void Recording(const cDevice *Device, const char *Name, const char *FileName, bool On) override;
+  virtual void OsdStatusMessage(const char *Message) override;
+  virtual void ChannelChange(const cChannel *Channel) override;
 
 public:
 
-  cVNSIClient(int fd, unsigned int id, const char *ClientAdr);
+  cVNSIClient(int fd, unsigned int id, const char *ClientAdr, CVNSITimers &timers);
   virtual ~cVNSIClient();
 
   void ChannelsChange();
   void RecordingsChange();
-  void TimerChange();
+  void SignalTimerChange();
   void EpgChange();
   static bool InhibidDataUpdates() { return m_inhibidDataUpdates; }
 

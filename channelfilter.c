@@ -46,6 +46,8 @@ bool cVNSIProvider::operator==(const cVNSIProvider &rhs)
 {
   if (rhs.m_caid != m_caid)
     return false;
+  if (m_name.empty())
+    return false;
   if (rhs.m_name.compare(m_name) != 0)
     return false;
   return true;

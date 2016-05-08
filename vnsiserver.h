@@ -30,6 +30,7 @@
 
 #include "config.h"
 #include "status.h"
+#include "vnsitimer.h"
 
 class cVNSIClient;
 
@@ -40,10 +41,11 @@ protected:
   virtual void Action(void);
   void NewClientConnected(int fd);
 
-  int           m_ServerPort;
-  int           m_ServerFD;
-  cString       m_AllowedHostsFile;
-  cVNSIStatus   m_Status;
+  int m_ServerPort;
+  int m_ServerFD;
+  cString m_AllowedHostsFile;
+  CVNSITimers m_timers;
+  cVNSIStatus m_Status;
 
   static unsigned int m_IdCnt;
 

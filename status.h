@@ -26,6 +26,7 @@
 
 #include <vdr/thread.h>
 #include <list>
+#include "vnsitimer.h"
 
 class cVNSIClient;
 
@@ -34,8 +35,9 @@ typedef std::list<cVNSIClient*> ClientList;
 class cVNSIStatus : public cThread
 {
 public:
-  cVNSIStatus() : cThread("VNSI Status") {};
+  cVNSIStatus();
   virtual ~cVNSIStatus();
+  void Init(CVNSITimers *timers);
   void Shutdown();
   void AddClient(cVNSIClient* client);
 
@@ -44,4 +46,5 @@ protected:
 
   ClientList m_clients;
   cMutex m_mutex;
+  CVNSITimers *m_vnsiTimers;
 };

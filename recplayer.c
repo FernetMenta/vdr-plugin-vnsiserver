@@ -41,19 +41,14 @@
 cRecPlayer::cRecPlayer(const cRecording* rec, bool inProgress)
   :m_inProgress(inProgress),
    m_recordingFilename(rec->FileName()),
-#if VDRVERSNUM < 10703
-   m_pesrecording(true),
-   m_indexFile(m_recordingFilename.c_str(), false),
-#else
    m_pesrecording(rec->IsPesRecording()),
    m_indexFile(m_recordingFilename.c_str(), false, m_pesrecording),
-#endif
    m_file(-1), m_fileOpen(-1)
 {
   // FIXME find out max file path / name lengths
-#if VDRVERSNUM >= 10703
-  if(m_pesrecording) INFOLOG("recording '%s' is a PES recording", m_recordingFilename.c_str());
-#endif
+
+  if(m_pesrecording)
+    INFOLOG("recording '%s' is a PES recording", m_recordingFilename.c_str());
 
   scan();
 }
@@ -102,7 +97,7 @@ void cRecPlayer::reScan()
 
   m_totalLength = 0;
 
-  for(int i = 0; ; i++) // i think we only need one possible loop
+  for(size_t i = 0; ; i++) // i think we only need one possible loop
   {
     fileNameFromIndex(i);
 
@@ -260,17 +255,10 @@ int cRecPlayer::getBlock(unsigned char* buffer, uint64_t position, int amount)
 
 uint64_t cRecPlayer::positionFromFrameNumber(uint32_t frameNumber)
 {
-#if VDRVERSNUM < 10703
-  unsigned char retFileNumber;
-  int retFileOffset;
-  unsigned char retPicType;
-#else
   uint16_t retFileNumber;
   off_t retFileOffset;
   bool retPicType;
-#endif
   int retLength;
-
 
   if (!m_indexFile.Get((int)frameNumber, &retFileNumber, &retFileOffset, &retPicType, &retLength))
     return 0;
@@ -313,13 +301,8 @@ bool cRecPlayer::getNextIFrame(uint32_t frameNumber, uint32_t direction, uint64_
   // 0 = backwards
   // 1 = forwards
 
-#if VDRVERSNUM < 10703
-  unsigned char waste1;
-  int waste2;
-#else
   uint16_t waste1;
   off_t waste2;
-#endif
 
   int iframeLength;
   int indexReturnFrameNumber;

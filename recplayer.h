@@ -70,15 +70,15 @@ private:
   void checkBufferSize(int s);
 
   const bool m_inProgress;
-  const bool m_pesrecording;
-  char        m_fileName[512];
   const std::string m_recordingFilename;
+  const bool m_pesrecording;
   cIndexFile m_indexFile;
-  int         m_file;
-  int         m_fileOpen;
+  int m_file;
+  int m_fileOpen;
+  char m_fileName[512];
   std::vector<cSegment> m_segments;
-  uint64_t    m_totalLength;
-  uint32_t    m_totalFrames;
+  uint64_t m_totalLength;
+  uint32_t m_totalFrames;
 };
 
 #endif // VNSI_RECPLAYER_H
