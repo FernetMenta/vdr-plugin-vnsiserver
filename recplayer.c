@@ -41,7 +41,6 @@
 cRecPlayer::cRecPlayer(const cRecording* rec, bool inProgress)
   :m_inProgress(inProgress),
    m_recordingFilename(rec->FileName()),
-
    m_pesrecording(rec->IsPesRecording()),
    m_indexFile(m_recordingFilename.c_str(), false, m_pesrecording),
    m_file(-1), m_fileOpen(-1)
@@ -98,7 +97,7 @@ void cRecPlayer::reScan()
 
   m_totalLength = 0;
 
-  for(int i = 0; ; i++) // i think we only need one possible loop
+  for(size_t i = 0; ; i++) // i think we only need one possible loop
   {
     fileNameFromIndex(i);
 
