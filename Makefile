@@ -36,32 +36,9 @@ APIVERSION = $(shell grep 'define APIVERSION ' $(VDRDIR)/config.h | awk '{ print
 NOCONFIG := 1
 endif
 
-# backwards compatibility version < 1.7.34
-API1733 := $(shell if [ "$(APIVERSION)" \< "1.7.34" ]; then echo true; fi; )
-
-ifdef API1733
-
-VDRSRC = $(VDRDIR)
-VDRSRC ?= ../../..
-ifeq ($(strip $(LIBDIR)),)
-LIBDIR = $(VDRSRC)/PLUGINS/lib
-endif
-
-ifndef NOCONFIG
-CXXFLAGS = $(call PKGCFG,cflags)
-CXXFLAGS += -fPIC
-else
--include $(VDRSRC)/Make.global
--include $(VDRSRC)/Make.config
-endif
-
-export CXXFLAGS
-else
-
 ### Allow user defined options to overwrite defaults:
 
 -include $(PLGCFG)
-endif
 
 ### The name of the distribution archive:
 

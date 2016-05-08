@@ -861,12 +861,7 @@ bool cVNSIClient::processRecStream_Open(cRequestPacket &req) /* OPCODE 40 */
     resp.add_U32(VNSI_RET_OK);
     resp.add_U32(m_RecPlayer->getLengthFrames());
     resp.add_U64(m_RecPlayer->getLengthBytes());
-
-#if VDRVERSNUM < 10703
-    resp.add_U8(true);//added for TS
-#else
     resp.add_U8(recording->IsPesRecording());//added for TS
-#endif
   }
   else
   {
