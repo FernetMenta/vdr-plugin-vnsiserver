@@ -1951,7 +1951,7 @@ bool cVNSIClient::processTIMER_GetTypes(cRequestPacket &req) /* OPCODE 80 */
 #if VDRVERSNUM >= 20301
   resp.add_U32(VNSI_TIMER_TYPE_EPG_SEARCH);
 #else
-  resp.add_U32();
+  resp.add_U32(0);
 #endif
   resp.finalise();
   m_socket.write(resp.getPtr(), resp.getLen());
