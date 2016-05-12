@@ -245,7 +245,7 @@ void cVNSIStatus::Action(void)
         INFOLOG("Requesting clients to reload timers");
         for (ClientList::iterator i = m_clients.begin(); i != m_clients.end(); i++)
         {
-          (*i)->TimerChange();
+          (*i)->SignalTimerChange();
         }
       }
 
