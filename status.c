@@ -156,7 +156,10 @@ void cVNSIStatus::Action(void)
     if (!cVNSIClient::InhibidDataUpdates())
     {
       // reset inactivity timeout as long as there are clients connected
-      ShutdownHandler.SetUserInactiveTimeout();
+      if (m_clients.size() > 0)
+      {
+        ShutdownHandler.SetUserInactiveTimeout();
+      }
 
       // trigger clients to reload the modified channel list
       if(chanTimer.TimedOut())
