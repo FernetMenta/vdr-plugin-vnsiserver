@@ -354,6 +354,7 @@ void cVNSIClient::OsdStatusMessage(const char *Message)
   }
 }
 
+#if VDRVERSNUM >= 20104
 void cVNSIClient::ChannelChange(const cChannel *Channel)
 {
   cMutexLock lock(&m_msgLock);
@@ -362,6 +363,7 @@ void cVNSIClient::ChannelChange(const cChannel *Channel)
     m_Streamer->RetuneChannel(Channel);
   }
 }
+#endif
 
 bool cVNSIClient::processRequest(cRequestPacket &req)
 {

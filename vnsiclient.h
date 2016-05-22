@@ -84,7 +84,9 @@ protected:
   virtual void Action(void) override;
   virtual void Recording(const cDevice *Device, const char *Name, const char *FileName, bool On) override;
   virtual void OsdStatusMessage(const char *Message) override;
+#if VDRVERSNUM >= 20104
   virtual void ChannelChange(const cChannel *Channel) override;
+#endif
 
 public:
 
