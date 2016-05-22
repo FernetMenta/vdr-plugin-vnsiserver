@@ -457,6 +457,7 @@ bool cVideoInput::Open(const cChannel *channel, int priority, cVideoBuffer *vide
       m_Receiver->SetPids(&m_PmtChannel);
       m_Receiver->AddPid(m_PmtChannel.Tpid());
 
+#if VDRVERSNUM >= 20107
       if (DisableScrambleTimeout)
       {
         m_Receiver->SetPriority(MINPRIORITY);
@@ -467,6 +468,7 @@ bool cVideoInput::Open(const cChannel *channel, int priority, cVideoBuffer *vide
         m_Receiver->SetPriority(m_Priority);
       }
       else
+#endif
       {
         m_Device->AttachReceiver(m_Receiver);
       }
