@@ -269,7 +269,7 @@ void CVNSITimers::Action()
   {
     if (!m_doScan)
     {
-      usleep(1000);
+      usleep(1000*1000);
       continue;
     }
     m_doScan = false;
