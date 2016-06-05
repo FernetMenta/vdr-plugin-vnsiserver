@@ -152,6 +152,11 @@ int cVNSIDemuxer::Read(sStreamPacket *packet, sStreamPacket *packet_side_data)
     else if (error < 0)
     {
       m_Error |= abs(error);
+      if (m_Error & ERROR_PES_SCRAMBLE)
+      {
+        ResetParsers();
+        m_WaitIFrame = true;
+      }
     }
   }
 
