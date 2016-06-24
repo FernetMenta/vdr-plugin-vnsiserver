@@ -72,14 +72,14 @@ void cVNSIStatus::Action(void)
 #if VDRVERSNUM >= 20301
   cStateKey chanState;
   const cChannels *channels = cChannels::GetChannelsRead(chanState);
-  chanState.Remove();
+  chanState.Remove(false);
 #endif
 
   // get initial state of the recordings
 #if VDRVERSNUM >= 20301
   cStateKey recState;
   const cRecordings *recordings = cRecordings::GetRecordingsRead(recState);
-  recState.Remove();
+  recState.Remove(false);
 #else
   int recState = -1;
   Recordings.StateChanged(recState);
@@ -89,7 +89,7 @@ void cVNSIStatus::Action(void)
 #if VDRVERSNUM >= 20301
   cStateKey timerState;
   const cTimers *timers = cTimers::GetTimersRead(timerState);
-  timerState.Remove();
+  timerState.Remove(false);
 #else
   int timerState = -1;
   Timers.Modified(timerState);
@@ -103,7 +103,7 @@ void cVNSIStatus::Action(void)
 #if VDRVERSNUM >= 20301
   cStateKey epgState;
   const cSchedules *epg = cSchedules::GetSchedulesRead(epgState);
-  epgState.Remove();
+  epgState.Remove(false);
 #else
   time_t epgUpdate = cSchedules::Modified();
 #endif
@@ -167,7 +167,7 @@ void cVNSIStatus::Action(void)
 #if VDRVERSNUM >= 20301
         if (channels->Lock(chanState))
         {
-          chanState.Remove();
+          chanState.Remove(false);
           INFOLOG("Requesting clients to reload channel list");
           for (ClientList::iterator i = m_clients.begin(); i != m_clients.end(); i++)
             (*i)->ChannelsChange();
@@ -200,7 +200,7 @@ void cVNSIStatus::Action(void)
 
       if (timers->Lock(timerState))
       {
-        timerState.Remove();
+        timerState.Remove(false);
         INFOLOG("Requesting clients to reload timers");
         for (ClientList::iterator i = m_clients.begin(); i != m_clients.end(); i++)
         {
@@ -210,7 +210,7 @@ void cVNSIStatus::Action(void)
 
       if (m_vnsiTimers->StateChange(vnsitimerState))
       {
-        INFOLOG("Requesting clients to reload timers");
+        INFOLOG("Requesting clients to reload vnsi-timers");
         for (ClientList::iterator i = m_clients.begin(); i != m_clients.end(); i++)
         {
           (*i)->SignalTimerChange();
@@ -221,7 +221,7 @@ void cVNSIStatus::Action(void)
       {
         if (epg->Lock(epgState))
         {
-          epgState.Remove();
+          epgState.Remove(false);
           INFOLOG("Requesting clients to load epg");
           for (ClientList::iterator i = m_clients.begin(); i != m_clients.end(); i++)
           {

@@ -260,6 +260,7 @@ bool CVNSITimers::IsDuplicateEvent(cTimers *timers, const cEvent *event)
 void CVNSITimers::Action()
 {
   bool modified;
+  cStateKey timerState;
 
 #if VDRVERSNUM >= 20301
   // set thread priority (nice level)
@@ -280,7 +281,11 @@ void CVNSITimers::Action()
       timers = m_timers;
     }
 
-    LOCK_TIMERS_WRITE;
+    cTimers *Timers = cTimers::GetTimersWrite(timerState);
+    if (!Timers)
+      continue;
+
+    Timers->SetExplicitModify();
     modified = false;
     cStateKey SchedulesStateKey(true);
     const cSchedules *schedules = cSchedules::GetSchedulesRead(SchedulesStateKey);
@@ -339,6 +344,7 @@ void CVNSITimers::Action()
     }
     if (modified)
       Timers->SetModified();
+    timerState.Remove(modified);
     SchedulesStateKey.Remove(modified);
   }
 
