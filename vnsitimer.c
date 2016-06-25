@@ -260,9 +260,10 @@ bool CVNSITimers::IsDuplicateEvent(cTimers *timers, const cEvent *event)
 void CVNSITimers::Action()
 {
   bool modified;
-  cStateKey timerState;
 
 #if VDRVERSNUM >= 20301
+  cStateKey timerState;
+
   // set thread priority (nice level)
   SetPriority(1);
 
