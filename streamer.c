@@ -268,6 +268,16 @@ void cLiveStreamer::Action(void)
           if (!retune)
             m_Event.TimedWait(m_Mutex, 10);
         }
+
+        if (m_Demuxer.GetError() & ERROR_CAM_ERROR)
+        {
+          INFOLOG("CAM error, try reset");
+          cCamSlot *cs = m_Device->CamSlot();
+          if (cs)
+            cs->StopDecrypting();
+          retune = true;
+        }
+
         if (retune)
         {
           m_VideoInput.Close();

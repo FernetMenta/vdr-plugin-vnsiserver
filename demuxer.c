@@ -154,8 +154,12 @@ int cVNSIDemuxer::Read(sStreamPacket *packet, sStreamPacket *packet_side_data)
       m_Error |= abs(error);
       if (m_Error & ERROR_PES_SCRAMBLE)
       {
-        ResetParsers();
-        m_WaitIFrame = true;
+        if (!m_WaitIFrame)
+        {
+          ResetParsers();
+          m_Error |= ERROR_CAM_ERROR;
+          m_WaitIFrame = true;
+        }
       }
     }
   }

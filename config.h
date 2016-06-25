@@ -69,6 +69,7 @@
 #define ERROR_PES_SCRAMBLE  0x02
 #define ERROR_PES_STARTCODE 0x04
 #define ERROR_DEMUX_NODATA  0x10
+#define ERROR_CAM_ERROR     0x20
 
 class cVNSIServerConfig
 {

@@ -457,21 +457,16 @@ bool cVideoInput::Open(const cChannel *channel, int priority, cVideoBuffer *vide
       m_Receiver->SetPids(&m_PmtChannel);
       m_Receiver->AddPid(m_PmtChannel.Tpid());
 
+      m_Device->AttachReceiver(m_Receiver);
+
 #if VDRVERSNUM >= 20107
       if (DisableScrambleTimeout)
       {
-        m_Receiver->SetPriority(MINPRIORITY);
-        m_Device->AttachReceiver(m_Receiver);
         cCamSlot *cs = m_Device->CamSlot();
         if (cs)
-          cs->StartDecrypting();
-        m_Receiver->SetPriority(m_Priority);
+          cs->StartActivation();
       }
-      else
 #endif
-      {
-        m_Device->AttachReceiver(m_Receiver);
-      }
 
       m_VideoBuffer->AttachInput(true);
       return true;
