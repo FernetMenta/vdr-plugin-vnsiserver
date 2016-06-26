@@ -223,12 +223,21 @@ void cVNSIStatus::Action(void)
         {
           epgState.Remove(false);
           INFOLOG("Requesting clients to load epg");
+          bool callAgain = false;
           for (ClientList::iterator i = m_clients.begin(); i != m_clients.end(); i++)
           {
-            (*i)->EpgChange();
+            callAgain |= (*i)->EpgChange();
           }
-          epgTimer.Set(5000);
-          m_vnsiTimers->Scan();
+          if (callAgain)
+          {
+            epgTimer.Set(100);
+            epgState.Reset();
+          }
+          else
+          {
+            epgTimer.Set(5000);
+            m_vnsiTimers->Scan();
+          }
         }
       }
 #else

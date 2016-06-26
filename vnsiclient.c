@@ -222,25 +222,27 @@ void cVNSIClient::RecordingsChange()
   m_socket.write(resp.getPtr(), resp.getLen());
 }
 
-void cVNSIClient::EpgChange()
+bool cVNSIClient::EpgChange()
 {
+  bool callAgain = false;
+
   cMutexLock lock(&m_msgLock);
 
   if (!m_StatusInterfaceEnabled)
-    return;
+    return callAgain;
 
 #if VDRVERSNUM >= 20301
   cStateKey SchedulesStateKey(true);
   const cSchedules *schedules = cSchedules::GetSchedulesRead(SchedulesStateKey);
   if (!schedules)
   {
-    return;
+    return callAgain;
   }
 #else
   cSchedulesLock MutexLock;
   const cSchedules *schedules = cSchedules::Schedules(MutexLock);
   if (!schedules)
-    return;
+    return callAgain;
 #endif
 
   std::map<int, sEpgUpdate>::iterator it;
@@ -285,10 +287,16 @@ void cVNSIClient::EpgChange()
     resp.add_U32(channelId);
     resp.finalise();
     m_socket.write(resp.getPtr(), resp.getLen());
+
+    callAgain = true;
+    break;
   }
+
 #if VDRVERSNUM >= 20301
   SchedulesStateKey.Remove();
 #endif
+
+  return callAgain;
 }
 
 void cVNSIClient::Recording(const cDevice *Device, const char *Name, const char *FileName, bool On)
@@ -2297,8 +2305,8 @@ bool cVNSIClient::processEPG_GetForChannel(cRequestPacket &req) /* OPCODE 120 */
 
   channelUID = req.extract_U32();
 
-  uint32_t startTime      = req.extract_U32();
-  uint32_t duration       = req.extract_U32();
+  uint32_t startTime = req.extract_U32();
+  uint32_t duration = req.extract_U32();
 
 #if VDRVERSNUM >= 20301
   LOCK_CHANNELS_READ;
@@ -2395,17 +2403,23 @@ bool cVNSIClient::processEPG_GetForChannel(cRequestPacket &req) /* OPCODE 120 */
 #endif
 
     //in the past filter
-    if ((thisEventTime + thisEventDuration) < (uint32_t)time(NULL)) continue;
+    if ((thisEventTime + thisEventDuration) < (uint32_t)time(NULL))
+      continue;
 
     //start time filter
-    if ((thisEventTime + thisEventDuration) <= startTime) continue;
+    if ((thisEventTime + thisEventDuration) <= startTime)
+      continue;
 
     //duration filter
-    if (duration != 0 && thisEventTime >= (startTime + duration)) continue;
+    if (duration != 0 && thisEventTime >= (startTime + duration))
+      continue;
 
-    if (!thisEventTitle)        thisEventTitle        = "";
-    if (!thisEventSubTitle)     thisEventSubTitle     = "";
-    if (!thisEventDescription)  thisEventDescription  = "";
+    if (!thisEventTitle)
+      thisEventTitle = "";
+    if (!thisEventSubTitle)
+      thisEventSubTitle = "";
+    if (!thisEventDescription)
+      thisEventDescription = "";
 
     resp.add_U32(thisEventID);
     resp.add_U32(thisEventTime);
