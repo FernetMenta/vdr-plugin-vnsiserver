@@ -346,6 +346,7 @@ void cVNSIClient::OsdStatusMessage(const char *Message)
     else if (strcasecmp(Message, trVDR("Delete marks information?")) == 0) return;
     else if (strcasecmp(Message, trVDR("Delete resume information?")) == 0) return;
     else if (strcasecmp(Message, trVDR("CAM is in use - really reset?")) == 0) return;
+    else if (strcasecmp(Message, trVDR("CAM activated!")) == 0) return;
     else if (strcasecmp(Message, trVDR("Really restart?")) == 0) return;
     else if (strcasecmp(Message, trVDR("Stop recording?")) == 0) return;
     else if (strcasecmp(Message, trVDR("Cancel editing?")) == 0) return;
