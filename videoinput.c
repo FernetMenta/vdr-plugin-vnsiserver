@@ -444,6 +444,8 @@ bool cVideoInput::Open(const cChannel *channel, int priority, cVideoBuffer *vide
     if (m_Device->SwitchChannel(m_Channel, false))
     {
 
+      m_Device->SetCurrentChannel(m_Channel);
+
 #if VDRVERSNUM < 20104
       m_PatFilter = new cLivePatFilter(this, m_Channel);
       m_Device->AttachFilter(m_PatFilter);
@@ -481,6 +483,16 @@ void cVideoInput::Close()
 
   if (m_Device)
   {
+
+#if VDRVERSNUM >= 20107
+    if (DisableScrambleTimeout)
+    {
+      cCamSlot *cs = m_Device->CamSlot();
+      if (cs)
+        cs->CancelActivation();
+    }
+#endif
+
     if (m_Receiver)
     {
       DEBUGLOG("Detaching Live Receiver");
