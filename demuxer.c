@@ -428,6 +428,10 @@ bool cVNSIDemuxer::EnsureParsers()
     {
       stream = new cTSStream(stH264, it->pID, &m_PtsWrap);
     }
+    else if (it->type == stHEVC)
+    {
+      stream = new cTSStream(stHEVC, it->pID, &m_PtsWrap);
+    }
     else if (it->type == stMPEG2VIDEO)
     {
       stream = new cTSStream(stMPEG2VIDEO, it->pID, &m_PtsWrap);
@@ -492,6 +496,8 @@ void cVNSIDemuxer::SetChannelStreams(const cChannel *channel)
 #if APIVERSNUM >= 10701
     if (channel->Vtype() == 0x1B)
       newStream.type = stH264;
+    else if (channel->Vtype() == 0x24)
+      newStream.type = stHEVC;
     else
 #endif
       newStream.type = stMPEG2VIDEO;

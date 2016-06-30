@@ -427,6 +427,16 @@ void cLiveStreamer::sendStreamChange()
       resp.add_U32(Width);
       resp.add_double(Aspect);
     }
+    else if (stream->Type() == stHEVC)
+    {
+      stream->GetVideoInformation(FpsScale, FpsRate, Height, Width, Aspect);
+      resp.add_String("HEVC");
+      resp.add_U32(FpsScale);
+      resp.add_U32(FpsRate);
+      resp.add_U32(Height);
+      resp.add_U32(Width);
+      resp.add_double(Aspect);
+    }
     else if (stream->Type() == stDVBSUB)
     {
       resp.add_String("DVBSUB");

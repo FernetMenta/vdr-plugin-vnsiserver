@@ -32,6 +32,7 @@
 #include "parser_AC3.h"
 #include "parser_DTS.h"
 #include "parser_h264.h"
+#include "parser_hevc.h"
 #include "parser_MPEGAudio.h"
 #include "parser_MPEGVideo.h"
 #include "parser_Subtitle.h"
@@ -402,7 +403,7 @@ inline bool cParser::IsValidStartCode(uint8_t *buf, int size)
     return false;
 
   uint32_t startcode = buf[0] << 24 | buf[1] << 16 | buf[2] << 8 | buf[3];
-  if (m_Stream->Type() == stH264 || m_Stream->Type() == stMPEG2VIDEO)
+  if (m_Stream->Type() == stH264 || m_Stream->Type() == stHEVC ||m_Stream->Type() == stMPEG2VIDEO)
   {
     if (startcode >= 0x000001e0 && startcode <= 0x000001ef)
       return true;
@@ -468,6 +469,11 @@ cTSStream::cTSStream(eStreamType type, int pid, sPtsWrap *ptsWrap, bool handleSi
   else if (m_streamType == stH264)
   {
     m_pesParser = new cParserH264(m_pID, this, ptsWrap, true);
+    m_streamContent = scVIDEO;
+  }
+  else if (m_streamType == stHEVC)
+  {
+    m_pesParser = new cParserHEVC(m_pID, this, ptsWrap, true);
     m_streamContent = scVIDEO;
   }
   else if (m_streamType == stMPEG2AUDIO)
