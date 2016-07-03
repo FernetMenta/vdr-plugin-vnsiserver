@@ -126,7 +126,10 @@ void cVNSIStatus::Action(void)
     cmd = cString::sprintf("rm -f %s/*.vnsi", VideoDirectory);
 #endif
   }
-  system(cmd);
+  if (system(cmd) == -1)
+  {
+    ERRORLOG("could not create process for deleting of timeshift files");
+  }
 
   // set thread priority
   SetPriority(1);

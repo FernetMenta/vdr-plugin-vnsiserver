@@ -1844,7 +1844,8 @@ bool cVNSIClient::processTIMER_Update(cRequestPacket &req) /* OPCODE 85 */
   cMutexLock lock(&m_timerLock);
 
   bool active;
-  uint32_t priority, lifetime, channelid, weekdays, type;
+  uint32_t priority, lifetime, channelid, weekdays;
+  uint32_t type = 0;
   time_t startTime, stopTime, day;
   const char *file;
   const char *aux;
