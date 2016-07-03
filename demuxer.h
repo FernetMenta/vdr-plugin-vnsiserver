@@ -81,7 +81,6 @@ protected:
   std::list<sStreamInfo> m_StreamInfos;
   cChannel m_CurrentChannel;
   cPatPmtParser m_PatPmtParser;
-  int m_OldPmtVersion;
   bool m_WaitIFrame;
   cVideoBuffer *m_VideoBuffer;
   cMutex m_Mutex;

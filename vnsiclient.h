@@ -96,7 +96,7 @@ public:
   void ChannelsChange();
   void RecordingsChange();
   void SignalTimerChange();
-  void EpgChange();
+  bool EpgChange();
   static bool InhibidDataUpdates() { return m_inhibidDataUpdates; }
 
   unsigned int GetID() { return m_Id; }

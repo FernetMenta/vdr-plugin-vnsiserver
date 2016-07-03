@@ -116,6 +116,7 @@ cLivePatFilter::cLivePatFilter(cVideoInput *VideoInput, const cChannel *Channel)
 
 void cLivePatFilter::Process(u_short Pid, u_char Tid, const u_char *Data, int Length)
 {
+#if VDRVERSNUM < 20104
   if (Pid == 0x00)
   {
     if (Tid == 0x00)
@@ -409,6 +410,7 @@ void cLivePatFilter::Process(u_short Pid, u_char Tid, const u_char *Data, int Le
          m_VideoInput->Retune();
     }
   }
+#endif
 }
 
 // ----------------------------------------------------------------------------
@@ -444,6 +446,8 @@ bool cVideoInput::Open(const cChannel *channel, int priority, cVideoBuffer *vide
     if (m_Device->SwitchChannel(m_Channel, false))
     {
 
+      m_Device->SetCurrentChannel(m_Channel);
+
 #if VDRVERSNUM < 20104
       m_PatFilter = new cLivePatFilter(this, m_Channel);
       m_Device->AttachFilter(m_PatFilter);
@@ -457,21 +461,16 @@ bool cVideoInput::Open(const cChannel *channel, int priority, cVideoBuffer *vide
       m_Receiver->SetPids(&m_PmtChannel);
       m_Receiver->AddPid(m_PmtChannel.Tpid());
 
+      m_Device->AttachReceiver(m_Receiver);
+
 #if VDRVERSNUM >= 20107
       if (DisableScrambleTimeout)
       {
-        m_Receiver->SetPriority(MINPRIORITY);
-        m_Device->AttachReceiver(m_Receiver);
         cCamSlot *cs = m_Device->CamSlot();
         if (cs)
-          cs->StartDecrypting();
-        m_Receiver->SetPriority(m_Priority);
+          cs->StartActivation();
       }
-      else
 #endif
-      {
-        m_Device->AttachReceiver(m_Receiver);
-      }
 
       m_VideoBuffer->AttachInput(true);
       return true;
@@ -486,6 +485,16 @@ void cVideoInput::Close()
 
   if (m_Device)
   {
+
+#if VDRVERSNUM >= 20107
+    if (DisableScrambleTimeout)
+    {
+      cCamSlot *cs = m_Device->CamSlot();
+      if (cs)
+        cs->CancelActivation();
+    }
+#endif
+
     if (m_Receiver)
     {
       DEBUGLOG("Detaching Live Receiver");

@@ -695,7 +695,10 @@ bool cTSStream::SetVideoInformation(int FpsScale, int FpsRate, int Height, int W
       (m_Height != Height) ||
       (m_Width != Width) ||
       (m_Aspect != Aspect))
+  {
+    INFOLOG("Video stream change, pid: %d, width: %d, height: %d, aspect: %f", m_pID, Width, Height, Aspect);
     m_IsStreamChange = true;
+  }
 
   m_FpsScale        = FpsScale;
   m_FpsRate         = FpsRate;
@@ -724,7 +727,10 @@ bool cTSStream::SetAudioInformation(int Channels, int SampleRate, int BitRate, i
       (m_BlockAlign != BlockAlign) ||
       (m_BitRate != BitRate) ||
       (m_BitsPerSample != BitsPerSample))
+  {
+    INFOLOG("Audio stream change, pid: %d, channels: %d, samplerate: %d", m_pID, Channels, SampleRate);
     m_IsStreamChange = true;
+  }
 
   m_Channels        = Channels;
   m_SampleRate      = SampleRate;
