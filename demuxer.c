@@ -34,7 +34,6 @@
 cVNSIDemuxer::cVNSIDemuxer(bool bAllowRDS)
  : m_bAllowRDS(bAllowRDS)
 {
-  m_OldPmtVersion = -1;
 }
 
 cVNSIDemuxer::~cVNSIDemuxer()
@@ -48,7 +47,6 @@ void cVNSIDemuxer::Open(const cChannel &channel, cVideoBuffer *videoBuffer)
 
   m_CurrentChannel = channel;
   m_VideoBuffer = videoBuffer;
-  m_OldPmtVersion = -1;
 
   if (m_CurrentChannel.Vpid())
     m_WaitIFrame = true;
@@ -118,18 +116,14 @@ int cVNSIDemuxer::Read(sStreamPacket *packet, sStreamPacket *packet_side_data)
     m_PatPmtParser.ParsePmt(buf, TS_SIZE);
     if (m_PatPmtParser.GetVersions(patVersion, pmtVersion))
     {
-      if (pmtVersion != m_OldPmtVersion)
+      cChannel pmtChannel(m_CurrentChannel);
+      SetChannelPids(&pmtChannel, &m_PatPmtParser);
+      SetChannelStreams(&pmtChannel);
+      m_PatPmtParser.Reset();
+      if (EnsureParsers())
       {
-        cChannel pmtChannel(m_CurrentChannel);
-        SetChannelPids(&pmtChannel, &m_PatPmtParser);
-        SetChannelStreams(&pmtChannel);
-        m_PatPmtParser.Reset();
-        m_OldPmtVersion = pmtVersion;
-        if (EnsureParsers())
-        {
-          packet->pmtChange = true;
-            return 1;
-        }
+        packet->pmtChange = true;
+        return 1;
       }
     }
   }
