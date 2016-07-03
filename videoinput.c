@@ -116,6 +116,7 @@ cLivePatFilter::cLivePatFilter(cVideoInput *VideoInput, const cChannel *Channel)
 
 void cLivePatFilter::Process(u_short Pid, u_char Tid, const u_char *Data, int Length)
 {
+#if VDRVERSNUM < 20104
   if (Pid == 0x00)
   {
     if (Tid == 0x00)
@@ -409,6 +410,7 @@ void cLivePatFilter::Process(u_short Pid, u_char Tid, const u_char *Data, int Le
          m_VideoInput->Retune();
     }
   }
+#endif
 }
 
 // ----------------------------------------------------------------------------
