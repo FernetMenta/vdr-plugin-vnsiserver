@@ -104,6 +104,7 @@ enum eStreamType
   stDTS,
   stMPEG2VIDEO,
   stH264,
+  stHEVC,
   stDVBSUB,
   stTEXTSUB,
   stTELETEXT,
