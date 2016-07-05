@@ -30,6 +30,12 @@
 #include <vdr/videodir.h>
 #include <vdr/shutdown.h>
 
+#include <sys/types.h>
+#include <dirent.h>
+#include <unistd.h>
+#include <errno.h>
+#include <string.h>
+
 cVNSIStatus::cVNSIStatus() : cThread("VNSIStatus")
 {
 }
@@ -50,6 +56,42 @@ void cVNSIStatus::Shutdown()
   Cancel(5);
   cMutexLock lock(&m_mutex);
   m_clients.clear();
+}
+
+static bool CheckFileSuffix(const char *name,
+                            const char *suffix, size_t suffix_length)
+{
+  size_t name_length = strlen(name);
+  return name_length > suffix_length &&
+    memcmp(name + name_length - suffix_length, suffix, suffix_length) == 0;
+}
+
+static void DeleteFiles(const char *directory_path, const char *suffix)
+{
+  const size_t suffix_length = strlen(suffix);
+
+  DIR *dir = opendir(directory_path);
+  if (dir == nullptr)
+    return;
+
+  std::string path(directory_path);
+  path.push_back('/');
+  const size_t start = path.size();
+
+  while (auto *e = readdir(dir))
+  {
+    if (CheckFileSuffix(e->d_name, suffix, suffix_length))
+    {
+      path.replace(start, path.size(), e->d_name);
+
+      if (unlink(path.c_str()) < 0)
+      {
+        ERRORLOG("Failed to delete %s: %s", path.c_str(), strerror(errno));
+      }
+    }
+  }
+
+  closedir(dir);
 }
 
 void cVNSIStatus::Action(void)
@@ -98,23 +140,18 @@ void cVNSIStatus::Action(void)
 #endif
 
   // delete old timeshift file
-  cString cmd;
   struct stat sb;
   if ((*TimeshiftBufferDir) && stat(TimeshiftBufferDir, &sb) == 0 && S_ISDIR(sb.st_mode))
   {
-    cmd = cString::sprintf("rm -f %s/*.vnsi", TimeshiftBufferDir);
+    DeleteFiles(TimeshiftBufferDir, ".vnsi");
   }
   else
   {
 #if VDRVERSNUM >= 20102
-    cmd = cString::sprintf("rm -f %s/*.vnsi", cVideoDirectory::Name());
+    DeleteFiles(cVideoDirectory::Name(), ".vnsi");
 #else
-    cmd = cString::sprintf("rm -f %s/*.vnsi", VideoDirectory);
+    DeleteFiles(VideoDirectory, ".vnsi");
 #endif
-  }
-  if (system(cmd) == -1)
-  {
-    ERRORLOG("could not create process for deleting of timeshift files");
   }
 
   // set thread priority
