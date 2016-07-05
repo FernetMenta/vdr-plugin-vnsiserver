@@ -37,6 +37,10 @@ class cVNSIStatus : public cThread
 public:
   cVNSIStatus();
   virtual ~cVNSIStatus();
+
+  cVNSIStatus(const cVNSIStatus &) = delete;
+  cVNSIStatus &operator=(const cVNSIStatus &) = delete;
+
   void Init(CVNSITimers *timers);
   void Shutdown();
   void AddClient(cVNSIClient* client);
