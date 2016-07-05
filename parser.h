@@ -150,6 +150,9 @@ public:
   cParser(int pID, cTSStream *stream, sPtsWrap *ptsWrap, bool observePtsWraps);
   virtual ~cParser();
 
+  cParser(const cParser &) = delete;
+  cParser &operator=(const cParser &) = delete;
+
   bool AddPESPacket(uint8_t *data, int size);
   virtual void Parse(sStreamPacket *pkt, sStreamPacket *pkt_side_data) = 0;
 //  void ClearFrame() {m_PesBufferPtr = 0;}
@@ -227,6 +230,9 @@ private:
 public:
   cTSStream(eStreamType type, int pid, sPtsWrap *ptsWrap, bool handleSideData = false);
   virtual ~cTSStream();
+
+  cTSStream(const cTSStream &) = delete;
+  cTSStream &operator=(const cTSStream &) = delete;
 
   int ProcessTSPacket(uint8_t *data, sStreamPacket *pkt, sStreamPacket *pkt_side_data, bool iframe);
   bool ReadTime(uint8_t *data, int64_t *dts);
