@@ -131,21 +131,14 @@ void CVNSITimers::Save()
   wfile.open(filename);
   if(wfile.is_open())
   {
-    std::string tmp;
-    char buf[16];
     for (auto &timer : m_timers)
     {
-      tmp = timer.m_name + ";";
-      sprintf(buf, "%d;", timer.m_channelUID);
-      tmp += buf;
-      sprintf(buf, "%d;", timer.m_enabled);
-      tmp += buf;
-      sprintf(buf, "%d;", timer.m_priority);
-      tmp += buf;
-      sprintf(buf, "%d;", timer.m_lifetime);
-      tmp += buf;
-      tmp += timer.m_search;
-      wfile << tmp << "\n";
+      wfile << timer.m_name << ';'
+            << timer.m_channelUID << ';'
+            << timer.m_enabled << ';'
+            << timer.m_priority << ';'
+            << timer.m_lifetime << ';'
+            << timer.m_search << '\n';
     }
     wfile.close();
   }
