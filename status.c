@@ -156,7 +156,7 @@ void cVNSIStatus::Action(void)
     if (!cVNSIClient::InhibidDataUpdates())
     {
       // reset inactivity timeout as long as there are clients connected
-      if (m_clients.size() > 0)
+      if (!m_clients.empty())
       {
         ShutdownHandler.SetUserInactiveTimeout();
       }
