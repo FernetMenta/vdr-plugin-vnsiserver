@@ -399,7 +399,7 @@ bool cVNSIDemuxer::EnsureParsers()
 {
   bool streamChange = false;
 
-  std::list<cTSStream*>::iterator it = m_Streams.begin();
+  auto it = m_Streams.begin();
   while (it != m_Streams.end())
   {
     if (!Contains(m_StreamInfos, (*it)->GetPID(), (*it)->Type()))
