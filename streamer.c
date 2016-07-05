@@ -395,10 +395,10 @@ void cLiveStreamer::sendStreamChange()
       resp.add_U32(BitRate);
       resp.add_U32(BitsPerSample);
 
-      for (unsigned int i = 0; i < stream->GetSideDataTypes()->size(); i++)
+      for (const auto &i : *stream->GetSideDataTypes())
       {
-        resp.add_U32(stream->GetSideDataTypes()->at(i).first);
-        if (stream->GetSideDataTypes()->at(i).second == scRDS)
+        resp.add_U32(i.first);
+        if (i.second == scRDS)
         {
           resp.add_String("RDS");
           resp.add_String(stream->GetLanguage());
