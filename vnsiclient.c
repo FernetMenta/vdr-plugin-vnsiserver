@@ -1656,7 +1656,7 @@ bool cVNSIClient::processTIMER_Add(cRequestPacket &req) /* OPCODE 83 */
     vnsitimer.m_search = epgsearch;
     vnsitimer.m_enabled = flags;
     vnsitimer.m_lifetime = lifetime;
-    m_vnsiTimers.Add(vnsitimer);
+    m_vnsiTimers.Add(std::move(vnsitimer));
     resp.add_U32(VNSI_RET_OK);
   }
   else

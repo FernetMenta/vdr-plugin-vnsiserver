@@ -114,7 +114,7 @@ void CVNSITimers::Load()
 
       timer.m_search = line.substr(pos+1);
 
-      m_timers.push_back(timer);
+      m_timers.emplace_back(std::move(timer));
     }
     rfile.close();
   }
@@ -144,7 +144,7 @@ void CVNSITimers::Save()
   }
 }
 
-void CVNSITimers::Add(CVNSITimer &timer)
+void CVNSITimers::Add(CVNSITimer &&timer)
 {
   const cChannel *channel = FindChannelByUID(timer.m_channelUID);
   if (!channel)
@@ -153,7 +153,7 @@ void CVNSITimers::Add(CVNSITimer &timer)
   timer.m_channelID = channel->GetChannelID();
 
   cMutexLock lock(&m_timerLock);
-  m_timers.push_back(timer);
+  m_timers.emplace_back(std::move(timer));
   m_state++;
 
   Save();

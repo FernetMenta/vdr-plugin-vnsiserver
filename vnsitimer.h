@@ -52,7 +52,7 @@ public:
   void Load();
   void Save();
   void Shutdown();
-  void Add(CVNSITimer &timer);
+  void Add(CVNSITimer &&timer);
   void Scan();
   size_t GetTimersCount();
   bool StateChange(int &state);
