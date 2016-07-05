@@ -405,8 +405,7 @@ bool cVNSIDemuxer::EnsureParsers()
     if (!Contains(m_StreamInfos, (*it)->GetPID(), (*it)->Type()))
     {
       INFOLOG("Deleting stream for pid=%i and type=%i", (*it)->GetPID(), (*it)->Type());
-      m_Streams.erase(it);
-      it = m_Streams.begin();
+      it = m_Streams.erase(it);
       streamChange = true;
     }
     else
