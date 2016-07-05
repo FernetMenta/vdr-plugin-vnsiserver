@@ -240,10 +240,10 @@ public:
 
   void SetLanguage(const char *language);
   const char *GetLanguage() { return m_language; }
-  const eStreamContent Content() const { return m_streamContent; }
-  const eStreamType Type() const { return m_streamType; }
+  eStreamContent Content() const { return m_streamContent; }
+  eStreamType Type() const { return m_streamType; }
   void SetType(eStreamType type) { m_streamType = type; }
-  const int GetPID() const { return m_pID; }
+  int GetPID() const { return m_pID; }
 
   uint32_t AddSideDataType(eStreamContent content);
   const std::vector< std::pair<uint32_t, eStreamContent> > *GetSideDataTypes() const { return &m_SideDataTypes; }
