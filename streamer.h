@@ -59,7 +59,7 @@ class cLiveStreamer : public cThread
   void sendBufferStatus();
   void sendRefTime(sStreamPacket *pkt);
 
-  int               m_ClientID;
+  const int         m_ClientID;
   const cChannel   *m_Channel = nullptr;            /*!> Channel to stream */
   cDevice          *m_Device;
   cxSocket         *m_Socket = nullptr;             /*!> The socket class to communicate with client */
