@@ -81,7 +81,12 @@ void cMenuSetupVNSI::Store(void)
     newTimeshiftBufferFileSize = 1;
   SetupStore(CONFNAME_TIMESHIFTBUFFERFILESIZE, TimeshiftBufferFileSize = newTimeshiftBufferFileSize);
 
-  SetupStore(CONFNAME_TIMESHIFTBUFFERDIR, strn0cpy(TimeshiftBufferDir, newTimeshiftBufferDir, sizeof(TimeshiftBufferDir)));
+  strn0cpy(TimeshiftBufferDir, newTimeshiftBufferDir, sizeof(TimeshiftBufferDir));
+  if (*TimeshiftBufferDir && TimeshiftBufferDir[strlen(TimeshiftBufferDir)-1] == '/')
+    /* strip trailing slash */
+    TimeshiftBufferDir[strlen(TimeshiftBufferDir)-1] = 0;
+
+  SetupStore(CONFNAME_TIMESHIFTBUFFERDIR, TimeshiftBufferDir);
 
   SetupStore(CONFNAME_PLAYRECORDING, PlayRecording = newPlayRecording);
 

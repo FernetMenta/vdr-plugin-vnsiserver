@@ -113,10 +113,7 @@ void cVNSIStatus::Action(void)
   struct stat sb;
   if ((*TimeshiftBufferDir) && stat(TimeshiftBufferDir, &sb) == 0 && S_ISDIR(sb.st_mode))
   {
-    if (TimeshiftBufferDir[strlen(TimeshiftBufferDir)-1] == '/')
-      cmd = cString::sprintf("rm -f %s*.vnsi", TimeshiftBufferDir);
-    else
-      cmd = cString::sprintf("rm -f %s/*.vnsi", TimeshiftBufferDir);
+    cmd = cString::sprintf("rm -f %s/*.vnsi", TimeshiftBufferDir);
   }
   else
   {

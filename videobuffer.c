@@ -385,10 +385,7 @@ bool cVideoBufferFile::Init()
   struct stat sb;
   if ((*TimeshiftBufferDir) && stat(TimeshiftBufferDir, &sb) == 0 && S_ISDIR(sb.st_mode))
   {
-    if (TimeshiftBufferDir[strlen(TimeshiftBufferDir)-1] == '/')
-      m_Filename = cString::sprintf("%sTimeshift-%d.vnsi", TimeshiftBufferDir, m_ClientID);
-    else
-      m_Filename = cString::sprintf("%s/Timeshift-%d.vnsi", TimeshiftBufferDir, m_ClientID);
+    m_Filename = cString::sprintf("%s/Timeshift-%d.vnsi", TimeshiftBufferDir, m_ClientID);
   }
   else
 #if VDRVERSNUM >= 20102
