@@ -134,8 +134,7 @@ void cVNSIServer::NewClientConnected(int fd)
 #endif
 
   INFOLOG("Client with ID %d connected: %s", m_IdCnt, cxSocket::ip2txt(sin.sin_addr.s_addr, sin.sin_port, buf));
-  cVNSIClient *connection = new cVNSIClient(fd, m_IdCnt, cxSocket::ip2txt(sin.sin_addr.s_addr, sin.sin_port, buf), m_timers);
-  m_Status.AddClient(connection);
+  m_Status.AddClient(fd, m_IdCnt, cxSocket::ip2txt(sin.sin_addr.s_addr, sin.sin_port, buf), m_timers);
   m_IdCnt++;
 }
 
