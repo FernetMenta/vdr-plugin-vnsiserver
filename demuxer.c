@@ -386,6 +386,15 @@ void cVNSIDemuxer::AddStreamInfo(sStreamInfo &stream)
   m_StreamInfos.push_back(stream);
 }
 
+static bool Contains(const std::list<sStreamInfo> &list, int pID, eStreamType type)
+{
+  for (const auto &i : list)
+    if (i.pID == pID && i.type == type)
+      return true;
+
+  return false;
+}
+
 bool cVNSIDemuxer::EnsureParsers()
 {
   bool streamChange = false;
@@ -393,15 +402,7 @@ bool cVNSIDemuxer::EnsureParsers()
   std::list<cTSStream*>::iterator it = m_Streams.begin();
   while (it != m_Streams.end())
   {
-    std::list<sStreamInfo>::iterator its;
-    for (its = m_StreamInfos.begin(); its != m_StreamInfos.end(); ++its)
-    {
-      if ((its->pID == (*it)->GetPID()) && (its->type == (*it)->Type()))
-      {
-        break;
-      }
-    }
-    if (its == m_StreamInfos.end())
+    if (!Contains(m_StreamInfos, (*it)->GetPID(), (*it)->Type()))
     {
       INFOLOG("Deleting stream for pid=%i and type=%i", (*it)->GetPID(), (*it)->Type());
       m_Streams.erase(it);
