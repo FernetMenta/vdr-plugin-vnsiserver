@@ -23,79 +23,123 @@
  */
 
 #include "bitstream.h"
+constexpr uint8_t cBitstream::m_bitMask[];
 
-cBitstream::cBitstream(uint8_t *data, int bits)
+cBitstream::cBitstream(uint8_t *data, unsigned int bits)
 {
   m_data   = data;
   m_offset = 0;
   m_len    = bits;
   m_error  = false;
+  m_doEP3  = false;
 }
 
-void cBitstream::setBitstream(uint8_t *data, int bits)
+void cBitstream::setBitstream(uint8_t *data, unsigned int bits)
 {
   m_data   = data;
   m_offset = 0;
   m_len    = bits;
   m_error  = false;
+  m_doEP3  = false;
 }
 
-void cBitstream::skipBits(int num)
+// this is a bitstream that has embedded emulation_prevention_three_byte
+// sequences that need to be removed as used in HECV.
+// Data must start at byte 2 
+
+cBitstream::cBitstream(uint8_t *data, unsigned int bits, bool doEP3)
 {
-  m_offset += num;
+  m_data   = data;
+  m_offset = 16; // skip header and use as sentinel for EP3 detection
+  m_len    = bits;
+  m_error  = false;
+  m_doEP3  = true;
 }
 
-unsigned int cBitstream::readBits(int num)
+void cBitstream::skipBits(unsigned int num)
 {
-  int r = 0;
+  register unsigned int tmp;
 
-  while(num > 0)
+  if (!m_doEP3)
   {
-    if(m_offset >= m_len)
+    m_offset += num;
+    return;
+  }
+
+  while (num)
+  { 
+    tmp = m_offset >> 3;
+    if (!(m_offset & 7) && (m_data[tmp--] == 3) && (m_data[tmp--] == 0) && (m_data[tmp] == 0))
+      m_offset += 8;   // skip EP3 byte
+    
+    if (!(m_offset & 7) && (num >= 8)) // byte boundary, speed up things a little bit
+    { 
+      m_offset += 8;
+      num -= 8;
+    }
+    else if ((tmp = 8-(m_offset & 7)) <= num) // jump to byte boundary
     {
+     m_offset += tmp;
+     num -= tmp;
+    }
+    else
+    { 
+      m_offset += num;
+      num = 0;
+    }
+    
+    if (m_offset >= m_len)
+    { 
       m_error = true;
-      return 0;
+      break;
+    }
+  }
+}
+
+unsigned int cBitstream::readBits(unsigned int num)
+{
+  unsigned int r = 0;
+
+  while (num)
+  {
+    if (m_doEP3)
+    {
+      register unsigned int tmp = m_offset >> 3;
+      if (!(m_offset & 7) && (m_data[tmp--] == 3) && (m_data[tmp--] == 0) && (m_data[tmp] == 0))
+        m_offset += 8;   // skip EP3 byte
     }
 
+    if (m_offset >= m_len)
+    {
+      m_error = true;
+      break;
+    }
+
+    r <<= 1;
+    if (m_data[m_offset >> 3] & m_bitMask[m_offset & 7])
+      r |= 1;
     num--;
-
-    if(m_data[m_offset / 8] & (1 << (7 - (m_offset & 7))))
-      r |= 1 << num;
-
     m_offset++;
   }
   return r;
 }
 
-unsigned int cBitstream::showBits(int num)
+unsigned int cBitstream::showBits(unsigned int num)
 {
-  int r = 0;
-  int offs = m_offset;
+  unsigned int r;
+  unsigned int offs = m_offset;
 
-  while(num > 0)
-  {
-    if(offs >= m_len)
-    {
-      m_error = true;
-      return 0;
-    }
-
-    num--;
-
-    if(m_data[offs / 8] & (1 << (7 - (offs & 7))))
-      r |= 1 << num;
-
-    offs++;
-  }
+  r = readBits(num);
+  m_offset = offs;
   return r;
 }
 
-unsigned int cBitstream::readGolombUE(int maxbits)
+unsigned int cBitstream::readGolombUE(unsigned int maxbits)
 {
   int lzb = -1;
-  int bits = 0;
+  unsigned int bits = 0;
 
-  for(int b = 0; !b; lzb++, bits++)
+  for (int b = 0; !b; lzb++, bits++)
   {
     if (bits > maxbits)
       return 0;
@@ -118,16 +162,31 @@ signed int cBitstream::readGolombSE()
 }
 
 
+
+// Todo: are these two functions needed anyway?
+
 unsigned int cBitstream::remainingBits()
 {
-  return m_len - m_offset;
+  if (m_doEP3)
+  {
+    m_error = true;  // can't tell because of EP3 bytes
+    return 0;
+  }
+  else
+     return m_len - m_offset;
 }
 
 
 void cBitstream::putBits(int val, int num)
 {
-  while(num > 0) {
-    if(m_offset >= m_len)
+  if (m_doEP3)  // cannot insert possible EP3 bytes -> fail always
+  {
+    m_error = true;
+    return;
+  }
+
+  while (num > 0) {
+    if (m_offset >= m_len)
     {
       m_error = true;
       return;
@@ -135,11 +194,12 @@ void cBitstream::putBits(int val, int num)
 
     num--;
 
-    if(val & (1 << num))
-      m_data[m_offset / 8] |= 1 << (7 - (m_offset & 7));
+    if (val & (1 << num))
+      m_data[m_offset / 8] |=  m_bitMask[m_offset & 7];
     else
-      m_data[m_offset / 8] &= ~(1 << (7 - (m_offset & 7)));
+      m_data[m_offset / 8] &= ~m_bitMask[m_offset & 7];
 
     m_offset++;
   }
 }
+
