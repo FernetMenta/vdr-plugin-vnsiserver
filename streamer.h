@@ -48,7 +48,6 @@ class cVideoInput;
 
 class cLiveStreamer : public cThread
 {
-private:
   friend class cParser;
   friend class cLivePatFilter;
   friend class cLiveReceiver;
