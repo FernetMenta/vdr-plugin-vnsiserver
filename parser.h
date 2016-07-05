@@ -246,7 +246,7 @@ public:
   int GetPID() const { return m_pID; }
 
   uint32_t AddSideDataType(eStreamContent content);
-  const std::vector< std::pair<uint32_t, eStreamContent> > *GetSideDataTypes() const { return &m_SideDataTypes; }
+  const std::vector< std::pair<uint32_t, eStreamContent> > &GetSideDataTypes() const { return m_SideDataTypes; }
 
   /* Video Stream Information */
   bool SetVideoInformation(int FpsScale, int FpsRate, int Height, int Width, float Aspect);

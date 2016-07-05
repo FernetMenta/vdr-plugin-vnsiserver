@@ -385,7 +385,7 @@ void cLiveStreamer::sendStreamChange()
       resp.add_U32(BitRate);
       resp.add_U32(BitsPerSample);
 
-      for (const auto &i : *stream->GetSideDataTypes())
+      for (const auto &i : stream->GetSideDataTypes())
       {
         resp.add_U32(i.first);
         if (i.second == scRDS)
