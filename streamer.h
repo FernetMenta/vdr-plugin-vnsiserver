@@ -94,6 +94,9 @@ public:
   cLiveStreamer(int clientID, bool bAllowRDS, uint8_t timeshift, uint32_t timeout = 0);
   virtual ~cLiveStreamer();
 
+  cLiveStreamer(const cLiveStreamer &) = delete;
+  cLiveStreamer &operator=(const cLiveStreamer &) = delete;
+
   void Activate(bool On);
 
   bool StreamChannel(const cChannel *channel, int priority, cxSocket *Socket, cResponsePacket* resp);
