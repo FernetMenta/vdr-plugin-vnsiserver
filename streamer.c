@@ -48,17 +48,7 @@ cLiveStreamer::cLiveStreamer(int clientID, bool bAllowRDS, uint8_t timeshift, ui
  , m_Demuxer(bAllowRDS)
  , m_VideoInput(m_Event, m_Mutex, m_IsRetune)
 {
-  m_Channel         = NULL;
-  m_Socket          = NULL;
-  m_Frontend        = -1;
-  m_IsAudioOnly     = false;
-  m_IsMPEGPS        = false;
-  m_startup         = true;
-  m_SignalLost      = false;
-  m_IFrameSeen      = false;
-  m_VideoBuffer     = NULL;
   m_Timeshift       = timeshift;
-  m_IsRetune        = false;
 
   memset(&m_FrontendInfo, 0, sizeof(m_FrontendInfo));
 
