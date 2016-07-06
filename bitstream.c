@@ -24,7 +24,7 @@
 
 #include "bitstream.h"
 
-void cBitstream::skipBits(int num)
+void cBitstream::skipBits(unsigned int num)
 {
   if (m_doEP3)
   {

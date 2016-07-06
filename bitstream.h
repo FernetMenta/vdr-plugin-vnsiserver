@@ -54,12 +54,12 @@ public:
   {
   }
 
-  void         skipBits(int num);
+  void skipBits(unsigned int num);
   unsigned int readBits(int num);
   unsigned int showBits(int num);
   unsigned int readBits1() { return readBits(1); }
   unsigned int readGolombUE(int maxbits = 32);
-  signed int   readGolombSE();
+  signed int readGolombSE();
   constexpr size_t length() const { return m_len; }
   constexpr bool isError() const { return m_error; }
 };
