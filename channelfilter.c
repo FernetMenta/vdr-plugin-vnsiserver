@@ -188,15 +188,9 @@ void cVNSIChannelFilter::StoreWhitelist(bool radio)
   wfile.open(filename);
   if(wfile.is_open())
   {
-    std::string tmp;
-    char buf[16];
     for (const auto i : *whitelist)
     {
-      tmp = i.m_name;
-      tmp += "|";
-      sprintf(buf, "%d\n", i.m_caid);
-      tmp += buf;
-      wfile << tmp;
+      wfile << i.m_name << '|' << i.m_caid << '\n';
     }
     wfile.close();
   }
@@ -227,13 +221,9 @@ void cVNSIChannelFilter::StoreBlacklist(bool radio)
   wfile.open(filename);
   if(wfile.is_open())
   {
-    std::string tmp;
-    char buf[16];
     for (const auto i : *blacklist)
     {
-      sprintf(buf, "%d\n", i);
-      tmp = buf;
-      wfile << tmp;
+      wfile << i << '\n';
     }
     wfile.close();
   }
