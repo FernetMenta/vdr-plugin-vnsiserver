@@ -269,15 +269,12 @@ bool cVNSIClient::EpgChange()
 
     uint32_t channelId = CreateStringHash(schedule->ChannelID().ToString());
     it = m_epgUpdate.find(channelId);
-    if (it == m_epgUpdate.end() || it->second.lastEvent >= lastEvent->StartTime())
+    if (it == m_epgUpdate.end() || it->second.attempts > 3 ||
+        it->second.lastEvent >= lastEvent->StartTime())
     {
       continue;
     }
 
-    if (it->second.attempts > 3)
-    {
-      continue;
-    }
     it->second.attempts++;
 
     INFOLOG("Trigger EPG update for channel %s, id: %d", channel->Name(), channelId);
