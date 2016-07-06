@@ -27,9 +27,7 @@
 cBitstream::cBitstream(uint8_t *data, int bits)
 {
   m_data   = data;
-  m_offset = 0;
   m_len    = bits;
-  m_error  = false;
 }
 
 // this is a bitstream that has embedded emulation_prevention_three_byte
@@ -41,7 +39,6 @@ cBitstream::cBitstream(uint8_t *data, unsigned int bits, bool doEP3)
   m_data   = data;
   m_offset = 16; // skip header and use as sentinel for EP3 detection
   m_len    = bits;
-  m_error  = false;
   m_doEP3  = true;
 }
 

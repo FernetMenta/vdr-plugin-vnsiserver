@@ -31,9 +31,9 @@ class cBitstream
 {
 private:
   uint8_t *m_data;
-  int      m_offset;
+  int      m_offset = 0;
   int      m_len;
-  bool     m_error;
+  bool     m_error = false;
   bool     m_doEP3 = false;
 
 public:
