@@ -51,28 +51,26 @@ class CVNSITimers;
 class cVNSIClient : public cThread
                   , public cStatus
 {
-private:
-
-  unsigned int     m_Id;
+  const unsigned int m_Id;
   cxSocket         m_socket;
-  bool             m_loggedIn;
-  bool             m_StatusInterfaceEnabled;
-  cLiveStreamer   *m_Streamer;
-  bool             m_isStreaming;
-  bool             m_bSupportRDS;
-  cString          m_ClientAddress;
-  cRecPlayer      *m_RecPlayer;
+  bool             m_loggedIn = false;
+  bool             m_StatusInterfaceEnabled = false;
+  cLiveStreamer   *m_Streamer = nullptr;
+  bool             m_isStreaming = false;
+  bool             m_bSupportRDS = false;
+  const cString    m_ClientAddress;
+  cRecPlayer      *m_RecPlayer = nullptr;
   cCharSetConv     m_toUTF8;
   uint32_t         m_protocolVersion;
   cMutex           m_msgLock;
   static cMutex    m_timerLock;
-  cVnsiOsdProvider *m_Osd;
+  cVnsiOsdProvider *m_Osd = nullptr;
   CScanControl      m_ChannelScanControl;
   static bool       m_inhibidDataUpdates;
   typedef struct
   {
-    int attempts;
-    time_t lastEvent;
+    int attempts = 0;
+    time_t lastEvent = 0;
   } sEpgUpdate;
   std::map<int, sEpgUpdate> m_epgUpdate;
   CVNSITimers &m_vnsiTimers;
@@ -92,6 +90,9 @@ public:
 
   cVNSIClient(int fd, unsigned int id, const char *ClientAdr, CVNSITimers &timers);
   virtual ~cVNSIClient();
+
+  cVNSIClient(const cVNSIClient &) = delete;
+  cVNSIClient &operator=(const cVNSIClient &) = delete;
 
   void ChannelsChange();
   void RecordingsChange();

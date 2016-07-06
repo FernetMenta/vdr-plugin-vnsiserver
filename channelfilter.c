@@ -32,7 +32,7 @@
 #include <vdr/tools.h>
 
 cVNSIProvider::cVNSIProvider()
-  :m_name(""), m_caid(0)
+  :m_caid(0)
 {
 
 }
@@ -42,7 +42,7 @@ cVNSIProvider::cVNSIProvider(std::string name, int caid)
 {
 };
 
-bool cVNSIProvider::operator==(const cVNSIProvider &rhs)
+bool cVNSIProvider::operator==(const cVNSIProvider &rhs) const
 {
   if (rhs.m_caid != m_caid)
     return false;
@@ -75,8 +75,6 @@ void cVNSIChannelFilter::Load()
   cString filename;
   std::string line;
   std::ifstream rfile;
-  cVNSIProvider provider;
-  std::vector<cVNSIProvider>::iterator p_it;
 
   filename = cString::sprintf("%s/videowhitelist.vnsi", *VNSIServerConfig.ConfigDirectory);
   m_providersVideo.clear();
@@ -85,23 +83,21 @@ void cVNSIChannelFilter::Load()
   {
     while(std::getline(rfile,line))
     {
+      cVNSIProvider provider;
       size_t pos = line.find("|");
       if(pos == line.npos)
       {
         provider.m_name = line;
-        provider.m_caid = 0;
       }
       else
       {
-        provider.m_name = line.substr(0, pos);
-        std::string tmp = line.substr(pos+1);
-        char *pend;
-        provider.m_caid = strtol(tmp.c_str(), &pend, 10);
+        provider.m_name.assign(line, 0, pos);
+        provider.m_caid = strtol(line.c_str() + pos + 1, nullptr, 10);
       }
-      p_it = std::find(m_providersVideo.begin(), m_providersVideo.end(), provider);
+      auto p_it = std::find(m_providersVideo.begin(), m_providersVideo.end(), provider);
       if(p_it == m_providersVideo.end())
       {
-        m_providersVideo.push_back(provider);
+        m_providersVideo.emplace_back(std::move(provider));
       }
     }
     rfile.close();
@@ -114,23 +110,21 @@ void cVNSIChannelFilter::Load()
   {
     while(std::getline(rfile,line))
     {
-      unsigned int pos = line.find("|");
+      cVNSIProvider provider;
+      auto pos = line.find("|");
       if(pos == line.npos)
       {
         provider.m_name = line;
-        provider.m_caid = 0;
       }
       else
       {
-        provider.m_name = line.substr(0, pos);
-        std::string tmp = line.substr(pos+1);
-        char *pend;
-        provider.m_caid = strtol(tmp.c_str(), &pend, 10);
+        provider.m_name.assign(line, 0, pos);
+        provider.m_caid = strtol(line.c_str() + pos + 1, nullptr, 10);
       }
-      p_it = std::find(m_providersRadio.begin(), m_providersRadio.end(), provider);
+      auto p_it = std::find(m_providersRadio.begin(), m_providersRadio.end(), provider);
       if(p_it == m_providersRadio.end())
       {
-        m_providersRadio.push_back(provider);
+        m_providersRadio.emplace_back(std::move(provider));
       }
     }
     rfile.close();
@@ -143,9 +137,8 @@ void cVNSIChannelFilter::Load()
   {
     while(getline(rfile,line))
     {
-      char *pend;
-      int id = strtol(line.c_str(), &pend, 10);
-      m_channelsVideo.push_back(id);
+      int id = strtol(line.c_str(), nullptr, 10);
+      m_channelsVideo.insert(id);
     }
     rfile.close();
   }
@@ -157,9 +150,8 @@ void cVNSIChannelFilter::Load()
   {
     while(getline(rfile,line))
     {
-      char *pend;
-      int id = strtol(line.c_str(), &pend, 10);
-      m_channelsRadio.push_back(id);
+      int id = strtol(line.c_str(), nullptr, 10);
+      m_channelsRadio.insert(id);
     }
     rfile.close();
   }
@@ -171,8 +163,6 @@ void cVNSIChannelFilter::StoreWhitelist(bool radio)
 
   cString filename;
   std::ofstream wfile;
-  cVNSIProvider provider;
-  std::vector<cVNSIProvider>::iterator p_it;
   std::vector<cVNSIProvider> *whitelist;
 
   if (radio)
@@ -189,15 +179,9 @@ void cVNSIChannelFilter::StoreWhitelist(bool radio)
   wfile.open(filename);
   if(wfile.is_open())
   {
-    std::string tmp;
-    char buf[16];
-    for(p_it=whitelist->begin(); p_it!=whitelist->end(); ++p_it)
+    for (const auto i : *whitelist)
     {
-      tmp = p_it->m_name;
-      tmp += "|";
-      sprintf(buf, "%d\n", p_it->m_caid);
-      tmp += buf;
-      wfile << tmp;
+      wfile << i.m_name << '|' << i.m_caid << '\n';
     }
     wfile.close();
   }
@@ -211,9 +195,7 @@ void cVNSIChannelFilter::StoreBlacklist(bool radio)
 
   cString filename;
   std::ofstream wfile;
-  cVNSIProvider provider;
-  std::vector<int>::iterator it;
-  std::vector<int> *blacklist;
+  std::set<int> *blacklist;
 
   if (radio)
   {
@@ -229,13 +211,9 @@ void cVNSIChannelFilter::StoreBlacklist(bool radio)
   wfile.open(filename);
   if(wfile.is_open())
   {
-    std::string tmp;
-    char buf[16];
-    for(it=blacklist->begin(); it!=blacklist->end(); ++it)
+    for (const auto i : *blacklist)
     {
-      sprintf(buf, "%d\n", *it);
-      tmp = buf;
-      wfile << tmp;
+      wfile << i << '\n';
     }
     wfile.close();
   }
@@ -246,7 +224,6 @@ void cVNSIChannelFilter::StoreBlacklist(bool radio)
 bool cVNSIChannelFilter::IsWhitelist(const cChannel &channel)
 {
   cVNSIProvider provider;
-  std::vector<cVNSIProvider>::iterator p_it;
   std::vector<cVNSIProvider> *providers;
   provider.m_name = channel.Provider();
 
@@ -261,7 +238,7 @@ bool cVNSIChannelFilter::IsWhitelist(const cChannel &channel)
   if (channel.Ca(0) == 0)
   {
     provider.m_caid = 0;
-    p_it = std::find(providers->begin(), providers->end(), provider);
+    auto p_it = std::find(providers->begin(), providers->end(), provider);
     if(p_it!=providers->end())
       return true;
     else
@@ -273,7 +250,7 @@ bool cVNSIChannelFilter::IsWhitelist(const cChannel &channel)
   while((caid = channel.Ca(idx)) != 0)
   {
     provider.m_caid = caid;
-    p_it = std::find(providers->begin(), providers->end(), provider);
+    auto p_it = std::find(providers->begin(), providers->end(), provider);
     if(p_it!=providers->end())
       return true;
 
@@ -292,16 +269,15 @@ bool cVNSIChannelFilter::PassFilter(const cChannel &channel)
   if (!IsWhitelist(channel))
     return false;
 
-  std::vector<int>::iterator it;
   if (IsRadio(&channel))
   {
-    it = std::find(m_channelsRadio.begin(), m_channelsRadio.end(), CreateChannelUID(&channel));
+    auto it = std::find(m_channelsRadio.begin(), m_channelsRadio.end(), CreateChannelUID(&channel));
     if(it!=m_channelsRadio.end())
       return false;
   }
   else
   {
-    it = std::find(m_channelsVideo.begin(), m_channelsVideo.end(), CreateChannelUID(&channel));
+    auto it = std::find(m_channelsVideo.begin(), m_channelsVideo.end(), CreateChannelUID(&channel));
     if(it!=m_channelsVideo.end())
       return false;
   }

@@ -57,6 +57,10 @@ class cVNSIDemuxer
 public:
   cVNSIDemuxer(bool bAllowRDS);
   virtual ~cVNSIDemuxer();
+
+  cVNSIDemuxer(const cVNSIDemuxer &) = delete;
+  cVNSIDemuxer &operator=(const cVNSIDemuxer &) = delete;
+
   int Read(sStreamPacket *packet, sStreamPacket *packet_side_data);
   cTSStream *GetFirstStream();
   cTSStream *GetNextStream();

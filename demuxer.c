@@ -65,10 +65,10 @@ void cVNSIDemuxer::Close()
 {
   cMutexLock lock(&m_Mutex);
 
-  for (std::list<cTSStream*>::iterator it = m_Streams.begin(); it != m_Streams.end(); ++it)
+  for (auto *i : m_Streams)
   {
-    DEBUGLOG("Deleting stream parser for pid=%i and type=%i", (*it)->GetPID(), (*it)->Type());
-    delete (*it);
+    DEBUGLOG("Deleting stream parser for pid=%i and type=%i", i->GetPID(), o->Type());
+    delete i;
   }
   m_Streams.clear();
   m_StreamInfos.clear();
@@ -365,19 +365,19 @@ cTSStream *cVNSIDemuxer::GetNextStream()
 
 cTSStream *cVNSIDemuxer::FindStream(int Pid)
 {
-  for (std::list<cTSStream*>::iterator it = m_Streams.begin(); it != m_Streams.end(); ++it)
+  for (auto *i : m_Streams)
   {
-    if (Pid == (*it)->GetPID())
-      return *it;
+    if (Pid == i->GetPID())
+      return i;
   }
   return NULL;
 }
 
 void cVNSIDemuxer::ResetParsers()
 {
-  for (std::list<cTSStream*>::iterator it = m_Streams.begin(); it != m_Streams.end(); ++it)
+  for (auto *i : m_Streams)
   {
-    (*it)->ResetParser();
+    i->ResetParser();
   }
 }
 
@@ -386,90 +386,90 @@ void cVNSIDemuxer::AddStreamInfo(sStreamInfo &stream)
   m_StreamInfos.push_back(stream);
 }
 
+static bool Contains(const std::list<sStreamInfo> &list, int pID, eStreamType type)
+{
+  for (const auto &i : list)
+    if (i.pID == pID && i.type == type)
+      return true;
+
+  return false;
+}
+
 bool cVNSIDemuxer::EnsureParsers()
 {
   bool streamChange = false;
 
-  std::list<cTSStream*>::iterator it = m_Streams.begin();
+  auto it = m_Streams.begin();
   while (it != m_Streams.end())
   {
-    std::list<sStreamInfo>::iterator its;
-    for (its = m_StreamInfos.begin(); its != m_StreamInfos.end(); ++its)
-    {
-      if ((its->pID == (*it)->GetPID()) && (its->type == (*it)->Type()))
-      {
-        break;
-      }
-    }
-    if (its == m_StreamInfos.end())
+    if (!Contains(m_StreamInfos, (*it)->GetPID(), (*it)->Type()))
     {
       INFOLOG("Deleting stream for pid=%i and type=%i", (*it)->GetPID(), (*it)->Type());
-      m_Streams.erase(it);
-      it = m_Streams.begin();
+      it = m_Streams.erase(it);
       streamChange = true;
     }
     else
       ++it;
   }
 
-  for (std::list<sStreamInfo>::iterator it = m_StreamInfos.begin(); it != m_StreamInfos.end(); ++it)
+  for (const auto &i : m_StreamInfos)
   {
-    cTSStream *stream = FindStream(it->pID);
+    cTSStream *stream = FindStream(i.pID);
     if (stream)
     {
       // TODO: check for change in lang
-      stream->SetLanguage(it->language);
+      stream->SetLanguage(i.language);
       continue;
     }
 
-    if (it->type == stH264)
+    if (i.type == stH264)
     {
-      stream = new cTSStream(stH264, it->pID, &m_PtsWrap);
+      stream = new cTSStream(stH264, i.pID, &m_PtsWrap);
     }
-    else if (it->type == stHEVC)
+    else if (i.type == stHEVC)
     {
-      stream = new cTSStream(stHEVC, it->pID, &m_PtsWrap);
+      stream = new cTSStream(stHEVC, i.pID, &m_PtsWrap);
     }
-    else if (it->type == stMPEG2VIDEO)
+    else if (i.type == stMPEG2VIDEO)
     {
-      stream = new cTSStream(stMPEG2VIDEO, it->pID, &m_PtsWrap);
+      stream = new cTSStream(stMPEG2VIDEO, i.pID, &m_PtsWrap);
     }
-    else if (it->type == stMPEG2AUDIO)
+    else if (i.type == stMPEG2AUDIO)
     {
-      stream = new cTSStream(stMPEG2AUDIO, it->pID, &m_PtsWrap, it->handleRDS);
-      stream->SetLanguage(it->language);
+      stream = new cTSStream(stMPEG2AUDIO, i.pID, &m_PtsWrap, i.handleRDS);
+      stream->SetLanguage(i.language);
     }
-    else if (it->type == stAACADTS)
+    else if (i.type == stAACADTS)
     {
-      stream = new cTSStream(stAACADTS, it->pID, &m_PtsWrap);
-      stream->SetLanguage(it->language);
+      stream = new cTSStream(stAACADTS, i.pID, &m_PtsWrap);
+      stream->SetLanguage(i.language);
     }
-    else if (it->type == stAACLATM)
+    else if (i.type == stAACLATM)
     {
-      stream = new cTSStream(stAACLATM, it->pID, &m_PtsWrap);
-      stream->SetLanguage(it->language);
+      stream = new cTSStream(stAACLATM, i.pID, &m_PtsWrap);
+      stream->SetLanguage(i.language);
     }
-    else if (it->type == stAC3)
+    else if (i.type == stAC3)
     {
-      stream = new cTSStream(stAC3, it->pID, &m_PtsWrap);
-      stream->SetLanguage(it->language);
+      stream = new cTSStream(stAC3, i.pID, &m_PtsWrap);
+      stream->SetLanguage(i.language);
     }
-    else if (it->type == stEAC3)
+    else if (i.type == stEAC3)
     {
-      stream = new cTSStream(stEAC3, it->pID, &m_PtsWrap);
-      stream->SetLanguage(it->language);
+      stream = new cTSStream(stEAC3, i.pID, &m_PtsWrap);
+      stream->SetLanguage(i.language);
     }
-    else if (it->type == stDVBSUB)
+    else if (i.type == stDVBSUB)
     {
-      stream = new cTSStream(stDVBSUB, it->pID, &m_PtsWrap);
-      stream->SetLanguage(it->language);
+      stream = new cTSStream(stDVBSUB, i.pID, &m_PtsWrap);
+      stream->SetLanguage(i.language);
 #if APIVERSNUM >= 10709
-      stream->SetSubtitlingDescriptor(it->subtitlingType, it->compositionPageId, it->ancillaryPageId);
+      stream->SetSubtitlingDescriptor(i.subtitlingType, i.compositionPageId, i.ancillaryPageId);
 #endif
     }
-    else if (it->type == stTELETEXT)
+    else if (i.type == stTELETEXT)
     {
-      stream = new cTSStream(stTELETEXT, it->pID, &m_PtsWrap);
+      stream = new cTSStream(stTELETEXT, i.pID, &m_PtsWrap);
     }
     else
       continue;

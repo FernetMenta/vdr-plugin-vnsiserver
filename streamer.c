@@ -48,17 +48,7 @@ cLiveStreamer::cLiveStreamer(int clientID, bool bAllowRDS, uint8_t timeshift, ui
  , m_Demuxer(bAllowRDS)
  , m_VideoInput(m_Event, m_Mutex, m_IsRetune)
 {
-  m_Channel         = NULL;
-  m_Socket          = NULL;
-  m_Frontend        = -1;
-  m_IsAudioOnly     = false;
-  m_IsMPEGPS        = false;
-  m_startup         = true;
-  m_SignalLost      = false;
-  m_IFrameSeen      = false;
-  m_VideoBuffer     = NULL;
   m_Timeshift       = timeshift;
-  m_IsRetune        = false;
 
   memset(&m_FrontendInfo, 0, sizeof(m_FrontendInfo));
 
@@ -395,10 +385,10 @@ void cLiveStreamer::sendStreamChange()
       resp.add_U32(BitRate);
       resp.add_U32(BitsPerSample);
 
-      for (unsigned int i = 0; i < stream->GetSideDataTypes()->size(); i++)
+      for (const auto &i : stream->GetSideDataTypes())
       {
-        resp.add_U32(stream->GetSideDataTypes()->at(i).first);
-        if (stream->GetSideDataTypes()->at(i).second == scRDS)
+        resp.add_U32(i.first);
+        if (i.second == scRDS)
         {
           resp.add_String("RDS");
           resp.add_String(stream->GetLanguage());

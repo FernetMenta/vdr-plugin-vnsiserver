@@ -56,18 +56,11 @@ bool cVNSIClient::m_inhibidDataUpdates = false;
 
 cVNSIClient::cVNSIClient(int fd, unsigned int id, const char *ClientAdr, CVNSITimers &timers)
   : m_Id(id),
-    m_loggedIn(false),
-    m_StatusInterfaceEnabled(false),
-    m_Streamer(NULL),
-    m_isStreaming(false),
-    m_bSupportRDS(false),
+    m_socket(fd),
     m_ClientAddress(ClientAdr),
-    m_RecPlayer(NULL),
-    m_Osd(NULL),
     m_ChannelScanControl(this),
     m_vnsiTimers(timers)
 {
-  m_socket.SetHandle(fd);
   SetDescription("VNSI Client %u->%s", id, ClientAdr);
 
   Start();
@@ -80,7 +73,6 @@ cVNSIClient::~cVNSIClient()
   m_ChannelScanControl.StopScan();
   m_socket.Shutdown();
   Cancel(10);
-  m_socket.close();
   DEBUGLOG("done");
 }
 
@@ -245,7 +237,6 @@ bool cVNSIClient::EpgChange()
     return callAgain;
 #endif
 
-  std::map<int, sEpgUpdate>::iterator it;
   for (const cSchedule *schedule = schedules->First(); schedule; schedule = schedules->Next(schedule))
   {
     const cEvent *lastEvent =  schedule->Events()->Last();
@@ -268,16 +259,13 @@ bool cVNSIClient::EpgChange()
       continue;
 
     uint32_t channelId = CreateStringHash(schedule->ChannelID().ToString());
-    it = m_epgUpdate.find(channelId);
-    if (it != m_epgUpdate.end() && it->second.lastEvent >= lastEvent->StartTime())
+    auto it = m_epgUpdate.find(channelId);
+    if (it == m_epgUpdate.end() || it->second.attempts > 3 ||
+        it->second.lastEvent >= lastEvent->StartTime())
     {
       continue;
     }
 
-    if (it->second.attempts > 3)
-    {
-      continue;
-    }
     it->second.attempts++;
 
     INFOLOG("Trigger EPG update for channel %s, id: %d", channel->Name(), channelId);
@@ -1107,13 +1095,7 @@ bool cVNSIClient::processCHANNELS_GetChannels(cRequestPacket &req) /* OPCODE 63 
     }
 
     // create entry in EPG map on first query
-    std::map<int, sEpgUpdate>::iterator it;
-    it = m_epgUpdate.find(uuid);
-    if (it == m_epgUpdate.end())
-    {
-      m_epgUpdate[uuid].lastEvent = 0;
-      m_epgUpdate[uuid].attempts = 0;
-    }
+    m_epgUpdate.insert(std::make_pair(uuid, sEpgUpdate()));
   }
 
 #if VDRVERSNUM >= 20301
@@ -1161,15 +1143,14 @@ bool cVNSIClient::processCHANNELS_GroupsCount(cRequestPacket &req)
 bool cVNSIClient::processCHANNELS_GroupList(cRequestPacket &req)
 {
   uint32_t radio = req.extract_U8();
-  std::map<std::string, ChannelGroup>::iterator i;
 
   cResponsePacket resp;
   resp.init(req.getRequestID());
 
-  for(i = m_channelgroups[radio].begin(); i != m_channelgroups[radio].end(); i++)
+  for (const auto &i : m_channelgroups[radio])
   {
-    resp.add_String(i->second.name.c_str());
-    resp.add_U8(i->second.radio);
+    resp.add_String(i.second.name.c_str());
+    resp.add_U8(i.second.radio);
   }
 
   resp.finalise();
@@ -1287,10 +1268,10 @@ bool cVNSIClient::processCHANNELS_GetWhitelist(cRequestPacket &req)
   resp.init(req.getRequestID());
 
   VNSIChannelFilter.m_Mutex.Lock();
-  for(unsigned int i=0; i<providers->size(); i++)
+  for (const auto &i : *providers)
   {
-    resp.add_String((*providers)[i].m_name.c_str());
-    resp.add_U32((*providers)[i].m_caid);
+    resp.add_String(i.m_name.c_str());
+    resp.add_U32(i.m_caid);
   }
   VNSIChannelFilter.m_Mutex.Unlock();
 
@@ -1302,7 +1283,7 @@ bool cVNSIClient::processCHANNELS_GetWhitelist(cRequestPacket &req)
 bool cVNSIClient::processCHANNELS_GetBlacklist(cRequestPacket &req)
 {
   bool radio = req.extract_U8();
-  std::vector<int> *channels;
+  const std::set<int> *channels;
 
   if(radio)
     channels = &VNSIChannelFilter.m_channelsRadio;
@@ -1313,9 +1294,9 @@ bool cVNSIClient::processCHANNELS_GetBlacklist(cRequestPacket &req)
   resp.init(req.getRequestID());
 
   VNSIChannelFilter.m_Mutex.Lock();
-  for(unsigned int i=0; i<channels->size(); i++)
+  for (auto i : *channels)
   {
-    resp.add_U32((*channels)[i]);
+    resp.add_U32(i);
   }
   VNSIChannelFilter.m_Mutex.Unlock();
 
@@ -1359,7 +1340,7 @@ bool cVNSIClient::processCHANNELS_SetBlacklist(cRequestPacket &req)
 {
   bool radio = req.extract_U8();
   cVNSIProvider provider;
-  std::vector<int> *channels;
+  std::set<int> *channels;
 
   if(radio)
     channels = &VNSIChannelFilter.m_channelsRadio;
@@ -1373,7 +1354,7 @@ bool cVNSIClient::processCHANNELS_SetBlacklist(cRequestPacket &req)
   while(!req.end())
   {
     id = req.extract_U32();
-    channels->push_back(id);
+    channels->insert(id);
   }
   VNSIChannelFilter.StoreBlacklist(radio);
   VNSIChannelFilter.m_Mutex.Unlock();
@@ -1675,7 +1656,7 @@ bool cVNSIClient::processTIMER_Add(cRequestPacket &req) /* OPCODE 83 */
     vnsitimer.m_search = epgsearch;
     vnsitimer.m_enabled = flags;
     vnsitimer.m_lifetime = lifetime;
-    m_vnsiTimers.Add(vnsitimer);
+    m_vnsiTimers.Add(std::move(vnsitimer));
     resp.add_U32(VNSI_RET_OK);
   }
   else
@@ -1856,10 +1837,10 @@ bool cVNSIClient::processTIMER_Update(cRequestPacket &req) /* OPCODE 85 */
   cResponsePacket resp;
   resp.init(req.getRequestID());
 
-  if (m_protocolVersion >= 9)
-  {
-    type  = req.extract_U32();
-  }
+  type = m_protocolVersion >= 9
+    ? req.extract_U32()
+    : VNSI_TIMER_TYPE_MAN;
+
   active = req.extract_U32();
   priority = req.extract_U32();
   lifetime = req.extract_U32();
@@ -2454,8 +2435,9 @@ bool cVNSIClient::processEPG_GetForChannel(cRequestPacket &req) /* OPCODE 120 */
   const cEvent *lastEvent =  Schedule->Events()->Last();
   if (lastEvent)
   {
-    m_epgUpdate[channelUID].lastEvent = lastEvent->StartTime();
-    m_epgUpdate[channelUID].attempts = 0;
+    auto &u = m_epgUpdate[channelUID];
+    u.lastEvent = lastEvent->StartTime();
+    u.attempts = 0;
   }
   DEBUGLOG("written schedules packet");
 
@@ -2512,11 +2494,11 @@ bool cVNSIClient::processSCAN_GetCountries(cRequestPacket &req) /* OPCODE 141 */
   if (m_ChannelScanControl.GetCountries(list))
   {
     resp.add_U32(VNSI_RET_OK);
-    for (scannerEntryList::const_iterator it = list.begin(); it != list.end(); ++it)
+    for (const auto &i : list)
     {
-      resp.add_U32(it->index);
-      resp.add_String(it->name);
-      resp.add_String(it->longName);
+      resp.add_U32(i.index);
+      resp.add_String(i.name);
+      resp.add_String(i.longName);
     }
   }
   else
@@ -2538,11 +2520,11 @@ bool cVNSIClient::processSCAN_GetSatellites(cRequestPacket &req) /* OPCODE 142 *
   if (m_ChannelScanControl.GetSatellites(list))
   {
     resp.add_U32(VNSI_RET_OK);
-    for (scannerEntryList::const_iterator it = list.begin(); it != list.end(); ++it)
+    for (const auto &i : list)
     {
-      resp.add_U32(it->index);
-      resp.add_String(it->name);
-      resp.add_String(it->longName);
+      resp.add_U32(i.index);
+      resp.add_String(i.name);
+      resp.add_String(i.longName);
     }
   }
   else

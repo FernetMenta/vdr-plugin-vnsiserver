@@ -48,7 +48,6 @@ class cVideoInput;
 
 class cLiveStreamer : public cThread
 {
-private:
   friend class cParser;
   friend class cLivePatFilter;
   friend class cLiveReceiver;
@@ -60,30 +59,30 @@ private:
   void sendBufferStatus();
   void sendRefTime(sStreamPacket *pkt);
 
-  int               m_ClientID;
-  const cChannel   *m_Channel;                      /*!> Channel to stream */
+  const int         m_ClientID;
+  const cChannel   *m_Channel = nullptr;            /*!> Channel to stream */
   cDevice          *m_Device;
-  cxSocket         *m_Socket;                       /*!> The socket class to communicate with client */
-  int               m_Frontend;                     /*!> File descriptor to access used receiving device  */
+  cxSocket         *m_Socket = nullptr;             /*!> The socket class to communicate with client */
+  int               m_Frontend = -1;                /*!> File descriptor to access used receiving device  */
   dvb_frontend_info m_FrontendInfo;                 /*!> DVB Information about the receiving device (DVB only) */
   v4l2_capability   m_vcap;                         /*!> PVR Information about the receiving device (pvrinput only) */
   cString           m_DeviceString;                 /*!> The name of the receiving device */
-  bool              m_startup;
-  bool              m_IsAudioOnly;                  /*!> Set to true if streams contains only audio */
-  bool              m_IsMPEGPS;                     /*!> TS Stream contains MPEG PS data like from pvrinput */
+  bool              m_startup = true;
+  bool              m_IsAudioOnly = false;          /*!> Set to true if streams contains only audio */
+  bool              m_IsMPEGPS = false;             /*!> TS Stream contains MPEG PS data like from pvrinput */
   uint32_t          m_scanTimeout;                  /*!> Channel scanning timeout (in seconds) */
   cTimeMs           m_last_tick;
-  bool              m_SignalLost;
-  bool              m_IFrameSeen;
+  bool              m_SignalLost = false;
+  bool              m_IFrameSeen = false;
   cResponsePacket   m_streamHeader;
   cVNSIDemuxer      m_Demuxer;
-  cVideoBuffer     *m_VideoBuffer;
+  cVideoBuffer     *m_VideoBuffer = nullptr;
   cVideoInput       m_VideoInput;
   int               m_Priority;
   uint8_t           m_Timeshift;
   cCondVar          m_Event;
   cMutex            m_Mutex;
-  bool              m_IsRetune;
+  bool              m_IsRetune = false;
 
 protected:
   virtual void Action(void);
@@ -93,6 +92,9 @@ protected:
 public:
   cLiveStreamer(int clientID, bool bAllowRDS, uint8_t timeshift, uint32_t timeout = 0);
   virtual ~cLiveStreamer();
+
+  cLiveStreamer(const cLiveStreamer &) = delete;
+  cLiveStreamer &operator=(const cLiveStreamer &) = delete;
 
   void Activate(bool On);
 

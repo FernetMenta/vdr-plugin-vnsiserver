@@ -39,17 +39,18 @@
 
 class cxSocket
 {
- private:
-  int m_fd;
+  const int m_fd;
   cMutex m_MutexWrite;
-  cPoller *m_pollerRead;
-  cPoller *m_pollerWrite;
+  cPoller m_pollerRead;
+  cPoller m_pollerWrite;
 
  public:
-  cxSocket() : m_fd(-1), m_pollerRead(NULL), m_pollerWrite(NULL) {}
+  cxSocket(int h);
   ~cxSocket();
-  void SetHandle(int h);
-  void close(void);
+
+  cxSocket(const cxSocket &) = delete;
+  cxSocket &operator=(const cxSocket &) = delete;
+
   void Shutdown(void);
   void LockWrite();
   void UnlockWrite();

@@ -27,19 +27,29 @@
 #include <vdr/thread.h>
 #include <list>
 #include "vnsitimer.h"
+#include "vnsiclient.h"
 
 class cVNSIClient;
 
-typedef std::list<cVNSIClient*> ClientList;
+typedef std::list<cVNSIClient> ClientList;
 
 class cVNSIStatus : public cThread
 {
 public:
   cVNSIStatus();
   virtual ~cVNSIStatus();
+
+  cVNSIStatus(const cVNSIStatus &) = delete;
+  cVNSIStatus &operator=(const cVNSIStatus &) = delete;
+
   void Init(CVNSITimers *timers);
   void Shutdown();
-  void AddClient(cVNSIClient* client);
+
+  template<typename... Args>
+  void AddClient(Args&&... args) {
+    cMutexLock lock(&m_mutex);
+    m_clients.emplace_back(std::forward<Args>(args)...);
+  }
 
 protected:
   virtual void Action(void);

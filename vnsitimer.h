@@ -52,7 +52,7 @@ public:
   void Load();
   void Save();
   void Shutdown();
-  void Add(CVNSITimer &timer);
+  void Add(CVNSITimer &&timer);
   void Scan();
   size_t GetTimersCount();
   bool StateChange(int &state);
@@ -61,7 +61,7 @@ public:
   bool UpdateTimer(int idx, CVNSITimer &timer);
   bool DeleteTimer(int idx);
 
-  const uint32_t INDEX_MASK = 0xF0000000;
+  static constexpr uint32_t INDEX_MASK = 0xF0000000;
 protected:
   virtual void Action(void) override;
   std::string Convert(std::string search);

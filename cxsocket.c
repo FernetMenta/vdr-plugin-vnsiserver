@@ -53,26 +53,21 @@
 #define MSG_MORE 0
 #endif
 
-cxSocket::~cxSocket()
+cxSocket::cxSocket(int h)
+  :m_fd(h),
+   m_pollerRead(m_fd),
+   m_pollerWrite(m_fd, true)
 {
-  close();
-  delete m_pollerRead;
-  delete m_pollerWrite;
 }
 
-void cxSocket::close() {
-  if(m_fd >= 0) { 
-    ::close(m_fd);
-    m_fd=-1; 
-  }
+cxSocket::~cxSocket()
+{
+  close(m_fd);
 }
 
 void cxSocket::Shutdown()
 {
-  if(m_fd >= 0)
-  {
-    ::shutdown(m_fd, SHUT_RD);
-  }
+  ::shutdown(m_fd, SHUT_RD);
 }
 
 void cxSocket::LockWrite()
@@ -89,15 +84,12 @@ ssize_t cxSocket::write(const void *buffer, size_t size, int timeout_ms, bool mo
 {
   cMutexLock CmdLock(&m_MutexWrite);
 
-  if(m_fd == -1)
-    return -1;
-
   ssize_t written = (ssize_t)size;
   const unsigned char *ptr = (const unsigned char *)buffer;
 
   while (size > 0)
   {
-    if(!m_pollerWrite->Poll(timeout_ms))
+    if(!m_pollerWrite.Poll(timeout_ms))
     {
       ERRORLOG("cxSocket::write(fd=%d): poll() failed", m_fd);
       return written-size;
@@ -128,15 +120,12 @@ ssize_t cxSocket::read(void *buffer, size_t size, int timeout_ms)
 {
   int retryCounter = 0;
 
-  if(m_fd == -1)
-    return -1;
-
   ssize_t missing = (ssize_t)size;
   unsigned char *ptr = (unsigned char *)buffer;
 
   while (missing > 0)
   {
-    if(!m_pollerRead->Poll(timeout_ms))
+    if(!m_pollerRead.Poll(timeout_ms))
     {
       ERRORLOG("cxSocket::read(fd=%d): poll() failed at %d/%d", m_fd, (int)(size-missing), (int)size);
       return size-missing;
@@ -167,17 +156,6 @@ ssize_t cxSocket::read(void *buffer, size_t size, int timeout_ms)
   }
 
   return size;
-}
-
-void cxSocket::SetHandle(int h) {
-  if(h != m_fd) {
-    close();
-    m_fd = h;
-    delete m_pollerRead;
-    delete m_pollerWrite;
-    m_pollerRead = new cPoller(m_fd);
-    m_pollerWrite = new cPoller(m_fd, true);
-  }
 }
 
 char *cxSocket::ip2txt(uint32_t ip, unsigned int port, char *str)

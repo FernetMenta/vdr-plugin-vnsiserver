@@ -24,12 +24,17 @@
 
 #include "status.h"
 #include "vnsi.h"
-#include "vnsiclient.h"
 
 #include <vdr/tools.h>
 #include <vdr/recording.h>
 #include <vdr/videodir.h>
 #include <vdr/shutdown.h>
+
+#include <sys/types.h>
+#include <dirent.h>
+#include <unistd.h>
+#include <errno.h>
+#include <string.h>
 
 cVNSIStatus::cVNSIStatus() : cThread("VNSIStatus")
 {
@@ -50,17 +55,43 @@ void cVNSIStatus::Shutdown()
 {
   Cancel(5);
   cMutexLock lock(&m_mutex);
-  for (ClientList::iterator i = m_clients.begin(); i != m_clients.end(); i++)
-  {
-    delete (*i);
-  }
   m_clients.clear();
 }
 
-void cVNSIStatus::AddClient(cVNSIClient* client)
+static bool CheckFileSuffix(const char *name,
+                            const char *suffix, size_t suffix_length)
 {
-  cMutexLock lock(&m_mutex);
-  m_clients.push_back(client);
+  size_t name_length = strlen(name);
+  return name_length > suffix_length &&
+    memcmp(name + name_length - suffix_length, suffix, suffix_length) == 0;
+}
+
+static void DeleteFiles(const char *directory_path, const char *suffix)
+{
+  const size_t suffix_length = strlen(suffix);
+
+  DIR *dir = opendir(directory_path);
+  if (dir == nullptr)
+    return;
+
+  std::string path(directory_path);
+  path.push_back('/');
+  const size_t start = path.size();
+
+  while (auto *e = readdir(dir))
+  {
+    if (CheckFileSuffix(e->d_name, suffix, suffix_length))
+    {
+      path.replace(start, path.size(), e->d_name);
+
+      if (unlink(path.c_str()) < 0)
+      {
+        ERRORLOG("Failed to delete %s: %s", path.c_str(), strerror(errno));
+      }
+    }
+  }
+
+  closedir(dir);
 }
 
 void cVNSIStatus::Action(void)
@@ -109,26 +140,18 @@ void cVNSIStatus::Action(void)
 #endif
 
   // delete old timeshift file
-  cString cmd;
   struct stat sb;
   if ((*TimeshiftBufferDir) && stat(TimeshiftBufferDir, &sb) == 0 && S_ISDIR(sb.st_mode))
   {
-    if (TimeshiftBufferDir[strlen(TimeshiftBufferDir)-1] == '/')
-      cmd = cString::sprintf("rm -f %s*.vnsi", TimeshiftBufferDir);
-    else
-      cmd = cString::sprintf("rm -f %s/*.vnsi", TimeshiftBufferDir);
+    DeleteFiles(TimeshiftBufferDir, ".vnsi");
   }
   else
   {
 #if VDRVERSNUM >= 20102
-    cmd = cString::sprintf("rm -f %s/*.vnsi", cVideoDirectory::Name());
+    DeleteFiles(cVideoDirectory::Name(), ".vnsi");
 #else
-    cmd = cString::sprintf("rm -f %s/*.vnsi", VideoDirectory);
+    DeleteFiles(VideoDirectory, ".vnsi");
 #endif
-  }
-  if (system(cmd) == -1)
-  {
-    ERRORLOG("could not create process for deleting of timeshift files");
   }
 
   // set thread priority
@@ -141,10 +164,9 @@ void cVNSIStatus::Action(void)
     // remove disconnected clients
     for (ClientList::iterator i = m_clients.begin(); i != m_clients.end();)
     {
-      if (!(*i)->Active())
+      if (!i->Active())
       {
-        INFOLOG("Client with ID %u seems to be disconnected, removing from client list", (*i)->GetID());
-        delete (*i);
+        INFOLOG("Client with ID %u seems to be disconnected, removing from client list", i->GetID());
         i = m_clients.erase(i);
       }
       else {
@@ -159,7 +181,7 @@ void cVNSIStatus::Action(void)
     if (!cVNSIClient::InhibidDataUpdates())
     {
       // reset inactivity timeout as long as there are clients connected
-      if (m_clients.size() > 0)
+      if (!m_clients.empty())
       {
         ShutdownHandler.SetUserInactiveTimeout();
       }
@@ -172,8 +194,8 @@ void cVNSIStatus::Action(void)
         {
           chanState.Remove(false);
           INFOLOG("Requesting clients to reload channel list");
-          for (ClientList::iterator i = m_clients.begin(); i != m_clients.end(); i++)
-            (*i)->ChannelsChange();
+          for (auto *i : m_clients)
+            i->ChannelsChange();
           chanTimer.Set(5000);
         }
 #else
@@ -182,8 +204,8 @@ void cVNSIStatus::Action(void)
         {
           Channels.SetModified((modified == CHANNELSMOD_USER) ? true : false);
           INFOLOG("Requesting clients to reload channel list");
-          for (ClientList::iterator i = m_clients.begin(); i != m_clients.end(); i++)
-            (*i)->ChannelsChange();
+          for (auto &i : m_clients)
+            i.ChannelsChange();
         }
         chanTimer.Set(5000);
 #endif
@@ -195,9 +217,9 @@ void cVNSIStatus::Action(void)
       {
         recState.Remove();
         INFOLOG("Requesting clients to reload recordings list");
-        for (ClientList::iterator i = m_clients.begin(); i != m_clients.end(); i++)
+        for (auto &i : m_clients)
         {
-          (*i)->RecordingsChange();
+          i.RecordingsChange();
         }
       }
 
@@ -205,18 +227,18 @@ void cVNSIStatus::Action(void)
       {
         timerState.Remove(false);
         INFOLOG("Requesting clients to reload timers");
-        for (ClientList::iterator i = m_clients.begin(); i != m_clients.end(); i++)
+        for (auto &i : m_clients)
         {
-          (*i)->SignalTimerChange();
+          i.SignalTimerChange();
         }
       }
 
       if (m_vnsiTimers->StateChange(vnsitimerState))
       {
         INFOLOG("Requesting clients to reload vnsi-timers");
-        for (ClientList::iterator i = m_clients.begin(); i != m_clients.end(); i++)
+        for (auto &i : m_clients)
         {
-          (*i)->SignalTimerChange();
+          i.SignalTimerChange();
         }
       }
 
@@ -227,9 +249,9 @@ void cVNSIStatus::Action(void)
           epgState.Remove(false);
           INFOLOG("Requesting clients to load epg");
           bool callAgain = false;
-          for (ClientList::iterator i = m_clients.begin(); i != m_clients.end(); i++)
+          for (auto &i : m_clients)
           {
-            callAgain |= (*i)->EpgChange();
+            callAgain |= i.EpgChange();
           }
           if (callAgain)
           {
@@ -249,8 +271,8 @@ void cVNSIStatus::Action(void)
       {
         INFOLOG("Recordings state changed (%i)", recState);
         INFOLOG("Requesting clients to reload recordings list");
-        for (ClientList::iterator i = m_clients.begin(); i != m_clients.end(); i++)
-          (*i)->RecordingsChange();
+        for (auto &i : m_clients)
+          i.RecordingsChange();
       }
 
       // update timers
@@ -258,18 +280,18 @@ void cVNSIStatus::Action(void)
       {
         INFOLOG("Timers state changed (%i)", timerState);
         INFOLOG("Requesting clients to reload timers");
-        for (ClientList::iterator i = m_clients.begin(); i != m_clients.end(); i++)
+        for (auto &i : m_clients)
         {
-          (*i)->SignalTimerChange();
+          i.SignalTimerChange();
         }
       }
 
       // update epg
       if((cSchedules::Modified() > epgUpdate + 10) || time(NULL) > epgUpdate + 300)
       {
-        for (ClientList::iterator i = m_clients.begin(); i != m_clients.end(); i++)
+        for (auto &i : m_clients)
         {
-          (*i)->EpgChange();
+          i.EpgChange();
         }
         epgUpdate = time(NULL);
       }

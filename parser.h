@@ -150,6 +150,9 @@ public:
   cParser(int pID, cTSStream *stream, sPtsWrap *ptsWrap, bool observePtsWraps);
   virtual ~cParser();
 
+  cParser(const cParser &) = delete;
+  cParser &operator=(const cParser &) = delete;
+
   bool AddPESPacket(uint8_t *data, int size);
   virtual void Parse(sStreamPacket *pkt, sStreamPacket *pkt_side_data) = 0;
 //  void ClearFrame() {m_PesBufferPtr = 0;}
@@ -228,19 +231,22 @@ public:
   cTSStream(eStreamType type, int pid, sPtsWrap *ptsWrap, bool handleSideData = false);
   virtual ~cTSStream();
 
+  cTSStream(const cTSStream &) = delete;
+  cTSStream &operator=(const cTSStream &) = delete;
+
   int ProcessTSPacket(uint8_t *data, sStreamPacket *pkt, sStreamPacket *pkt_side_data, bool iframe);
   bool ReadTime(uint8_t *data, int64_t *dts);
   void ResetParser();
 
   void SetLanguage(const char *language);
   const char *GetLanguage() { return m_language; }
-  const eStreamContent Content() const { return m_streamContent; }
-  const eStreamType Type() const { return m_streamType; }
+  eStreamContent Content() const { return m_streamContent; }
+  eStreamType Type() const { return m_streamType; }
   void SetType(eStreamType type) { m_streamType = type; }
-  const int GetPID() const { return m_pID; }
+  int GetPID() const { return m_pID; }
 
   uint32_t AddSideDataType(eStreamContent content);
-  const std::vector< std::pair<uint32_t, eStreamContent> > *GetSideDataTypes() const { return &m_SideDataTypes; }
+  const std::vector< std::pair<uint32_t, eStreamContent> > &GetSideDataTypes() const { return m_SideDataTypes; }
 
   /* Video Stream Information */
   bool SetVideoInformation(int FpsScale, int FpsRate, int Height, int Width, float Aspect);
