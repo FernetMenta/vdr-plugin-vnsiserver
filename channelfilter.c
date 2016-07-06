@@ -93,7 +93,7 @@ void cVNSIChannelFilter::Load()
       }
       else
       {
-        provider.m_name = line.substr(0, pos);
+        provider.m_name.assign(line, 0, pos);
         provider.m_caid = strtol(line.c_str() + pos + 1, nullptr, 10);
       }
       p_it = std::find(m_providersVideo.begin(), m_providersVideo.end(), provider);
@@ -120,7 +120,7 @@ void cVNSIChannelFilter::Load()
       }
       else
       {
-        provider.m_name = line.substr(0, pos);
+        provider.m_name.assign(line, 0, pos);
         provider.m_caid = strtol(line.c_str() + pos + 1, nullptr, 10);
       }
       p_it = std::find(m_providersRadio.begin(), m_providersRadio.end(), provider);
