@@ -269,7 +269,7 @@ bool cVNSIClient::EpgChange()
 
     uint32_t channelId = CreateStringHash(schedule->ChannelID().ToString());
     it = m_epgUpdate.find(channelId);
-    if (it != m_epgUpdate.end() && it->second.lastEvent >= lastEvent->StartTime())
+    if (it == m_epgUpdate.end() || it->second.lastEvent >= lastEvent->StartTime())
     {
       continue;
     }
