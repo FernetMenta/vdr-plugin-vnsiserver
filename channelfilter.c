@@ -95,8 +95,7 @@ void cVNSIChannelFilter::Load()
       {
         provider.m_name = line.substr(0, pos);
         std::string tmp = line.substr(pos+1);
-        char *pend;
-        provider.m_caid = strtol(tmp.c_str(), &pend, 10);
+        provider.m_caid = strtol(tmp.c_str(), nullptr, 10);
       }
       p_it = std::find(m_providersVideo.begin(), m_providersVideo.end(), provider);
       if(p_it == m_providersVideo.end())
@@ -124,8 +123,7 @@ void cVNSIChannelFilter::Load()
       {
         provider.m_name = line.substr(0, pos);
         std::string tmp = line.substr(pos+1);
-        char *pend;
-        provider.m_caid = strtol(tmp.c_str(), &pend, 10);
+        provider.m_caid = strtol(tmp.c_str(), nullptr, 10);
       }
       p_it = std::find(m_providersRadio.begin(), m_providersRadio.end(), provider);
       if(p_it == m_providersRadio.end())
@@ -143,8 +141,7 @@ void cVNSIChannelFilter::Load()
   {
     while(getline(rfile,line))
     {
-      char *pend;
-      int id = strtol(line.c_str(), &pend, 10);
+      int id = strtol(line.c_str(), nullptr, 10);
       m_channelsVideo.push_back(id);
     }
     rfile.close();
@@ -157,8 +154,7 @@ void cVNSIChannelFilter::Load()
   {
     while(getline(rfile,line))
     {
-      char *pend;
-      int id = strtol(line.c_str(), &pend, 10);
+      int id = strtol(line.c_str(), nullptr, 10);
       m_channelsRadio.push_back(id);
     }
     rfile.close();
