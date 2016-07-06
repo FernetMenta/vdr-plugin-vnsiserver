@@ -51,8 +51,6 @@ class CVNSITimers;
 class cVNSIClient : public cThread
                   , public cStatus
 {
-private:
-
   unsigned int     m_Id;
   cxSocket         m_socket;
   bool             m_loggedIn;
