@@ -245,7 +245,6 @@ bool cVNSIClient::EpgChange()
     return callAgain;
 #endif
 
-  std::map<int, sEpgUpdate>::iterator it;
   for (const cSchedule *schedule = schedules->First(); schedule; schedule = schedules->Next(schedule))
   {
     const cEvent *lastEvent =  schedule->Events()->Last();
@@ -268,7 +267,7 @@ bool cVNSIClient::EpgChange()
       continue;
 
     uint32_t channelId = CreateStringHash(schedule->ChannelID().ToString());
-    it = m_epgUpdate.find(channelId);
+    auto it = m_epgUpdate.find(channelId);
     if (it == m_epgUpdate.end() || it->second.attempts > 3 ||
         it->second.lastEvent >= lastEvent->StartTime())
     {
@@ -1104,8 +1103,7 @@ bool cVNSIClient::processCHANNELS_GetChannels(cRequestPacket &req) /* OPCODE 63 
     }
 
     // create entry in EPG map on first query
-    std::map<int, sEpgUpdate>::iterator it;
-    it = m_epgUpdate.find(uuid);
+    auto it = m_epgUpdate.find(uuid);
     if (it == m_epgUpdate.end())
     {
       m_epgUpdate[uuid].lastEvent = 0;
