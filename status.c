@@ -194,8 +194,8 @@ void cVNSIStatus::Action(void)
         {
           chanState.Remove(false);
           INFOLOG("Requesting clients to reload channel list");
-          for (auto *i : m_clients)
-            i->ChannelsChange();
+          for (auto &i : m_clients)
+            i.ChannelsChange();
           chanTimer.Set(5000);
         }
 #else
