@@ -34,25 +34,23 @@ private:
   int      m_offset;
   int      m_len;
   bool     m_error;
-  bool     m_doEP3;
-  static constexpr uint8_t m_bitMask[8] = { 0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01 };
+  bool     m_doEP3 = false;
 
 public:
-  cBitstream(uint8_t *data, unsigned int bits);
+  cBitstream(uint8_t *data, int bits);
   cBitstream(uint8_t *data, unsigned int bits, bool doEP3);
 
-  void         setBitstream(uint8_t *data, unsigned int bits);
-  void         skipBits(unsigned int num);
-  unsigned int readBits(unsigned int num);
-  unsigned int showBits(unsigned int num);
+  void         setBitstream(uint8_t *data, int bits);
+  void         skipBits(int num);
+  unsigned int readBits(int num);
+  unsigned int showBits(int num);
   unsigned int readBits1() { return readBits(1); }
-  unsigned int readGolombUE(unsigned int maxbits = 32);
+  unsigned int readGolombUE(int maxbits = 32);
   signed int   readGolombSE();
   unsigned int remainingBits();
   void         putBits(int val, int num);
   int          length() { return m_len; }
   bool         isError() { return m_error; }
 };
-
 
 #endif // VNSI_BITSTREAM_H
