@@ -56,11 +56,11 @@ bool cVNSIClient::m_inhibidDataUpdates = false;
 
 cVNSIClient::cVNSIClient(int fd, unsigned int id, const char *ClientAdr, CVNSITimers &timers)
   : m_Id(id),
+    m_socket(fd),
     m_ClientAddress(ClientAdr),
     m_ChannelScanControl(this),
     m_vnsiTimers(timers)
 {
-  m_socket.SetHandle(fd);
   SetDescription("VNSI Client %u->%s", id, ClientAdr);
 
   Start();

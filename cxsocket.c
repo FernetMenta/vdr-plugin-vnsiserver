@@ -53,26 +53,23 @@
 #define MSG_MORE 0
 #endif
 
+cxSocket::cxSocket(int h)
+  :m_fd(h),
+   m_pollerRead(new cPoller(m_fd)),
+   m_pollerWrite(new cPoller(m_fd, true))
+{
+}
+
 cxSocket::~cxSocket()
 {
-  close();
+  close(m_fd);
   delete m_pollerRead;
   delete m_pollerWrite;
 }
 
-void cxSocket::close() {
-  if(m_fd >= 0) { 
-    ::close(m_fd);
-    m_fd=-1; 
-  }
-}
-
 void cxSocket::Shutdown()
 {
-  if(m_fd >= 0)
-  {
-    ::shutdown(m_fd, SHUT_RD);
-  }
+  ::shutdown(m_fd, SHUT_RD);
 }
 
 void cxSocket::LockWrite()
@@ -88,9 +85,6 @@ void cxSocket::UnlockWrite()
 ssize_t cxSocket::write(const void *buffer, size_t size, int timeout_ms, bool more_data)
 {
   cMutexLock CmdLock(&m_MutexWrite);
-
-  if(m_fd == -1)
-    return -1;
 
   ssize_t written = (ssize_t)size;
   const unsigned char *ptr = (const unsigned char *)buffer;
@@ -128,9 +122,6 @@ ssize_t cxSocket::read(void *buffer, size_t size, int timeout_ms)
 {
   int retryCounter = 0;
 
-  if(m_fd == -1)
-    return -1;
-
   ssize_t missing = (ssize_t)size;
   unsigned char *ptr = (unsigned char *)buffer;
 
@@ -167,17 +158,6 @@ ssize_t cxSocket::read(void *buffer, size_t size, int timeout_ms)
   }
 
   return size;
-}
-
-void cxSocket::SetHandle(int h) {
-  if(h != m_fd) {
-    close();
-    m_fd = h;
-    delete m_pollerRead;
-    delete m_pollerWrite;
-    m_pollerRead = new cPoller(m_fd);
-    m_pollerWrite = new cPoller(m_fd, true);
-  }
 }
 
 char *cxSocket::ip2txt(uint32_t ip, unsigned int port, char *str)
