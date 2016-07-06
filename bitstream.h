@@ -26,33 +26,42 @@
 #define VNSI_BITSTREAM_H
 
 #include <stdint.h>
+#include <stddef.h>
 
 class cBitstream
 {
 private:
-  uint8_t *m_data;
-  int      m_offset;
-  int      m_len;
-  bool     m_error;
-  bool     m_doEP3;
-  static constexpr uint8_t m_bitMask[8] = { 0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01 };
+  uint8_t *const m_data;
+  size_t   m_offset = 0;
+  const size_t m_len;
+  bool     m_error = false;
+  const bool m_doEP3 = false;
 
 public:
-  cBitstream(uint8_t *data, unsigned int bits);
-  cBitstream(uint8_t *data, unsigned int bits, bool doEP3);
+  constexpr cBitstream(uint8_t *data, size_t bits)
+    :m_data(data), m_len(bits)
+  {
+  }
 
-  void         setBitstream(uint8_t *data, unsigned int bits);
-  void         skipBits(unsigned int num);
-  unsigned int readBits(unsigned int num);
-  unsigned int showBits(unsigned int num);
+  // this is a bitstream that has embedded emulation_prevention_three_byte
+  // sequences that need to be removed as used in HECV.
+  // Data must start at byte 2
+  constexpr cBitstream(uint8_t *data, size_t bits, bool doEP3)
+    :m_data(data),
+     m_offset(16), // skip header and use as sentinel for EP3 detection
+     m_len(bits),
+     m_doEP3(true)
+  {
+  }
+
+  void         skipBits(int num);
+  unsigned int readBits(int num);
+  unsigned int showBits(int num);
   unsigned int readBits1() { return readBits(1); }
-  unsigned int readGolombUE(unsigned int maxbits = 32);
+  unsigned int readGolombUE(int maxbits = 32);
   signed int   readGolombSE();
-  unsigned int remainingBits();
-  void         putBits(int val, int num);
-  int          length() { return m_len; }
-  bool         isError() { return m_error; }
+  constexpr size_t length() const { return m_len; }
+  constexpr bool isError() const { return m_error; }
 };
-
 
 #endif // VNSI_BITSTREAM_H
