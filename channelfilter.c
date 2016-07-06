@@ -42,7 +42,7 @@ cVNSIProvider::cVNSIProvider(std::string name, int caid)
 {
 };
 
-bool cVNSIProvider::operator==(const cVNSIProvider &rhs)
+bool cVNSIProvider::operator==(const cVNSIProvider &rhs) const
 {
   if (rhs.m_caid != m_caid)
     return false;

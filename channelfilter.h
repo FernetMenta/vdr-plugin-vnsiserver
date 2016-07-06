@@ -34,7 +34,7 @@ class cVNSIProvider
 public:
   cVNSIProvider();
   cVNSIProvider(std::string name, int caid);
-  bool operator==(const cVNSIProvider &rhs);
+  bool operator==(const cVNSIProvider &rhs) const;
   std::string m_name;
   int m_caid;
 };
