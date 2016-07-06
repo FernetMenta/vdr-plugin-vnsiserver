@@ -172,7 +172,6 @@ void cVNSIChannelFilter::StoreWhitelist(bool radio)
   cString filename;
   std::ofstream wfile;
   cVNSIProvider provider;
-  std::vector<cVNSIProvider>::iterator p_it;
   std::vector<cVNSIProvider> *whitelist;
 
   if (radio)
@@ -191,11 +190,11 @@ void cVNSIChannelFilter::StoreWhitelist(bool radio)
   {
     std::string tmp;
     char buf[16];
-    for(p_it=whitelist->begin(); p_it!=whitelist->end(); ++p_it)
+    for (const auto i : *whitelist)
     {
-      tmp = p_it->m_name;
+      tmp = i.m_name;
       tmp += "|";
-      sprintf(buf, "%d\n", p_it->m_caid);
+      sprintf(buf, "%d\n", i.m_caid);
       tmp += buf;
       wfile << tmp;
     }
@@ -212,7 +211,6 @@ void cVNSIChannelFilter::StoreBlacklist(bool radio)
   cString filename;
   std::ofstream wfile;
   cVNSIProvider provider;
-  std::vector<int>::iterator it;
   std::vector<int> *blacklist;
 
   if (radio)
@@ -231,9 +229,9 @@ void cVNSIChannelFilter::StoreBlacklist(bool radio)
   {
     std::string tmp;
     char buf[16];
-    for(it=blacklist->begin(); it!=blacklist->end(); ++it)
+    for (const auto i : *blacklist)
     {
-      sprintf(buf, "%d\n", *it);
+      sprintf(buf, "%d\n", i);
       tmp = buf;
       wfile << tmp;
     }
