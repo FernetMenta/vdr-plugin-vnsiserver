@@ -1158,15 +1158,14 @@ bool cVNSIClient::processCHANNELS_GroupsCount(cRequestPacket &req)
 bool cVNSIClient::processCHANNELS_GroupList(cRequestPacket &req)
 {
   uint32_t radio = req.extract_U8();
-  std::map<std::string, ChannelGroup>::iterator i;
 
   cResponsePacket resp;
   resp.init(req.getRequestID());
 
-  for(i = m_channelgroups[radio].begin(); i != m_channelgroups[radio].end(); i++)
+  for (const auto &i : m_channelgroups[radio])
   {
-    resp.add_String(i->second.name.c_str());
-    resp.add_U8(i->second.radio);
+    resp.add_String(i.second.name.c_str());
+    resp.add_U8(i.second.radio);
   }
 
   resp.finalise();
@@ -1284,10 +1283,10 @@ bool cVNSIClient::processCHANNELS_GetWhitelist(cRequestPacket &req)
   resp.init(req.getRequestID());
 
   VNSIChannelFilter.m_Mutex.Lock();
-  for(unsigned int i=0; i<providers->size(); i++)
+  for (const auto &i : *providers)
   {
-    resp.add_String((*providers)[i].m_name.c_str());
-    resp.add_U32((*providers)[i].m_caid);
+    resp.add_String(i.m_name.c_str());
+    resp.add_U32(i.m_caid);
   }
   VNSIChannelFilter.m_Mutex.Unlock();
 
@@ -1310,9 +1309,9 @@ bool cVNSIClient::processCHANNELS_GetBlacklist(cRequestPacket &req)
   resp.init(req.getRequestID());
 
   VNSIChannelFilter.m_Mutex.Lock();
-  for(unsigned int i=0; i<channels->size(); i++)
+  for (auto i : *channels)
   {
-    resp.add_U32((*channels)[i]);
+    resp.add_U32(i);
   }
   VNSIChannelFilter.m_Mutex.Unlock();
 
@@ -2509,11 +2508,11 @@ bool cVNSIClient::processSCAN_GetCountries(cRequestPacket &req) /* OPCODE 141 */
   if (m_ChannelScanControl.GetCountries(list))
   {
     resp.add_U32(VNSI_RET_OK);
-    for (scannerEntryList::const_iterator it = list.begin(); it != list.end(); ++it)
+    for (const auto &i : list)
     {
-      resp.add_U32(it->index);
-      resp.add_String(it->name);
-      resp.add_String(it->longName);
+      resp.add_U32(i.index);
+      resp.add_String(i.name);
+      resp.add_String(i.longName);
     }
   }
   else
@@ -2535,11 +2534,11 @@ bool cVNSIClient::processSCAN_GetSatellites(cRequestPacket &req) /* OPCODE 142 *
   if (m_ChannelScanControl.GetSatellites(list))
   {
     resp.add_U32(VNSI_RET_OK);
-    for (scannerEntryList::const_iterator it = list.begin(); it != list.end(); ++it)
+    for (const auto &i : list)
     {
-      resp.add_U32(it->index);
-      resp.add_String(it->name);
-      resp.add_String(it->longName);
+      resp.add_U32(i.index);
+      resp.add_String(i.name);
+      resp.add_String(i.longName);
     }
   }
   else
