@@ -34,19 +34,13 @@
 // log output configuration
 
 #ifdef CONSOLEDEBUG
-#define DEBUGLOG(x...) printf("VNSI: " x)
-#elif defined  DEBUG
-#define DEBUGLOG(x...) dsyslog("VNSI: " x)
-#else
-#define DEBUGLOG(x...)
-#endif
-
-#ifdef CONSOLEDEBUG
 #define INFOLOG(x...) printf("VNSI: " x)
 #define ERRORLOG(x...) printf("VNSI-Error: " x)
+#define DEBUGLOG(x...) printf("VNSI-Debug: " x)
 #else
 #define INFOLOG(x...) isyslog("VNSI: " x)
 #define ERRORLOG(x...) esyslog("VNSI-Error: " x)
+#define DEBUGLOG(x...) dsyslog("VNSI-Debug: " x)
 #endif
 
 // default settings

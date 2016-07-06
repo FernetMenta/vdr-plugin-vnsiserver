@@ -67,7 +67,7 @@ void cVNSIDemuxer::Close()
 
   for (auto *i : m_Streams)
   {
-    DEBUGLOG("Deleting stream parser for pid=%i and type=%i", i->GetPID(), o->Type());
+    DEBUGLOG("Deleting stream parser for pid=%i and type=%i", i->GetPID(), i->Type());
     delete i;
   }
   m_Streams.clear();

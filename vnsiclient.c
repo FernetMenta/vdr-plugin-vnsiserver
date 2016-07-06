@@ -268,7 +268,7 @@ bool cVNSIClient::EpgChange()
 
     it->second.attempts++;
 
-    INFOLOG("Trigger EPG update for channel %s, id: %d", channel->Name(), channelId);
+    DEBUGLOG("Trigger EPG update for channel %s, id: %d", channel->Name(), channelId);
 
     cResponsePacket resp;
     resp.initStatus(VNSI_STATUS_EPGCHANGE);
