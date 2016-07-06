@@ -67,13 +67,13 @@ void cBitstream::skipBits(int num)
 
 unsigned int cBitstream::readBits(int num)
 {
-  int r = 0;
+  unsigned int r = 0;
 
   while(num > 0)
   {
     if (m_doEP3)
     {
-      register unsigned int tmp = m_offset >> 3;
+      size_t tmp = m_offset >> 3;
       if (!(m_offset & 7) && (m_data[tmp--] == 3) && (m_data[tmp--] == 0) && (m_data[tmp] == 0))
         m_offset += 8;   // skip EP3 byte
     }
@@ -96,8 +96,8 @@ unsigned int cBitstream::readBits(int num)
 
 unsigned int cBitstream::showBits(int num)
 {
-  int r = 0;
-  int offs = m_offset;
+  unsigned int r = 0;
+  size_t offs = m_offset;
 
   while(num > 0)
   {

@@ -26,18 +26,19 @@
 #define VNSI_BITSTREAM_H
 
 #include <stdint.h>
+#include <stddef.h>
 
 class cBitstream
 {
 private:
   uint8_t *const m_data;
-  int      m_offset = 0;
-  const int m_len;
+  size_t   m_offset = 0;
+  const size_t m_len;
   bool     m_error = false;
   const bool m_doEP3 = false;
 
 public:
-  constexpr cBitstream(uint8_t *data, int bits)
+  constexpr cBitstream(uint8_t *data, size_t bits)
     :m_data(data), m_len(bits)
   {
   }
@@ -45,7 +46,7 @@ public:
   // this is a bitstream that has embedded emulation_prevention_three_byte
   // sequences that need to be removed as used in HECV.
   // Data must start at byte 2
-  constexpr cBitstream(uint8_t *data, unsigned int bits, bool doEP3)
+  constexpr cBitstream(uint8_t *data, size_t bits, bool doEP3)
     :m_data(data),
      m_offset(16), // skip header and use as sentinel for EP3 detection
      m_len(bits),
@@ -59,7 +60,7 @@ public:
   unsigned int readBits1() { return readBits(1); }
   unsigned int readGolombUE(int maxbits = 32);
   signed int   readGolombSE();
-  constexpr int length() const { return m_len; }
+  constexpr size_t length() const { return m_len; }
   constexpr bool isError() const { return m_error; }
 };
 
