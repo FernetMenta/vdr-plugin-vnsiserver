@@ -51,14 +51,14 @@ class CVNSITimers;
 class cVNSIClient : public cThread
                   , public cStatus
 {
-  unsigned int     m_Id;
+  const unsigned int m_Id;
   cxSocket         m_socket;
   bool             m_loggedIn = false;
   bool             m_StatusInterfaceEnabled = false;
   cLiveStreamer   *m_Streamer = nullptr;
   bool             m_isStreaming = false;
   bool             m_bSupportRDS = false;
-  cString          m_ClientAddress;
+  const cString    m_ClientAddress;
   cRecPlayer      *m_RecPlayer = nullptr;
   cCharSetConv     m_toUTF8;
   uint32_t         m_protocolVersion;
