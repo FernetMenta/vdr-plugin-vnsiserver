@@ -40,7 +40,7 @@
 #else
 #define INFOLOG(x...) isyslog("VNSI: " x)
 #define ERRORLOG(x...) esyslog("VNSI-Error: " x)
-#define DEBUGLOG(x...) dsyslog("VNSI-Debug: " x)
+#define DEBUGLOG(x...) (SysLogLevel > 3) ? dsyslog("VNSI-Debug: " x) : void()
 #endif
 
 // default settings
