@@ -171,7 +171,6 @@ void cVNSIChannelFilter::StoreWhitelist(bool radio)
 
   cString filename;
   std::ofstream wfile;
-  cVNSIProvider provider;
   std::vector<cVNSIProvider> *whitelist;
 
   if (radio)
@@ -204,7 +203,6 @@ void cVNSIChannelFilter::StoreBlacklist(bool radio)
 
   cString filename;
   std::ofstream wfile;
-  cVNSIProvider provider;
   std::vector<int> *blacklist;
 
   if (radio)
