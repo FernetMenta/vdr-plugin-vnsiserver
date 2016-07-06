@@ -75,7 +75,6 @@ void cVNSIChannelFilter::Load()
   cString filename;
   std::string line;
   std::ifstream rfile;
-  cVNSIProvider provider;
   std::vector<cVNSIProvider>::iterator p_it;
 
   filename = cString::sprintf("%s/videowhitelist.vnsi", *VNSIServerConfig.ConfigDirectory);
@@ -85,11 +84,11 @@ void cVNSIChannelFilter::Load()
   {
     while(std::getline(rfile,line))
     {
+      cVNSIProvider provider;
       size_t pos = line.find("|");
       if(pos == line.npos)
       {
         provider.m_name = line;
-        provider.m_caid = 0;
       }
       else
       {
@@ -112,11 +111,11 @@ void cVNSIChannelFilter::Load()
   {
     while(std::getline(rfile,line))
     {
+      cVNSIProvider provider;
       auto pos = line.find("|");
       if(pos == line.npos)
       {
         provider.m_name = line;
-        provider.m_caid = 0;
       }
       else
       {
