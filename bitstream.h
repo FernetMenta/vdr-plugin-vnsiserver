@@ -37,8 +37,21 @@ private:
   const bool m_doEP3 = false;
 
 public:
-  cBitstream(uint8_t *data, int bits);
-  cBitstream(uint8_t *data, unsigned int bits, bool doEP3);
+  constexpr cBitstream(uint8_t *data, int bits)
+    :m_data(data), m_len(bits)
+  {
+  }
+
+  // this is a bitstream that has embedded emulation_prevention_three_byte
+  // sequences that need to be removed as used in HECV.
+  // Data must start at byte 2
+  constexpr cBitstream(uint8_t *data, unsigned int bits, bool doEP3)
+    :m_data(data),
+     m_offset(16), // skip header and use as sentinel for EP3 detection
+     m_len(bits),
+     m_doEP3(true)
+  {
+  }
 
   void         skipBits(int num);
   unsigned int readBits(int num);
