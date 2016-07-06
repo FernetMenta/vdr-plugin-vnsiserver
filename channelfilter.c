@@ -32,7 +32,7 @@
 #include <vdr/tools.h>
 
 cVNSIProvider::cVNSIProvider()
-  :m_name(""), m_caid(0)
+  :m_caid(0)
 {
 
 }
