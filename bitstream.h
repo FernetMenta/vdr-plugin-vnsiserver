@@ -30,11 +30,11 @@
 class cBitstream
 {
 private:
-  uint8_t *m_data;
+  uint8_t *const m_data;
   int      m_offset = 0;
-  int      m_len;
+  const int m_len;
   bool     m_error = false;
-  bool     m_doEP3 = false;
+  const bool m_doEP3 = false;
 
 public:
   cBitstream(uint8_t *data, int bits);
