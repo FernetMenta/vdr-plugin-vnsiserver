@@ -93,6 +93,9 @@ public:
   cVNSIClient(int fd, unsigned int id, const char *ClientAdr, CVNSITimers &timers);
   virtual ~cVNSIClient();
 
+  cVNSIClient(const cVNSIClient &) = delete;
+  cVNSIClient &operator=(const cVNSIClient &) = delete;
+
   void ChannelsChange();
   void RecordingsChange();
   void SignalTimerChange();
