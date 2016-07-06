@@ -1853,10 +1853,10 @@ bool cVNSIClient::processTIMER_Update(cRequestPacket &req) /* OPCODE 85 */
   cResponsePacket resp;
   resp.init(req.getRequestID());
 
-  if (m_protocolVersion >= 9)
-  {
-    type  = req.extract_U32();
-  }
+  type = m_protocolVersion >= 9
+    ? req.extract_U32()
+    : VNSI_TIMER_TYPE_MAN;
+
   active = req.extract_U32();
   priority = req.extract_U32();
   lifetime = req.extract_U32();
