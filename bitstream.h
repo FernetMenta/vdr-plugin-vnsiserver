@@ -59,8 +59,8 @@ public:
   unsigned int readBits1() { return readBits(1); }
   unsigned int readGolombUE(int maxbits = 32);
   signed int   readGolombSE();
-  int          length() { return m_len; }
-  bool         isError() { return m_error; }
+  constexpr int length() const { return m_len; }
+  constexpr bool isError() const { return m_error; }
 };
 
 #endif // VNSI_BITSTREAM_H
