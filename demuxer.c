@@ -485,6 +485,8 @@ bool cVNSIDemuxer::EnsureParsers()
 
 void cVNSIDemuxer::SetChannelStreams(const cChannel *channel)
 {
+  m_StreamInfos.clear();
+
   sStreamInfo newStream;
   bool containsVideo = false;
   int index = 0;
@@ -508,17 +510,12 @@ void cVNSIDemuxer::SetChannelStreams(const cChannel *channel)
   index = 0;
   for ( ; *DPids; DPids++)
   {
-    if (!FindStream(*DPids))
-    {
-      newStream.pID = *DPids;
-      newStream.type = stAC3;
-#if APIVERSNUM >= 10715
-      if (channel->Dtype(index) == SI::EnhancedAC3DescriptorTag)
-        newStream.type = stEAC3;
-#endif
-      newStream.SetLanguage(channel->Dlang(index));
-      AddStreamInfo(newStream);
-    }
+    newStream.pID = *DPids;
+    newStream.type = stAC3;
+    if (channel->Dtype(index) == SI::EnhancedAC3DescriptorTag)
+      newStream.type = stEAC3;
+    newStream.SetLanguage(channel->Dlang(index));
+    AddStreamInfo(newStream);
     index++;
   }
 
@@ -526,20 +523,15 @@ void cVNSIDemuxer::SetChannelStreams(const cChannel *channel)
   index = 0;
   for ( ; *APids; APids++)
   {
-    if (!FindStream(*APids))
-    {
-      newStream.pID = *APids;
-      newStream.type = stMPEG2AUDIO;
-#if APIVERSNUM >= 10715
-      if (channel->Atype(index) == 0x0F)
-        newStream.type = stAACADTS;
-      else if (channel->Atype(index) == 0x11)
-        newStream.type = stAACLATM;
-#endif
-      newStream.handleRDS = m_bAllowRDS && newStream.type == stMPEG2AUDIO && !containsVideo ? true : false; // Relevant for RDS, if present only on mpeg 2 audio, use only if RDS is allowed
-      newStream.SetLanguage(channel->Alang(index));
-      AddStreamInfo(newStream);
-    }
+    newStream.pID = *APids;
+    newStream.type = stMPEG2AUDIO;
+    if (channel->Atype(index) == 0x0F)
+      newStream.type = stAACADTS;
+    else if (channel->Atype(index) == 0x11)
+      newStream.type = stAACLATM;
+    newStream.handleRDS = m_bAllowRDS && newStream.type == stMPEG2AUDIO && !containsVideo ? true : false; // Relevant for RDS, if present only on mpeg 2 audio, use only if RDS is allowed
+    newStream.SetLanguage(channel->Alang(index));
+    AddStreamInfo(newStream);
     index++;
   }
 
@@ -549,20 +541,15 @@ void cVNSIDemuxer::SetChannelStreams(const cChannel *channel)
     index = 0;
     for ( ; *SPids; SPids++)
     {
-      if (!FindStream(*SPids))
-      {
-        newStream.pID = *SPids;
-        newStream.type = stDVBSUB;
-        newStream.SetLanguage(channel->Slang(index));
-#if APIVERSNUM >= 10709
-        newStream.subtitlingType = channel->SubtitlingType(index);
-        newStream.compositionPageId = channel->CompositionPageId(index);
-        newStream.ancillaryPageId = channel->AncillaryPageId(index);
-#endif
-        AddStreamInfo(newStream);
-      }
-      index++;
+      newStream.pID = *SPids;
+      newStream.type = stDVBSUB;
+      newStream.SetLanguage(channel->Slang(index));
+      newStream.subtitlingType = channel->SubtitlingType(index);
+      newStream.compositionPageId = channel->CompositionPageId(index);
+      newStream.ancillaryPageId = channel->AncillaryPageId(index);
+      AddStreamInfo(newStream);
     }
+    index++;
   }
 
   if (channel->Tpid())
