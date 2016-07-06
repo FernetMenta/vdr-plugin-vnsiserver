@@ -53,18 +53,18 @@ class cVNSIClient : public cThread
 {
   unsigned int     m_Id;
   cxSocket         m_socket;
-  bool             m_loggedIn;
-  bool             m_StatusInterfaceEnabled;
-  cLiveStreamer   *m_Streamer;
-  bool             m_isStreaming;
-  bool             m_bSupportRDS;
+  bool             m_loggedIn = false;
+  bool             m_StatusInterfaceEnabled = false;
+  cLiveStreamer   *m_Streamer = nullptr;
+  bool             m_isStreaming = false;
+  bool             m_bSupportRDS = false;
   cString          m_ClientAddress;
-  cRecPlayer      *m_RecPlayer;
+  cRecPlayer      *m_RecPlayer = nullptr;
   cCharSetConv     m_toUTF8;
   uint32_t         m_protocolVersion;
   cMutex           m_msgLock;
   static cMutex    m_timerLock;
-  cVnsiOsdProvider *m_Osd;
+  cVnsiOsdProvider *m_Osd = nullptr;
   CScanControl      m_ChannelScanControl;
   static bool       m_inhibidDataUpdates;
   typedef struct

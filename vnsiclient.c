@@ -56,14 +56,7 @@ bool cVNSIClient::m_inhibidDataUpdates = false;
 
 cVNSIClient::cVNSIClient(int fd, unsigned int id, const char *ClientAdr, CVNSITimers &timers)
   : m_Id(id),
-    m_loggedIn(false),
-    m_StatusInterfaceEnabled(false),
-    m_Streamer(NULL),
-    m_isStreaming(false),
-    m_bSupportRDS(false),
     m_ClientAddress(ClientAdr),
-    m_RecPlayer(NULL),
-    m_Osd(NULL),
     m_ChannelScanControl(this),
     m_vnsiTimers(timers)
 {
