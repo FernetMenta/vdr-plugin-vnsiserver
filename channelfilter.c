@@ -114,7 +114,7 @@ void cVNSIChannelFilter::Load()
   {
     while(std::getline(rfile,line))
     {
-      unsigned int pos = line.find("|");
+      auto pos = line.find("|");
       if(pos == line.npos)
       {
         provider.m_name = line;
