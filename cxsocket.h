@@ -39,7 +39,6 @@
 
 class cxSocket
 {
- private:
   int m_fd;
   cMutex m_MutexWrite;
   cPoller *m_pollerRead;
