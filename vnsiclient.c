@@ -2435,8 +2435,9 @@ bool cVNSIClient::processEPG_GetForChannel(cRequestPacket &req) /* OPCODE 120 */
   const cEvent *lastEvent =  Schedule->Events()->Last();
   if (lastEvent)
   {
-    m_epgUpdate[channelUID].lastEvent = lastEvent->StartTime();
-    m_epgUpdate[channelUID].attempts = 0;
+    auto &u = m_epgUpdate[channelUID];
+    u.lastEvent = lastEvent->StartTime();
+    u.attempts = 0;
   }
   DEBUGLOG("written schedules packet");
 
