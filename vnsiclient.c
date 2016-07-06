@@ -73,7 +73,6 @@ cVNSIClient::~cVNSIClient()
   m_ChannelScanControl.StopScan();
   m_socket.Shutdown();
   Cancel(10);
-  m_socket.close();
   DEBUGLOG("done");
 }
 
