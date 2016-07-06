@@ -69,8 +69,8 @@ class cVNSIClient : public cThread
   static bool       m_inhibidDataUpdates;
   typedef struct
   {
-    int attempts;
-    time_t lastEvent;
+    int attempts = 0;
+    time_t lastEvent = 0;
   } sEpgUpdate;
   std::map<int, sEpgUpdate> m_epgUpdate;
   CVNSITimers &m_vnsiTimers;
