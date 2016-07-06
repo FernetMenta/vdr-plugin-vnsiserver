@@ -40,15 +40,12 @@ public:
   cBitstream(uint8_t *data, int bits);
   cBitstream(uint8_t *data, unsigned int bits, bool doEP3);
 
-  void         setBitstream(uint8_t *data, int bits);
   void         skipBits(int num);
   unsigned int readBits(int num);
   unsigned int showBits(int num);
   unsigned int readBits1() { return readBits(1); }
   unsigned int readGolombUE(int maxbits = 32);
   signed int   readGolombSE();
-  unsigned int remainingBits();
-  void         putBits(int val, int num);
   int          length() { return m_len; }
   bool         isError() { return m_error; }
 };

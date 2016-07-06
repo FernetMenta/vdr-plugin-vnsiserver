@@ -32,14 +32,6 @@ cBitstream::cBitstream(uint8_t *data, int bits)
   m_error  = false;
 }
 
-void cBitstream::setBitstream(uint8_t *data, int bits)
-{
-  m_data   = data;
-  m_offset = 0;
-  m_len    = bits;
-  m_error  = false;
-}
-
 // this is a bitstream that has embedded emulation_prevention_three_byte
 // sequences that need to be removed as used in HECV.
 // Data must start at byte 2 
@@ -171,31 +163,4 @@ signed int cBitstream::readGolombSE()
   pos = (v & 1);
   v = (v + 1) >> 1;
   return pos ? v : -v;
-}
-
-
-unsigned int cBitstream::remainingBits()
-{
-  return m_len - m_offset;
-}
-
-
-void cBitstream::putBits(int val, int num)
-{
-  while(num > 0) {
-    if(m_offset >= m_len)
-    {
-      m_error = true;
-      return;
-    }
-
-    num--;
-
-    if(val & (1 << num))
-      m_data[m_offset / 8] |= 1 << (7 - (m_offset & 7));
-    else
-      m_data[m_offset / 8] &= ~(1 << (7 - (m_offset & 7)));
-
-    m_offset++;
-  }
 }
