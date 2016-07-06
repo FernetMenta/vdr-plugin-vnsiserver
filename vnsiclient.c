@@ -1095,12 +1095,7 @@ bool cVNSIClient::processCHANNELS_GetChannels(cRequestPacket &req) /* OPCODE 63 
     }
 
     // create entry in EPG map on first query
-    auto it = m_epgUpdate.find(uuid);
-    if (it == m_epgUpdate.end())
-    {
-      m_epgUpdate[uuid].lastEvent = 0;
-      m_epgUpdate[uuid].attempts = 0;
-    }
+    m_epgUpdate.insert(std::make_pair(uuid, sEpgUpdate()));
   }
 
 #if VDRVERSNUM >= 20301
