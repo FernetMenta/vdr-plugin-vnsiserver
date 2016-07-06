@@ -98,7 +98,7 @@ void cVNSIChannelFilter::Load()
       p_it = std::find(m_providersVideo.begin(), m_providersVideo.end(), provider);
       if(p_it == m_providersVideo.end())
       {
-        m_providersVideo.push_back(provider);
+        m_providersVideo.emplace_back(std::move(provider));
       }
     }
     rfile.close();
@@ -125,7 +125,7 @@ void cVNSIChannelFilter::Load()
       p_it = std::find(m_providersRadio.begin(), m_providersRadio.end(), provider);
       if(p_it == m_providersRadio.end())
       {
-        m_providersRadio.push_back(provider);
+        m_providersRadio.emplace_back(std::move(provider));
       }
     }
     rfile.close();
