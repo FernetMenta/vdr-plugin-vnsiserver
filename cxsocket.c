@@ -55,16 +55,14 @@
 
 cxSocket::cxSocket(int h)
   :m_fd(h),
-   m_pollerRead(new cPoller(m_fd)),
-   m_pollerWrite(new cPoller(m_fd, true))
+   m_pollerRead(m_fd),
+   m_pollerWrite(m_fd, true)
 {
 }
 
 cxSocket::~cxSocket()
 {
   close(m_fd);
-  delete m_pollerRead;
-  delete m_pollerWrite;
 }
 
 void cxSocket::Shutdown()
@@ -91,7 +89,7 @@ ssize_t cxSocket::write(const void *buffer, size_t size, int timeout_ms, bool mo
 
   while (size > 0)
   {
-    if(!m_pollerWrite->Poll(timeout_ms))
+    if(!m_pollerWrite.Poll(timeout_ms))
     {
       ERRORLOG("cxSocket::write(fd=%d): poll() failed", m_fd);
       return written-size;
@@ -127,7 +125,7 @@ ssize_t cxSocket::read(void *buffer, size_t size, int timeout_ms)
 
   while (missing > 0)
   {
-    if(!m_pollerRead->Poll(timeout_ms))
+    if(!m_pollerRead.Poll(timeout_ms))
     {
       ERRORLOG("cxSocket::read(fd=%d): poll() failed at %d/%d", m_fd, (int)(size-missing), (int)size);
       return size-missing;

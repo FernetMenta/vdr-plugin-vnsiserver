@@ -41,8 +41,8 @@ class cxSocket
 {
   const int m_fd;
   cMutex m_MutexWrite;
-  cPoller *m_pollerRead;
-  cPoller *m_pollerWrite;
+  cPoller m_pollerRead;
+  cPoller m_pollerWrite;
 
  public:
   cxSocket(int h);
