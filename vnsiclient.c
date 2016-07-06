@@ -1283,7 +1283,7 @@ bool cVNSIClient::processCHANNELS_GetWhitelist(cRequestPacket &req)
 bool cVNSIClient::processCHANNELS_GetBlacklist(cRequestPacket &req)
 {
   bool radio = req.extract_U8();
-  std::vector<int> *channels;
+  const std::set<int> *channels;
 
   if(radio)
     channels = &VNSIChannelFilter.m_channelsRadio;
@@ -1340,7 +1340,7 @@ bool cVNSIClient::processCHANNELS_SetBlacklist(cRequestPacket &req)
 {
   bool radio = req.extract_U8();
   cVNSIProvider provider;
-  std::vector<int> *channels;
+  std::set<int> *channels;
 
   if(radio)
     channels = &VNSIChannelFilter.m_channelsRadio;
@@ -1354,7 +1354,7 @@ bool cVNSIClient::processCHANNELS_SetBlacklist(cRequestPacket &req)
   while(!req.end())
   {
     id = req.extract_U32();
-    channels->push_back(id);
+    channels->insert(id);
   }
   VNSIChannelFilter.StoreBlacklist(radio);
   VNSIChannelFilter.m_Mutex.Unlock();

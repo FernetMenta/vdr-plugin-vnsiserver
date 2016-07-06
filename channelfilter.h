@@ -26,6 +26,7 @@
 
 #include <string>
 #include <vector>
+#include <set>
 #include <vdr/thread.h>
 #include <vdr/channels.h>
 
@@ -51,8 +52,8 @@ public:
   static bool IsRadio(const cChannel* channel);
   std::vector<cVNSIProvider> m_providersVideo;
   std::vector<cVNSIProvider> m_providersRadio;
-  std::vector<int> m_channelsVideo;
-  std::vector<int> m_channelsRadio;
+  std::set<int> m_channelsVideo;
+  std::set<int> m_channelsRadio;
   cMutex m_Mutex;
 };
 

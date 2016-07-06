@@ -138,7 +138,7 @@ void cVNSIChannelFilter::Load()
     while(getline(rfile,line))
     {
       int id = strtol(line.c_str(), nullptr, 10);
-      m_channelsVideo.push_back(id);
+      m_channelsVideo.insert(id);
     }
     rfile.close();
   }
@@ -151,7 +151,7 @@ void cVNSIChannelFilter::Load()
     while(getline(rfile,line))
     {
       int id = strtol(line.c_str(), nullptr, 10);
-      m_channelsRadio.push_back(id);
+      m_channelsRadio.insert(id);
     }
     rfile.close();
   }
@@ -195,7 +195,7 @@ void cVNSIChannelFilter::StoreBlacklist(bool radio)
 
   cString filename;
   std::ofstream wfile;
-  std::vector<int> *blacklist;
+  std::set<int> *blacklist;
 
   if (radio)
   {
