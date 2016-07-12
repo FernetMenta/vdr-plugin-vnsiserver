@@ -615,10 +615,10 @@ void cLiveStreamer::sendSignalInfo()
           resp.add_String(*cString::sprintf("DVB-T #%d - %s", cDevice::ActualDevice()->CardIndex(), m_FrontendInfo.name));
           break;
         case cSource::stAtsc:
-          resp->add_String(*cString::sprintf("ATSC #%d - %s", cDevice::ActualDevice()->CardIndex(), m_FrontendInfo.name));
+          resp.add_String(*cString::sprintf("ATSC #%d - %s", cDevice::ActualDevice()->CardIndex(), m_FrontendInfo.name));
           break;
         default:
-          resp->add_U8(0);
+          resp.add_U8(0);
           break;
       }
       resp.add_String(*cString::sprintf("%s:%s:%s:%s:%s", (status & FE_HAS_LOCK) ? "LOCKED" : "-", (status & FE_HAS_SIGNAL) ? "SIGNAL" : "-", (status & FE_HAS_CARRIER) ? "CARRIER" : "-", (status & FE_HAS_VITERBI) ? "VITERBI" : "-", (status & FE_HAS_SYNC) ? "SYNC" : "-"));
