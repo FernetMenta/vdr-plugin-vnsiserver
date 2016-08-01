@@ -314,6 +314,9 @@ bool cLiveStreamer::StreamChannel(const cChannel *channel, int priority, cxSocke
   m_Priority  = priority;
   m_Socket    = Socket;
 
+  if (m_Priority < 0)
+    m_Priority = 0;
+
   if (!Open())
     return false;
 
