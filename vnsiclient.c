@@ -266,7 +266,15 @@ bool cVNSIClient::EpgChange()
       continue;
     }
 
+    time_t now = time(nullptr);
+    if ((now - it->second.lastTrigger) < 5)
+    {
+      callAgain = true;
+      continue;
+    }
+
     it->second.attempts++;
+    it->second.lastTrigger = now;
 
     DEBUGLOG("Trigger EPG update for channel %s, id: %d", channel->Name(), channelId);
 

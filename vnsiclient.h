@@ -71,6 +71,7 @@ class cVNSIClient : public cThread
   {
     int attempts = 0;
     time_t lastEvent = 0;
+    time_t lastTrigger = 0;
   } sEpgUpdate;
   std::map<int, sEpgUpdate> m_epgUpdate;
   CVNSITimers &m_vnsiTimers;
