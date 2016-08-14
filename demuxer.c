@@ -82,6 +82,9 @@ int cVNSIDemuxer::Read(sStreamPacket *packet, sStreamPacket *packet_side_data)
 
   cMutexLock lock(&m_Mutex);
 
+  if (!m_CurrentChannel.Vpid())
+    m_WaitIFrame = false;
+
   // clear packet
   if (!packet)
     return -1;
