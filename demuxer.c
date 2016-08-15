@@ -59,6 +59,7 @@ void cVNSIDemuxer::Open(const cChannel &channel, cVideoBuffer *videoBuffer)
   m_MuxPacketSerial = 0;
   m_Error = ERROR_DEMUX_NODATA;
   m_SetRefTime = true;
+  m_seenFirstPacket = false;
 }
 
 void cVNSIDemuxer::Close()
@@ -136,6 +137,7 @@ int cVNSIDemuxer::Read(sStreamPacket *packet, sStreamPacket *packet_side_data)
     if (error == 0)
     {
       m_WaitIFrame = false;
+      m_seenFirstPacket = true;
 
       packet->serial = m_MuxPacketSerial;
       if (m_SetRefTime)
@@ -151,7 +153,7 @@ int cVNSIDemuxer::Read(sStreamPacket *packet, sStreamPacket *packet_side_data)
       m_Error |= abs(error);
       if (m_Error & ERROR_PES_SCRAMBLE)
       {
-        if (!m_WaitIFrame)
+        if (m_seenFirstPacket)
         {
           ResetParsers();
           m_Error |= ERROR_CAM_ERROR;
@@ -382,6 +384,7 @@ void cVNSIDemuxer::ResetParsers()
   {
     i->ResetParser();
   }
+  m_seenFirstPacket = false;
 }
 
 void cVNSIDemuxer::AddStreamInfo(sStreamInfo &stream)

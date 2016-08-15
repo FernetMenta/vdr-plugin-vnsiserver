@@ -94,4 +94,5 @@ protected:
   bool m_SetRefTime;
   time_t m_refTime, m_endTime, m_wrapTime;
   bool m_bAllowRDS;
+  bool m_seenFirstPacket;
 };
