@@ -154,6 +154,9 @@ int cParserAAC::FindHeaders(uint8_t *buf, int buf_size)
       m_FrameSize = bs.readBits(13);
       m_SampleRate    = aac_sample_rates[SampleRateIndex & 0x0E];
 
+      if (!m_SampleRate)
+        m_SampleRate = aac_sample_rates[4];
+
       m_FoundFrame = true;
       m_DTS = m_curPTS;
       m_PTS = m_curPTS;
