@@ -35,6 +35,9 @@
 #include <vdr/config.h>
 #include <libsi/section.h>
 #include <libsi/descriptor.h>
+#include <memory>
+#include <vector>
+#include <algorithm>
 
 // --- cLiveReceiver -------------------------------------------------
 
@@ -77,13 +80,11 @@ void cLiveReceiver::Receive(uchar *Data, int Length)
   m_VideoInput->Receive(Data, Length);
 }
 
-inline void cLiveReceiver::Activate(bool On)
+void cLiveReceiver::Activate(bool On)
 {
   INFOLOG("activate live receiver: %d, pmt change: %d", On, m_VideoInput->m_PmtChange);
-  if (!On && !m_VideoInput->m_PmtChange)
-  {
-    m_VideoInput->Retune();
-  }
+  if (!On)
+    m_VideoInput->m_Event.Signal();
 }
 
 // --- cLivePatFilter ----------------------------------------------------
@@ -407,16 +408,75 @@ void cLivePatFilter::Process(u_short Pid, u_char Tid, const u_char *Data, int Le
        pmtChannel->SetPids(Vpid, Ppid, Vtype, Apids, Atypes, ALangs, Dpids, Dtypes, DLangs, Spids, SLangs, Tpid);
        pmtChannel->SetSubtitlingDescriptors(SubtitlingTypes, CompositionPageIds, AncillaryPageIds);
        if (pmtChannel->Modification(CHANNELMOD_PIDS))
-         m_VideoInput->Retune();
+         m_VideoInput->RequestRetune();
     }
   }
 #endif
 }
 
+// --- cDummyReceiver ----------------------------------------------------
+
+// This dummy receiver is used to detect if a recording/streaming task
+// with a higher priority has acquired the device and detached *all*
+// receivers from it.
+class cDummyReceiver : public cReceiver
+{
+public:
+  // Return a new or existing dummy receiver attached to the device.
+  static std::shared_ptr<cDummyReceiver> Create(cDevice *device);
+  virtual ~cDummyReceiver() {Detach();}
+protected:
+#if VDRVERSNUM >= 20301
+  virtual void Receive(const uchar *Data, int Length) {}
+#else
+  virtual void Receive(uchar *Data, int Length) {}
+#endif
+  virtual void Activate(bool On);
+private:
+  static std::vector<std::weak_ptr<cDummyReceiver>> s_Pool;
+  static cMutex s_PoolMutex;
+  cDummyReceiver() : cReceiver(NULL, MINPRIORITY) {}
+};
+
+std::vector<std::weak_ptr<cDummyReceiver>> cDummyReceiver::s_Pool;
+cMutex cDummyReceiver::s_PoolMutex;
+
+void cDummyReceiver::Activate(bool On)
+{
+  INFOLOG("Dummy receiver (%p) %s", this, (On)? "activated" : "deactivated");
+}
+
+std::shared_ptr<cDummyReceiver> cDummyReceiver::Create(cDevice *device)
+{
+  if (!device)
+    return nullptr;
+
+  cMutexLock MutexLock(&s_PoolMutex);
+  // cleanup
+  s_Pool.erase(std::remove_if(s_Pool.begin(), s_Pool.end(),
+        [](const std::weak_ptr<cDummyReceiver> &p) -> bool
+        {return !p.lock();}), s_Pool.end());
+
+  // find an active receiver for the device
+  for (auto p : s_Pool)
+  {
+    auto recv = p.lock();
+    if (recv->Device() == device)
+      return recv;
+  }
+  auto recv = std::shared_ptr<cDummyReceiver>(new cDummyReceiver);
+  if (device->AttachReceiver(recv.get()))
+  {
+    s_Pool.push_back(recv);
+    return recv;
+  }
+  return nullptr;
+}
+
 // ----------------------------------------------------------------------------
 
-cVideoInput::cVideoInput(cCondVar &condVar, cMutex &mutex, bool &retune) :
-    m_Event(condVar), m_Mutex(mutex), m_IsRetune(retune)
+cVideoInput::cVideoInput(cCondWait &event)
+  : m_Event(event)
 {
   m_Device = NULL;;
   m_PatFilter = NULL;
@@ -425,6 +485,7 @@ cVideoInput::cVideoInput(cCondVar &condVar, cMutex &mutex, bool &retune) :
   m_VideoBuffer = NULL;
   m_Priority = 0;
   m_PmtChange = false;
+  m_RetuneRequested = false;
 }
 
 cVideoInput::~cVideoInput()
@@ -437,11 +498,12 @@ bool cVideoInput::Open(const cChannel *channel, int priority, cVideoBuffer *vide
   m_VideoBuffer = videoBuffer;
   m_Channel = channel;
   m_Priority = priority;
+  m_RetuneRequested = false;
   m_Device = cDevice::GetDevice(m_Channel, m_Priority, false);
 
   if (m_Device != NULL)
   {
-    INFOLOG("Successfully found following device: %p (%d) for receiving", m_Device, m_Device ? m_Device->CardIndex() + 1 : 0);
+    INFOLOG("Successfully found following device: %p (%d) for receiving, priority=%d", m_Device, m_Device ? m_Device->CardIndex() + 1 : 0, m_Priority);
 
     if (m_Device->SwitchChannel(m_Channel, false))
     {
@@ -461,7 +523,11 @@ bool cVideoInput::Open(const cChannel *channel, int priority, cVideoBuffer *vide
       m_Receiver->SetPids(&m_PmtChannel);
       m_Receiver->AddPid(m_PmtChannel.Tpid());
 
-      m_Device->AttachReceiver(m_Receiver);
+      m_DummyReceiver = cDummyReceiver::Create(m_Device);
+      if (!m_DummyReceiver)
+        return false;
+      if (!m_Device->AttachReceiver(m_Receiver))
+        return false;
 
 #if VDRVERSNUM >= 20107
       if (DisableScrambleTimeout)
@@ -515,6 +581,8 @@ void cVideoInput::Close()
       DEBUGLOG("No live filter present");
     }
 
+    m_DummyReceiver.reset();
+
     if (m_Receiver)
     {
       DEBUGLOG("Deleting Live Receiver");
@@ -564,9 +632,23 @@ inline void cVideoInput::Receive(const uchar *data, int length)
   m_VideoBuffer->Put(data, length);
 }
 
-void cVideoInput::Retune()
+void cVideoInput::RequestRetune()
 {
-  cMutexLock lock(&m_Mutex);
-  m_IsRetune = true;
-  m_Event.Broadcast();
+  m_RetuneRequested = true;
+  m_Event.Signal();
+}
+
+cVideoInput::eReceivingStatus cVideoInput::ReceivingStatus()
+{
+  if (!m_Device || !m_Receiver || !m_DummyReceiver)
+    return RETUNE;
+  if (m_RetuneRequested || !m_Receiver->IsAttached())
+  {
+    (void)m_Device->Receiving();  // wait for the receivers mutex
+    if (!m_DummyReceiver->IsAttached())  // DetachAllReceivers() was called
+      return CLOSE;
+    else if (!m_PmtChange)
+      return RETUNE;
+  }
+  return NORMAL;
 }

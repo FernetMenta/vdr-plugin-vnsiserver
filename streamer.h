@@ -32,7 +32,6 @@
 #include <vdr/device.h>
 #include <vdr/receiver.h>
 #include <vdr/thread.h>
-#include <list>
 
 #include "parser.h"
 #include "responsepacket.h"
@@ -49,8 +48,6 @@ class cVideoInput;
 class cLiveStreamer : public cThread
 {
   friend class cParser;
-  friend class cLivePatFilter;
-  friend class cLiveReceiver;
 
   void sendStreamPacket(sStreamPacket *pkt);
   void sendStreamChange();
@@ -80,9 +77,7 @@ class cLiveStreamer : public cThread
   cVideoInput       m_VideoInput;
   int               m_Priority;
   uint8_t           m_Timeshift;
-  cCondVar          m_Event;
-  cMutex            m_Mutex;
-  bool              m_IsRetune = false;
+  cCondWait         m_Event;
 
 protected:
   virtual void Action(void);

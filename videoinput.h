@@ -24,6 +24,7 @@
 
 #pragma once
 
+#include <memory>
 #include <vdr/channels.h>
 #include <vdr/thread.h>
 
@@ -31,22 +32,24 @@ class cLivePatFilter;
 class cLiveReceiver;
 class cVideoBuffer;
 class cDevice;
+class cDummyReceiver;
 
 class cVideoInput
 {
 friend class cLivePatFilter;
 friend class cLiveReceiver;
 public:
-  cVideoInput(cCondVar &condVar, cMutex &mutex, bool &retune);
+  cVideoInput(cCondWait &event);
   virtual ~cVideoInput();
   bool Open(const cChannel *channel, int priority, cVideoBuffer *videoBuffer);
   void Close();
   bool IsOpen();
-
+  void RequestRetune();
+  enum eReceivingStatus {NORMAL, RETUNE, CLOSE};
+  eReceivingStatus ReceivingStatus();
 protected:
   cChannel *PmtChannel();
   void Receive(const uchar *data, int length);
-  void Retune();
   cDevice          *m_Device;
   cLivePatFilter   *m_PatFilter;
   cLiveReceiver    *m_Receiver;
@@ -54,8 +57,8 @@ protected:
   cVideoBuffer     *m_VideoBuffer;
   int               m_Priority;
   bool              m_PmtChange;
-  cCondVar          &m_Event;
-  cMutex            &m_Mutex;
-  bool              &m_IsRetune;
   cChannel m_PmtChannel;
+  cCondWait &m_Event;
+  std::shared_ptr<cDummyReceiver> m_DummyReceiver;
+  bool m_RetuneRequested;
 };
