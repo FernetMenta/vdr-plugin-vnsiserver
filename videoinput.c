@@ -558,6 +558,9 @@ void cVideoInput::Close()
       cCamSlot *cs = m_Device->CamSlot();
       if (cs)
         cs->CancelActivation();
+      if (m_Receiver)
+        ChannelCamRelations.ClrChecked(m_Receiver->ChannelID(),
+                (cs)? cs->SlotNumber() : 0);
     }
 #endif
 
