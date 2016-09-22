@@ -526,18 +526,24 @@ bool cVideoInput::Open(const cChannel *channel, int priority, cVideoBuffer *vide
       m_DummyReceiver = cDummyReceiver::Create(m_Device);
       if (!m_DummyReceiver)
         return false;
-      if (!m_Device->AttachReceiver(m_Receiver))
-        return false;
 
 #if VDRVERSNUM >= 20107
       if (DisableScrambleTimeout)
       {
+        m_Receiver->SetPriority(MINPRIORITY);
+        if (!m_Device->AttachReceiver(m_Receiver))
+          return false;
         cCamSlot *cs = m_Device->CamSlot();
         if (cs)
-          cs->StartActivation();
+          cs->StartDecrypting();
+        m_Receiver->SetPriority(m_Priority);
       }
+      else
 #endif
-
+      {
+        if (!m_Device->AttachReceiver(m_Receiver))
+          return false;
+      }
       m_VideoBuffer->AttachInput(true);
       return true;
     }
@@ -556,11 +562,11 @@ void cVideoInput::Close()
     if (DisableScrambleTimeout)
     {
       cCamSlot *cs = m_Device->CamSlot();
-      if (cs)
-        cs->CancelActivation();
-      if (m_Receiver)
+      if (m_Receiver && cs)
+      {
         ChannelCamRelations.ClrChecked(m_Receiver->ChannelID(),
-                (cs)? cs->SlotNumber() : 0);
+                                       cs->SlotNumber());
+      }
     }
 #endif
 
