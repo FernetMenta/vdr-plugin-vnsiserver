@@ -46,7 +46,7 @@ cLiveStreamer::cLiveStreamer(int clientID, bool bAllowRDS, uint8_t timeshift, ui
  , m_ClientID(clientID)
  , m_scanTimeout(timeout)
  , m_Demuxer(bAllowRDS)
- , m_VideoInput(m_Event, m_Mutex, m_IsRetune)
+ , m_VideoInput(m_Event)
 {
   m_Timeshift       = timeshift;
 
@@ -142,7 +142,6 @@ bool cLiveStreamer::Open(int serial)
     if (m_Channel && ((m_Channel->Source() >> 24) == 'V'))
       m_IsMPEGPS = true;
 
-    m_IsRetune = false;
     if (!m_VideoInput.Open(m_Channel, m_Priority, m_VideoBuffer))
     {
       ERRORLOG("Can't switch to channel %i - %s", m_Channel->Number(), m_Channel->Name());
@@ -186,13 +185,17 @@ void cLiveStreamer::Action(void)
   bool requestStreamChangeSideData = false;
   cTimeMs last_info(1000);
   cTimeMs bufferStatsTimer(1000);
+  int openFailCount = 0;
 
   while (Running())
   {
-    if (m_IsRetune)
+    auto retune = m_VideoInput.ReceivingStatus();
+    if (retune == cVideoInput::RETUNE)
+      // allow timeshift playback when retune == cVideoInput::CLOSE
       ret = -1;
     else
       ret = m_Demuxer.Read(&pkt_data, &pkt_side_data);
+
     if (ret > 0)
     {
       if (pkt_data.pmtChange)
@@ -250,39 +253,39 @@ void cLiveStreamer::Action(void)
     else if (ret == -1)
     {
       // no data
+      if (retune == cVideoInput::CLOSE)
       {
-        bool retune = false;
+        m_Socket->Shutdown();
+        break;
+      }
+      if (m_Demuxer.GetError() & ERROR_CAM_ERROR)
+      {
+        INFOLOG("CAM error, try reset");
+        cCamSlot *cs = m_Device->CamSlot();
+        if (cs)
+          cs->StopDecrypting();
+        retune = cVideoInput::RETUNE;
+      }
+      if (retune == cVideoInput::RETUNE)
+      {
+        INFOLOG("re-tuning...");
+        m_VideoInput.Close();
+        if (!m_VideoInput.Open(m_Channel, m_Priority, m_VideoBuffer))
         {
-          cMutexLock lock(&m_Mutex);
-          retune = m_IsRetune;
-          if (!retune)
-            m_Event.TimedWait(m_Mutex, 10);
-        }
-
-        if (m_Demuxer.GetError() & ERROR_CAM_ERROR)
-        {
-          INFOLOG("CAM error, try reset");
-          cCamSlot *cs = m_Device->CamSlot();
-          if (cs)
-            cs->StopDecrypting();
-          retune = true;
-        }
-
-        if (retune)
-        {
-          m_VideoInput.Close();
-          if (m_VideoInput.Open(m_Channel, m_Priority, m_VideoBuffer))
+          if (++openFailCount == 3)
           {
-            cMutexLock lock(&m_Mutex);
-            m_IsRetune = false;
+            openFailCount = 0;
+            cCondWait::SleepMs(2000);
           }
           else
-          {
-            cMutexLock lock(&m_Mutex);
-            m_Event.TimedWait(m_Mutex, 100);
-          }
+            cCondWait::SleepMs(100);
         }
+        else
+          openFailCount = 0;
       }
+      else
+        m_Event.Wait(10);
+
       if(m_last_tick.Elapsed() >= (uint64_t)(m_scanTimeout*1000))
       {
         sendStreamStatus();
@@ -706,7 +709,5 @@ void cLiveStreamer::RetuneChannel(const cChannel *channel)
     return;
 
   INFOLOG("re-tune to channel %s", m_Channel->Name());
-  cMutexLock lock(&m_Mutex);
-  m_IsRetune = true;
-  m_Event.Broadcast();
+  m_VideoInput.RequestRetune();
 }
