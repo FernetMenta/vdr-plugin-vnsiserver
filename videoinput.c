@@ -478,7 +478,8 @@ std::shared_ptr<cDummyReceiver> cDummyReceiver::Create(cDevice *device)
 cVideoInput::cVideoInput(cCondWait &event)
   : m_Event(event)
 {
-  m_Device = NULL;;
+  m_Device = NULL;
+  m_camSlot = nullptr;
   m_PatFilter = NULL;
   m_Receiver = NULL;;
   m_Channel = NULL;
@@ -500,6 +501,7 @@ bool cVideoInput::Open(const cChannel *channel, int priority, cVideoBuffer *vide
   m_Priority = priority;
   m_RetuneRequested = false;
   m_Device = cDevice::GetDevice(m_Channel, m_Priority, false);
+  m_camSlot = nullptr;
 
   if (m_Device != NULL)
   {
@@ -527,15 +529,16 @@ bool cVideoInput::Open(const cChannel *channel, int priority, cVideoBuffer *vide
       if (!m_DummyReceiver)
         return false;
 
+      m_camSlot = m_Device->CamSlot();
+
 #if VDRVERSNUM >= 20107
-      if (DisableScrambleTimeout)
+      if (DisableScrambleTimeout && m_camSlot)
       {
         m_Receiver->SetPriority(MINPRIORITY);
         if (!m_Device->AttachReceiver(m_Receiver))
           return false;
-        cCamSlot *cs = m_Device->CamSlot();
-        if (cs)
-          cs->StartDecrypting();
+        if (m_camSlot)
+          m_camSlot->StartDecrypting();
         m_Receiver->SetPriority(m_Priority);
       }
       else
@@ -557,18 +560,14 @@ void cVideoInput::Close()
 
   if (m_Device)
   {
-
-#if VDRVERSNUM >= 20107
-    if (DisableScrambleTimeout)
+    if (DisableCamBlacklist)
     {
-      cCamSlot *cs = m_Device->CamSlot();
-      if (m_Receiver && cs)
+      if (m_Receiver && m_camSlot)
       {
         ChannelCamRelations.ClrChecked(m_Receiver->ChannelID(),
-                                       cs->SlotNumber());
+                                       m_camSlot->SlotNumber());
       }
     }
-#endif
 
     if (m_Receiver)
     {

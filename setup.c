@@ -33,6 +33,7 @@ char TimeshiftBufferDir[PATH_MAX] = "\0";
 int PlayRecording = 0;
 int AvoidEPGScan = 1;
 int DisableScrambleTimeout = 0;
+int DisableCamBlacklist = 0;
 
 cMenuSetupVNSI::cMenuSetupVNSI(void)
 {
@@ -59,6 +60,9 @@ cMenuSetupVNSI::cMenuSetupVNSI(void)
 
   newDisableScrambleTimeout = DisableScrambleTimeout;
   Add(new cMenuEditBoolItem( tr("Disable scramble timeout"), &newDisableScrambleTimeout));
+
+  newDisableCamBlacklist = DisableCamBlacklist;
+  Add(new cMenuEditBoolItem( tr("Disable cam blacklist"), &newDisableCamBlacklist));
 }
 
 void cMenuSetupVNSI::Store(void)
@@ -93,4 +97,6 @@ void cMenuSetupVNSI::Store(void)
   SetupStore(CONFNAME_AVOIDEPGSCAN, AvoidEPGScan = newAvoidEPGScan);
 
   SetupStore(CONFNAME_DISABLESCRAMBLETIMEOUT, DisableScrambleTimeout = newDisableScrambleTimeout);
+
+  SetupStore(CONFNAME_DISABLECAMBLACKLIST, DisableCamBlacklist = newDisableCamBlacklist);
 }
