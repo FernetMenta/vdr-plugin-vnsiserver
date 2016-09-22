@@ -160,6 +160,8 @@ bool cPluginVNSIServer::SetupParse(const char *Name, const char *Value)
     AvoidEPGScan = atoi(Value);
   else if (!strcasecmp(Name, CONFNAME_DISABLESCRAMBLETIMEOUT))
     DisableScrambleTimeout = atoi(Value);
+  else if (!strcasecmp(Name, CONFNAME_DISABLECAMBLACKLIST))
+    DisableCamBlacklist = atoi(Value);
   else
     return false;
   return true;

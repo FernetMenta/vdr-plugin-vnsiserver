@@ -54,6 +54,7 @@
 #define CONFNAME_PLAYRECORDING "PlayRecording"
 #define CONFNAME_AVOIDEPGSCAN "AvoidEPGScan"
 #define CONFNAME_DISABLESCRAMBLETIMEOUT "DisableScrambleTimeout"
+#define CONFNAME_DISABLECAMBLACKLIST "DisableCamBlacklist"
 
 /* OPCODE 1 - 19: VNSI network functions for general purpose */
 #define VNSI_LOGIN                 1

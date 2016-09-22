@@ -33,6 +33,7 @@ class cLiveReceiver;
 class cVideoBuffer;
 class cDevice;
 class cDummyReceiver;
+class cCamSlot;
 
 class cVideoInput
 {
@@ -51,6 +52,7 @@ protected:
   cChannel *PmtChannel();
   void Receive(const uchar *data, int length);
   cDevice          *m_Device;
+  cCamSlot *m_camSlot;
   cLivePatFilter   *m_PatFilter;
   cLiveReceiver    *m_Receiver;
   const cChannel   *m_Channel;

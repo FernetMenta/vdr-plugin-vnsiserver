@@ -39,6 +39,7 @@ private:
   int newPlayRecording;
   int newAvoidEPGScan;
   int newDisableScrambleTimeout;
+  int newDisableCamBlacklist;
 protected:
   virtual void Store(void);
 public:

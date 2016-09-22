@@ -39,6 +39,7 @@ extern char TimeshiftBufferDir[PATH_MAX];
 extern int PlayRecording;
 extern int AvoidEPGScan;
 extern int DisableScrambleTimeout;
+extern int DisableCamBlacklist;
 
 class cDvbVsniDeviceProbe : public cDvbDeviceProbe
 {
