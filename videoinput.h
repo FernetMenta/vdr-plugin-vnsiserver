@@ -25,6 +25,7 @@
 #pragma once
 
 #include <memory>
+#include <atomic>
 #include <vdr/channels.h>
 #include <vdr/thread.h>
 
@@ -56,9 +57,9 @@ protected:
   const cChannel   *m_Channel;
   cVideoBuffer     *m_VideoBuffer;
   int               m_Priority;
-  bool              m_PmtChange;
+  std::atomic<bool> m_PmtChange;
   cChannel m_PmtChannel;
   cCondWait &m_Event;
   std::shared_ptr<cDummyReceiver> m_DummyReceiver;
-  bool m_RetuneRequested;
+  std::atomic<bool> m_RetuneRequested;
 };
