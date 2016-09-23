@@ -33,23 +33,22 @@ class cChannel;
 class cPatPmtParser;
 class cVideoBuffer;
 
-struct sStreamInfo
+class cStreamInfo
 {
-  int pID;
-  eStreamType type;
+public:
+  cStreamInfo();
+  cStreamInfo(const cStreamInfo& info);
+  cStreamInfo& operator=(const cStreamInfo& info) = delete;
+  void SetLanguage(const char* lang);
+
+  int pID = 0;
+  eStreamType type = eStreamType::stNone;
   eStreamContent content;
-  char language[MAXLANGCODE2];
+  char language[MAXLANGCODE2] = { 0 };
   int subtitlingType;
   int compositionPageId;
   int ancillaryPageId;
-  bool handleRDS;
-  void SetLanguage(const char* lang)
-  {
-    language[0] = lang[0];
-    language[1] = lang[1];
-    language[2] = lang[2];
-    language[3] = 0;
-  }
+  bool handleRDS = false;
 };
 
 class cVNSIDemuxer
@@ -75,14 +74,13 @@ public:
 protected:
   bool EnsureParsers();
   void ResetParsers();
-  void SetChannelStreams(const cChannel *channel);
+  void SetChannelStreamInfos(const cChannel *channel);
   void SetChannelPids(cChannel *channel, cPatPmtParser *patPmtParser);
   cTSStream *FindStream(int Pid);
-  void AddStreamInfo(sStreamInfo &stream);
   bool GetTimeAtPos(off_t *pos, int64_t *time);
   std::list<cTSStream*> m_Streams;
   std::list<cTSStream*>::iterator m_StreamsIterator;
-  std::list<sStreamInfo> m_StreamInfos;
+  std::list<cStreamInfo> m_StreamInfos;
   cChannel m_CurrentChannel;
   cPatPmtParser m_PatPmtParser;
   bool m_WaitIFrame;
