@@ -243,9 +243,15 @@ bool CVNSITimers::IsDuplicateEvent(cTimers *timers, const cEvent *event)
     if (timerEvent == nullptr)
       continue;
     if (timer->HasFlags(tfActive) &&
-        strcmp(timerEvent->Title(), event->Title()) == 0 &&
-        strcmp(timerEvent->ShortText(), event->ShortText()) == 0)
-      return true;
+        strcmp(timerEvent->Title(), event->Title()) == 0)
+    {
+      if (timerEvent->ShortText() != nullptr && event->ShortText() != nullptr &&
+          strcmp(timerEvent->ShortText(), event->ShortText()) == 0)
+        return true;
+
+      if (abs(difftime(timerEvent->StartTime(), event->StartTime())) < 300)
+        return true;
+    }
   }
   return false;
 }
@@ -308,14 +314,17 @@ void CVNSITimers::Action()
               {
                 if (recording->Info() != nullptr)
                 {
-                  if (strcmp(recording->Info()->Title(), event->Title()) == 0 &&
-                      strcmp(recording->Info()->ShortText(), event->ShortText()) == 0)
+                  if (strcmp(recording->Info()->Title(), event->Title()) == 0)
                   {
-                    duplicate = true;
-                    break;
+                    if (recording->Info()->ShortText() != nullptr && event->ShortText() != nullptr &&
+                        strcmp(recording->Info()->ShortText(), event->ShortText()) == 0)
+                    {
+                      duplicate = true;
+                      break;
+                    }
                   }
                 }
-                if (difftime(event->StartTime(), recording->Start()) < 300)
+                if (abs(difftime(event->StartTime(), recording->Start())) < 300)
                 {
                   duplicate = true;
                   break;

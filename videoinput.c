@@ -539,6 +539,8 @@ bool cVideoInput::Open(const cChannel *channel, int priority, cVideoBuffer *vide
 #if VDRVERSNUM >= 20107
       if (DisableScrambleTimeout && m_camSlot)
       {
+        // HACK cDevice::AttachReceiver() doesn't start scrambling
+        // timer if priority == MINPRIORITY
         m_Receiver->SetPriority(MINPRIORITY);
         if (!m_Device->AttachReceiver(m_Receiver))
           return false;
@@ -567,6 +569,9 @@ void cVideoInput::Close()
   {
     if (DisableCamBlacklist)
     {
+      // HACK Undo ChannelCamRelations.SetChecked() - see cDevice::Action().
+      // Note: m_Device->CamSlot() returns NULL after SetChecked() is called.
+      // Use m_camSlot here.
       if (m_Receiver && m_camSlot)
       {
         ChannelCamRelations.ClrChecked(m_Receiver->ChannelID(),
