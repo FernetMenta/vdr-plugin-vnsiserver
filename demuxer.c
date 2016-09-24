@@ -31,6 +31,31 @@
 #include <vdr/channels.h>
 #include <libsi/si.h>
 
+cStreamInfo::cStreamInfo()
+{
+
+}
+
+cStreamInfo::cStreamInfo(const cStreamInfo& info)
+{
+  pID = info.pID;
+  type = info.type;
+  content = info.content;
+  subtitlingType = info.subtitlingType;
+  compositionPageId = info.compositionPageId;
+  ancillaryPageId = info.ancillaryPageId;
+  handleRDS = info.handleRDS;
+  SetLanguage(info.language);
+}
+
+void cStreamInfo::SetLanguage(const char* lang)
+{
+  language[0] = lang[0];
+  language[1] = lang[1];
+  language[2] = lang[2];
+  language[3] = 0;
+}
+
 cVNSIDemuxer::cVNSIDemuxer(bool bAllowRDS)
  : m_bAllowRDS(bAllowRDS)
 {
@@ -122,7 +147,7 @@ int cVNSIDemuxer::Read(sStreamPacket *packet, sStreamPacket *packet_side_data)
     {
       cChannel pmtChannel(m_CurrentChannel);
       SetChannelPids(&pmtChannel, &m_PatPmtParser);
-      SetChannelStreams(&pmtChannel);
+      SetChannelStreamInfos(&pmtChannel);
       m_PatPmtParser.Reset();
       if (EnsureParsers())
       {
@@ -387,12 +412,7 @@ void cVNSIDemuxer::ResetParsers()
   m_seenFirstPacket = false;
 }
 
-void cVNSIDemuxer::AddStreamInfo(sStreamInfo &stream)
-{
-  m_StreamInfos.push_back(stream);
-}
-
-static bool Contains(const std::list<sStreamInfo> &list, int pID, eStreamType type)
+static bool Contains(const std::list<cStreamInfo> &list, int pID, eStreamType type)
 {
   for (const auto &i : list)
     if (i.pID == pID && i.type == type)
@@ -489,11 +509,11 @@ bool cVNSIDemuxer::EnsureParsers()
   return streamChange;
 }
 
-void cVNSIDemuxer::SetChannelStreams(const cChannel *channel)
+void cVNSIDemuxer::SetChannelStreamInfos(const cChannel *channel)
 {
   m_StreamInfos.clear();
 
-  sStreamInfo newStream;
+  cStreamInfo newStream;
   bool containsVideo = false;
   int index = 0;
   if (channel->Vpid())
@@ -508,7 +528,7 @@ void cVNSIDemuxer::SetChannelStreams(const cChannel *channel)
 #endif
       newStream.type = stMPEG2VIDEO;
 
-    AddStreamInfo(newStream);
+    m_StreamInfos.push_back(newStream);
     containsVideo = true;
   }
 
@@ -521,7 +541,7 @@ void cVNSIDemuxer::SetChannelStreams(const cChannel *channel)
     if (channel->Dtype(index) == SI::EnhancedAC3DescriptorTag)
       newStream.type = stEAC3;
     newStream.SetLanguage(channel->Dlang(index));
-    AddStreamInfo(newStream);
+    m_StreamInfos.push_back(newStream);
     index++;
   }
 
@@ -537,7 +557,7 @@ void cVNSIDemuxer::SetChannelStreams(const cChannel *channel)
       newStream.type = stAACLATM;
     newStream.handleRDS = m_bAllowRDS && newStream.type == stMPEG2AUDIO && !containsVideo ? true : false; // Relevant for RDS, if present only on mpeg 2 audio, use only if RDS is allowed
     newStream.SetLanguage(channel->Alang(index));
-    AddStreamInfo(newStream);
+    m_StreamInfos.push_back(newStream);
     index++;
   }
 
@@ -553,7 +573,7 @@ void cVNSIDemuxer::SetChannelStreams(const cChannel *channel)
       newStream.subtitlingType = channel->SubtitlingType(index);
       newStream.compositionPageId = channel->CompositionPageId(index);
       newStream.ancillaryPageId = channel->AncillaryPageId(index);
-      AddStreamInfo(newStream);
+      m_StreamInfos.push_back(newStream);
     }
     index++;
   }
@@ -562,7 +582,7 @@ void cVNSIDemuxer::SetChannelStreams(const cChannel *channel)
   {
     newStream.pID = channel->Tpid();
     newStream.type = stTELETEXT;
-    AddStreamInfo(newStream);
+    m_StreamInfos.push_back(newStream);
   }
 }
 
@@ -573,9 +593,9 @@ void cVNSIDemuxer::SetChannelPids(cChannel *channel, cPatPmtParser *patPmtParser
   int Dpids[MAXDPIDS + 1] = { 0 };
   int Dtypes[MAXDPIDS + 1] = { 0 };
   int Spids[MAXSPIDS + 1] = { 0 };
-  char ALangs[MAXAPIDS][MAXLANGCODE2] = { "" };
-  char DLangs[MAXDPIDS][MAXLANGCODE2] = { "" };
-  char SLangs[MAXSPIDS][MAXLANGCODE2] = { "" };
+  char ALangs[MAXAPIDS][MAXLANGCODE2] = { 0 };
+  char DLangs[MAXDPIDS][MAXLANGCODE2] = { 0 };
+  char SLangs[MAXSPIDS][MAXLANGCODE2] = { 0 };
   int index = 0;
 
   const int *aPids = patPmtParser->Apids();
