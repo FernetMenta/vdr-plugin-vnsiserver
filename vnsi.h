@@ -28,7 +28,7 @@
 #include <vdr/thread.h>
 #include "vnsiserver.h"
 
-static const char *VERSION        = "1.5.0";
+static const char *VERSION        = "1.5.1";
 static const char *DESCRIPTION    = "VDR-Network-Streaming-Interface (VNSI) Server";
 
 extern int PmtTimeout;
