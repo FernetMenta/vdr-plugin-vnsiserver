@@ -1,5 +1,11 @@
 VDR Plugin 'vnsiserver' Revision History
 ----------------------------------------
+2016-09-25: Version 1.5.1
+
+- see github history for fixes
+- added new setup parameter DisableCamBlacklist:
+  avoids a VDR hard-coded 15 seconds timeout if tuning failed due to hard-coded scramble timeout
+
 2016-08-01: Version 1.5.0
 
 - support for vdr 2.3.1
