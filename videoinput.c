@@ -82,8 +82,8 @@ void cLiveReceiver::Receive(uchar *Data, int Length)
 
 void cLiveReceiver::Activate(bool On)
 {
-  INFOLOG("activate live receiver: %d, pmt change: %d", On, static_cast<bool>(m_VideoInput->m_PmtChange));
-  if (!On && !m_VideoInput->m_PmtChange)
+  INFOLOG("activate live receiver: %d", On);
+  if (!On)
     m_VideoInput->RequestRetune();
 }
 
@@ -480,17 +480,17 @@ std::shared_ptr<cDummyReceiver> cDummyReceiver::Create(cDevice *device)
 // ----------------------------------------------------------------------------
 
 cVideoInput::cVideoInput(cCondWait &event)
-  : m_PmtChange(false)
-  , m_Event(event)
+  : m_Event(event)
   , m_RetuneRequested(false)
 {
   m_Device = NULL;
   m_camSlot = nullptr;
   m_PatFilter = NULL;
-  m_Receiver = NULL;;
+  m_Receiver = NULL;
   m_Channel = NULL;
   m_VideoBuffer = NULL;
   m_Priority = 0;
+  m_DataSeen = false;
 }
 
 cVideoInput::~cVideoInput()
@@ -504,7 +504,7 @@ bool cVideoInput::Open(const cChannel *channel, int priority, cVideoBuffer *vide
   m_Channel = channel;
   m_Priority = priority;
   m_RetuneRequested = false;
-  m_PmtChange = false;
+  m_DataSeen = false;
   m_Device = cDevice::GetDevice(m_Channel, m_Priority, false);
   m_camSlot = nullptr;
 
@@ -523,7 +523,6 @@ bool cVideoInput::Open(const cChannel *channel, int priority, cVideoBuffer *vide
 #endif
 
       m_PmtChannel = *m_Channel;
-      m_PmtChange = true;
 
       m_Receiver = new cLiveReceiver(this, m_Channel, m_Priority);
       m_Receiver->SetPids(NULL);
@@ -637,7 +636,7 @@ cChannel *cVideoInput::PmtChannel()
 
 inline void cVideoInput::Receive(const uchar *data, int length)
 {
-  if (m_PmtChange)
+  if (!m_DataSeen)
   {
      // generate pat/pmt so we can configure parsers later
      cPatPmtGenerator patPmtGenerator(&m_PmtChannel);
@@ -645,7 +644,7 @@ inline void cVideoInput::Receive(const uchar *data, int length)
      int Index = 0;
      while (uchar *pmt = patPmtGenerator.GetPmt(Index))
        m_VideoBuffer->Put(pmt, TS_SIZE);
-     m_PmtChange = false;
+     m_DataSeen = true;
   }
   m_VideoBuffer->Put(data, length);
 }

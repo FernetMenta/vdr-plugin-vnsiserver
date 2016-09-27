@@ -59,7 +59,7 @@ protected:
   const cChannel   *m_Channel;
   cVideoBuffer     *m_VideoBuffer;
   int               m_Priority;
-  std::atomic<bool> m_PmtChange;
+  bool              m_DataSeen;
   cChannel m_PmtChannel;
   cCondWait &m_Event;
   std::shared_ptr<cDummyReceiver> m_DummyReceiver;
