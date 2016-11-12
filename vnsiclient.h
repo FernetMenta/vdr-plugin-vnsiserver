@@ -23,8 +23,7 @@
  *
  */
 
-#ifndef VNSI_CLIENT_H
-#define VNSI_CLIENT_H
+#pragma once
 
 #include <vdr/thread.h>
 #include <vdr/tools.h>
@@ -37,6 +36,9 @@
 
 #include <map>
 #include <string>
+
+#define VNSI_EPG_AGAIN 1
+#define VNSI_EPG_PAUSE 2
 
 class cChannel;
 class cDevice;
@@ -98,7 +100,7 @@ public:
   void ChannelsChange();
   void RecordingsChange();
   void SignalTimerChange();
-  bool EpgChange();
+  int EpgChange();
   static bool InhibidDataUpdates() { return m_inhibidDataUpdates; }
 
   unsigned int GetID() { return m_Id; }
@@ -205,5 +207,3 @@ private:
   void processSCAN_IsFinished();
   void processSCAN_SetStatus(int status);
 };
-
-#endif // VNSI_CLIENT_H
