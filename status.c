@@ -247,19 +247,23 @@ void cVNSIStatus::Action(void)
         if (epg->Lock(epgState))
         {
           epgState.Remove(false);
-          INFOLOG("Requesting clients to load epg");
-          bool callAgain = false;
+          DEBUGLOG("Requesting clients to load epg");
+          int callAgain = 0;
           for (auto &i : m_clients)
           {
             callAgain |= i.EpgChange();
           }
-          if (callAgain)
+          if (callAgain & VNSI_EPG_AGAIN)
           {
             epgTimer.Set(100);
             epgState.Reset();
           }
           else
           {
+            if (callAgain & VNSI_EPG_PAUSE)
+            {
+              epgState.Reset();
+            }
             epgTimer.Set(5000);
             m_vnsiTimers->Scan();
           }

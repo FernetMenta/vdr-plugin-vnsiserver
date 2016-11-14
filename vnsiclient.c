@@ -214,9 +214,9 @@ void cVNSIClient::RecordingsChange()
   m_socket.write(resp.getPtr(), resp.getLen());
 }
 
-bool cVNSIClient::EpgChange()
+int cVNSIClient::EpgChange()
 {
-  bool callAgain = false;
+  int callAgain = 0;
 
   cMutexLock lock(&m_msgLock);
 
@@ -269,7 +269,7 @@ bool cVNSIClient::EpgChange()
     time_t now = time(nullptr);
     if ((now - it->second.lastTrigger) < 5)
     {
-      callAgain = true;
+      callAgain = VNSI_EPG_PAUSE;
       continue;
     }
 
@@ -284,7 +284,7 @@ bool cVNSIClient::EpgChange()
     resp.finalise();
     m_socket.write(resp.getPtr(), resp.getLen());
 
-    callAgain = true;
+    callAgain = VNSI_EPG_AGAIN;
     break;
   }
 
