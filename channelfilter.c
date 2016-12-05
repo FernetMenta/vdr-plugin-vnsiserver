@@ -37,6 +37,11 @@ cVNSIProvider::cVNSIProvider()
 
 }
 
+cVNSIProvider::cVNSIProvider(const cVNSIProvider &provider)
+  :m_name(provider.m_name), m_caid(provider.m_caid)
+{
+}
+
 cVNSIProvider::cVNSIProvider(std::string name, int caid)
   :m_name(name), m_caid(caid)
 {
