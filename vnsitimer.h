@@ -73,6 +73,7 @@ protected:
   std::string Convert(std::string search);
   bool IsDuplicateEvent(cTimers *timers, const cEvent *event);
   void DeleteChildren(CVNSITimer &vnsitimer);
+  bool IsChild(int id, time_t starttime);
 
   std::vector<CVNSITimer> m_timers;
   std::atomic_bool m_doScan;

@@ -336,6 +336,24 @@ int CVNSITimers::GetParent(const cTimer *timer)
   return 0;
 }
 
+bool CVNSITimers::IsChild(int id, time_t starttime)
+{
+  cMutexLock lock(&m_timerLock);
+
+  for (auto &timer : m_timers)
+  {
+    if (timer.m_id != id)
+      continue;
+
+    for (auto &time : timer.m_timersCreated)
+    {
+      if (time == starttime)
+        return true;
+    }
+  }
+  return false;
+}
+
 bool CVNSITimers::StateChange(int &state)
 {
   if (state != m_state)
@@ -491,6 +509,12 @@ void CVNSITimers::Action()
                 else
                   stop += searchTimer.m_marginEnd;
                 newTimer->SetStop(stop);
+              }
+
+              if (IsChild(searchTimer.m_id, newTimer->StartTime()))
+              {
+                delete newTimer;
+                continue;
               }
 
               Timers->Add(newTimer);
