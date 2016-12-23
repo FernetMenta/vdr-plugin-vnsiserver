@@ -32,6 +32,7 @@
 
 class cEvent;
 class cTimers;
+class cTimer;
 
 class CVNSITimer
 {
@@ -42,6 +43,8 @@ public:
   int32_t m_enabled;
   int32_t m_priority;
   int32_t m_lifetime;
+  uint32_t m_marginStart;
+  uint32_t m_marginEnd;
   std::string m_search;
   tChannelID m_channelID;
   std::vector<time_t> m_timersCreated;
@@ -62,12 +65,14 @@ public:
   bool GetTimer(int id, CVNSITimer &timer);
   bool UpdateTimer(int id, CVNSITimer &timer);
   bool DeleteTimer(int id);
+  int GetParent(const cTimer *timer);
 
   static constexpr uint32_t VNSITIMER_MASK = 0xF0000000;
 protected:
   virtual void Action(void) override;
   std::string Convert(std::string search);
   bool IsDuplicateEvent(cTimers *timers, const cEvent *event);
+  void DeleteChildren(CVNSITimer &vnsitimer);
 
   std::vector<CVNSITimer> m_timers;
   std::atomic_bool m_doScan;

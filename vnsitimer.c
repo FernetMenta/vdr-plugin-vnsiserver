@@ -133,6 +133,7 @@ void CVNSITimers::Load()
           std::string tmp = line.substr(0, pos);
           time_t starttime = strtol(tmp.c_str(), &pend, 10);
           timer.m_timersCreated.push_back(starttime);
+          line = line.substr(pos+1);
         }
       }
 
@@ -231,7 +232,18 @@ bool CVNSITimers::UpdateTimer(int id, CVNSITimer &timer)
   {
     if (searchtimer.m_id == id)
     {
-      timer.m_channelID = searchtimer.m_channelID;
+      const cChannel *channel = FindChannelByUID(timer.m_channelUID);
+      if (!channel)
+        return false;
+
+      if (timer.m_channelUID != searchtimer.m_channelUID ||
+          timer.m_search != searchtimer.m_search)
+      {
+        DeleteChildren(searchtimer);
+      }
+
+      timer.m_id = id;
+      timer.m_channelID = channel->GetChannelID();
       timer.m_timersCreated = searchtimer.m_timersCreated;
 
       searchtimer = timer;
@@ -253,38 +265,7 @@ bool CVNSITimers::DeleteTimer(int id)
   {
     if (it->m_id == id)
     {
-#if VDRVERSNUM >= 20301
-      cStateKey timerState;
-      timerState.Reset();
-      bool modified = false;
-      cTimers *Timers = cTimers::GetTimersWrite(timerState);
-      if (Timers)
-      {
-        Timers->SetExplicitModify();
-        cTimer *timer = Timers->First();
-        while (timer)
-        {
-          if (!timer->Channel())
-            continue;
-
-          cTimer* nextTimer = Timers->Next(timer);
-          for (auto &starttime : it->m_timersCreated)
-          {
-            if (it->m_channelID == timer->Channel()->GetChannelID() &&
-                timer->StartTime() == starttime)
-            {
-              Timers->Del(timer);
-              Timers->SetModified();
-              modified = true;
-              break;
-            }
-          }
-          timer = nextTimer;
-        }
-        timerState.Remove(modified);
-      }
-#endif
-
+      DeleteChildren(*it);
       m_timers.erase(it);
       m_state++;
       Save();
@@ -292,6 +273,67 @@ bool CVNSITimers::DeleteTimer(int id)
     }
   }
   return false;
+}
+
+void CVNSITimers::DeleteChildren(CVNSITimer &vnsitimer)
+{
+#if VDRVERSNUM >= 20301
+  cStateKey timerState;
+  timerState.Reset();
+  bool modified = false;
+  cTimers *Timers = cTimers::GetTimersWrite(timerState);
+  if (Timers)
+  {
+    Timers->SetExplicitModify();
+    cTimer *timer = Timers->First();
+    while (timer)
+    {
+      if (!timer->Channel())
+        continue;
+
+      timer->Matches();
+      cTimer* nextTimer = Timers->Next(timer);
+      for (auto &starttime : vnsitimer.m_timersCreated)
+      {
+        if (vnsitimer.m_channelID == timer->Channel()->GetChannelID() &&
+            timer->StartTime() == starttime &&
+            !timer->Recording())
+        {
+          Timers->Del(timer);
+          Timers->SetModified();
+          modified = true;
+          break;
+        }
+      }
+      timer = nextTimer;
+    }
+    timerState.Remove(modified);
+    vnsitimer.m_timersCreated.clear();
+  }
+#endif
+}
+
+int CVNSITimers::GetParent(const cTimer *timer)
+{
+  if (!timer->Channel())
+    return 0;
+
+  timer->Matches();
+  cMutexLock lock(&m_timerLock);
+  for (auto &searchTimer : m_timers)
+  {
+    if (searchTimer.m_channelID == timer->Channel()->GetChannelID())
+    {
+      for (auto &starttime : searchTimer.m_timersCreated)
+      {
+        if (timer->StartTime() == starttime)
+        {
+          return searchTimer.m_id | VNSITIMER_MASK;
+        }
+      }
+    }
+  }
+  return 0;
 }
 
 bool CVNSITimers::StateChange(int &state)
@@ -386,6 +428,9 @@ void CVNSITimers::Action()
 
           for (const cEvent *event = schedule->Events()->First(); event; event = schedule->Events()->Next(event))
           {
+            if (event->EndTime() < time(nullptr))
+              continue;
+
             std::string title(event->Title());
             std::smatch m;
             std::regex e(Convert(searchTimer.m_search));
@@ -421,6 +466,33 @@ void CVNSITimers::Action()
                 continue;
 
               cTimer *newTimer = new cTimer(event);
+
+              if (!Setup.MarginStart)
+              {
+                unsigned int start = newTimer->Start();
+                if (start < searchTimer.m_marginStart)
+                {
+                  newTimer->SetDay(cTimer::IncDay(newTimer->Day(), -1));
+                  start = 24*3600 - (searchTimer.m_marginStart - start);
+                }
+                else
+                  start -= searchTimer.m_marginStart;
+                newTimer->SetStart(start);
+              }
+
+              if (!Setup.MarginStop)
+              {
+                unsigned int stop = newTimer->Stop();
+                if (stop + searchTimer.m_marginEnd >= 24*3600)
+                {
+                  newTimer->SetDay(cTimer::IncDay(newTimer->Day(), 1));
+                  stop = stop + searchTimer.m_marginEnd - 24*3600;
+                }
+                else
+                  stop += searchTimer.m_marginEnd;
+                newTimer->SetStop(stop);
+              }
+
               Timers->Add(newTimer);
               modified = true;
 

@@ -1464,6 +1464,7 @@ bool cVNSIClient::processTIMER_Get(cRequestPacket &req) /* OPCODE 81 */
       resp.add_U32(0);
       resp.add_String(timer.m_name.c_str());
       resp.add_String(timer.m_search.c_str());
+      resp.add_U32(0);
     }
     else
     {
@@ -1517,6 +1518,10 @@ bool cVNSIClient::processTIMER_Get(cRequestPacket &req) /* OPCODE 81 */
         if (m_protocolVersion >= 9)
         {
           resp.add_String("");
+        }
+        if (m_protocolVersion >= 10)
+        {
+          resp.add_U32(m_vnsiTimers.GetParent(timer));
         }
       }
       else
@@ -1586,6 +1591,10 @@ bool cVNSIClient::processTIMER_GetList(cRequestPacket &req) /* OPCODE 82 */
     {
       resp.add_String("");
     }
+    if (m_protocolVersion >= 10)
+    {
+      resp.add_U32(m_vnsiTimers.GetParent(timer));
+    }
   }
 
   std::vector<CVNSITimer> vnsitimers = m_vnsiTimers.GetTimers();
@@ -1606,6 +1615,7 @@ bool cVNSIClient::processTIMER_GetList(cRequestPacket &req) /* OPCODE 82 */
     resp.add_U32(0);
     resp.add_String(vnsitimer.m_name.c_str());
     resp.add_String(vnsitimer.m_search.c_str());
+    resp.add_U32(0);
   }
   resp.finalise();
   m_socket.write(resp.getPtr(), resp.getLen());
@@ -1634,6 +1644,14 @@ bool cVNSIClient::processTIMER_Add(cRequestPacket &req) /* OPCODE 83 */
   const char *aux     = req.extract_String();
   if (m_protocolVersion >= 9)
     epgsearch = req.extract_String();
+
+  uint32_t marginStart = 0;
+  uint32_t marginEnd = 0;
+  if (m_protocolVersion >= 10)
+  {
+    marginStart = req.extract_U32();
+    marginEnd = req.extract_U32();
+  }
 
   // handle instant timers
   if(startTime == -1 || startTime == 0)
@@ -1669,7 +1687,10 @@ bool cVNSIClient::processTIMER_Add(cRequestPacket &req) /* OPCODE 83 */
     vnsitimer.m_channelUID = channelid;
     vnsitimer.m_search = epgsearch;
     vnsitimer.m_enabled = flags;
+    vnsitimer.m_priority = priority;
     vnsitimer.m_lifetime = lifetime;
+    vnsitimer.m_marginStart = marginStart;
+    vnsitimer.m_marginEnd = marginEnd;
     m_vnsiTimers.Add(std::move(vnsitimer));
     resp.add_U32(VNSI_RET_OK);
   }
@@ -1783,7 +1804,7 @@ bool cVNSIClient::processTIMER_Delete(cRequestPacket &req) /* OPCODE 84 */
     }
 #else
     int timersCount = Timers.Count();
-    if (number <= 0 || number > (uint32_t)timersCount)
+    if (id <= 0 || id > (uint32_t)timersCount)
     {
       ERRORLOG("Unable to delete timer - invalid timer identifier");
       resp.add_U32(VNSI_RET_DATAINVALID);
