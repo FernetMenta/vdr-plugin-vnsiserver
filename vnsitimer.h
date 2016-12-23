@@ -36,6 +36,7 @@ class cTimers;
 class CVNSITimer
 {
 public:
+  int m_id;
   std::string m_name;
   uint32_t m_channelUID;
   int32_t m_enabled;
@@ -57,11 +58,11 @@ public:
   size_t GetTimersCount();
   bool StateChange(int &state);
   std::vector<CVNSITimer> GetTimers();
-  bool GetTimer(int idx, CVNSITimer &timer);
-  bool UpdateTimer(int idx, CVNSITimer &timer);
-  bool DeleteTimer(int idx);
+  bool GetTimer(int id, CVNSITimer &timer);
+  bool UpdateTimer(int id, CVNSITimer &timer);
+  bool DeleteTimer(int id);
 
-  static constexpr uint32_t INDEX_MASK = 0xF0000000;
+  static constexpr uint32_t VNSITIMER_MASK = 0xF0000000;
 protected:
   virtual void Action(void) override;
   std::string Convert(std::string search);
@@ -71,5 +72,6 @@ protected:
   std::atomic_bool m_doScan;
   std::atomic_int m_state;
   cMutex m_timerLock;
+  int m_nextId = VNSITIMER_MASK;
 };
 
