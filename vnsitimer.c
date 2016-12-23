@@ -112,8 +112,32 @@ void CVNSITimers::Load()
       std::string lifetime = line.substr(0, pos);
       timer.m_lifetime = strtol(lifetime.c_str(), &pend, 10);
 
-      timer.m_search = line.substr(pos+1);
+      // searchstring
+      line = line.substr(pos+1);
+      pos = line.find(";");
+      if (pos == line.npos)
+      {
+        timer.m_search = line.substr(pos+1);
+      }
+      else
+      {
+        timer.m_search = line.substr(0, pos);
+      }
 
+      // created timers
+      if (pos != line.npos)
+      {
+        line = line.substr(pos+1);
+        while ((pos = line.find(",")) != line.npos)
+        {
+          std::string tmp = line.substr(0, pos);
+          time_t starttime = strtol(tmp.c_str(), &pend, 10);
+          timer.m_timersCreated.push_back(starttime);
+          line = line.substr(pos+1);
+        }
+      }
+
+      timer.m_id = ++m_nextId;
       m_timers.emplace_back(std::move(timer));
     }
     rfile.close();
@@ -138,7 +162,13 @@ void CVNSITimers::Save()
             << timer.m_enabled << ';'
             << timer.m_priority << ';'
             << timer.m_lifetime << ';'
-            << timer.m_search << '\n';
+            << timer.m_search << ';';
+
+      for (auto &starttime : timer.m_timersCreated)
+      {
+         wfile << starttime << ',';
+      }
+      wfile << '\n';
     }
     wfile.close();
   }
@@ -151,6 +181,7 @@ void CVNSITimers::Add(CVNSITimer &&timer)
     return;
 
   timer.m_channelID = channel->GetChannelID();
+  timer.m_id = ++m_nextId;
 
   cMutexLock lock(&m_timerLock);
   m_timers.emplace_back(std::move(timer));
@@ -176,38 +207,151 @@ std::vector<CVNSITimer> CVNSITimers::GetTimers()
   return m_timers;
 }
 
-bool CVNSITimers::GetTimer(int idx, CVNSITimer &timer)
+bool CVNSITimers::GetTimer(int id, CVNSITimer &timer)
 {
   cMutexLock lock(&m_timerLock);
-  idx &= ~INDEX_MASK;
-  if (idx < 0 || idx >= (int)m_timers.size())
-    return false;
-  timer = m_timers[idx];
-  return true;
+  id &= ~VNSITIMER_MASK;
+
+  for (auto &searchtimer : m_timers)
+  {
+    if (searchtimer.m_id == id)
+    {
+      timer = searchtimer;
+      return true;
+    }
+  }
+  return false;
 }
 
-bool CVNSITimers::UpdateTimer(int idx, CVNSITimer &timer)
+bool CVNSITimers::UpdateTimer(int id, CVNSITimer &timer)
 {
   cMutexLock lock(&m_timerLock);
-  idx &= ~INDEX_MASK;
-  if (idx < 0 || idx >= (int)m_timers.size())
-    return false;
-  m_timers[idx] = timer;
-  m_state++;
-  Save();
-  return true;
+  id &= ~VNSITIMER_MASK;
+
+  for (auto &searchtimer : m_timers)
+  {
+    if (searchtimer.m_id == id)
+    {
+      const cChannel *channel = FindChannelByUID(timer.m_channelUID);
+      if (!channel)
+        return false;
+
+      if (timer.m_channelUID != searchtimer.m_channelUID ||
+          timer.m_search != searchtimer.m_search)
+      {
+        DeleteChildren(searchtimer);
+      }
+
+      timer.m_id = id;
+      timer.m_channelID = channel->GetChannelID();
+      timer.m_timersCreated = searchtimer.m_timersCreated;
+
+      searchtimer = timer;
+      m_state++;
+      Save();
+      return true;
+    }
+  }
+  return false;
 }
 
-bool CVNSITimers::DeleteTimer(int idx)
+bool CVNSITimers::DeleteTimer(int id)
 {
   cMutexLock lock(&m_timerLock);
-  idx &= ~INDEX_MASK;
-  if (idx < 0 || idx >= (int)m_timers.size())
-    return false;
-  m_timers.erase(m_timers.begin()+idx);
-  m_state++;
-  Save();
-  return true;
+  id &= ~VNSITIMER_MASK;
+
+  std::vector<CVNSITimer>::iterator it;
+  for (it = m_timers.begin(); it != m_timers.end(); ++it)
+  {
+    if (it->m_id == id)
+    {
+      DeleteChildren(*it);
+      m_timers.erase(it);
+      m_state++;
+      Save();
+      return true;
+    }
+  }
+  return false;
+}
+
+void CVNSITimers::DeleteChildren(CVNSITimer &vnsitimer)
+{
+#if VDRVERSNUM >= 20301
+  cStateKey timerState;
+  timerState.Reset();
+  bool modified = false;
+  cTimers *Timers = cTimers::GetTimersWrite(timerState);
+  if (Timers)
+  {
+    Timers->SetExplicitModify();
+    cTimer *timer = Timers->First();
+    while (timer)
+    {
+      if (!timer->Channel())
+        continue;
+
+      timer->Matches();
+      cTimer* nextTimer = Timers->Next(timer);
+      for (auto &starttime : vnsitimer.m_timersCreated)
+      {
+        if (vnsitimer.m_channelID == timer->Channel()->GetChannelID() &&
+            timer->StartTime() == starttime &&
+            !timer->Recording())
+        {
+          Timers->Del(timer);
+          Timers->SetModified();
+          modified = true;
+          break;
+        }
+      }
+      timer = nextTimer;
+    }
+    timerState.Remove(modified);
+    vnsitimer.m_timersCreated.clear();
+  }
+#endif
+}
+
+int CVNSITimers::GetParent(const cTimer *timer)
+{
+  if (!timer->Channel())
+    return 0;
+
+  timer->Matches();
+  cMutexLock lock(&m_timerLock);
+  for (auto &searchTimer : m_timers)
+  {
+    if (searchTimer.m_channelID == timer->Channel()->GetChannelID())
+    {
+      for (auto &starttime : searchTimer.m_timersCreated)
+      {
+        if (timer->StartTime() == starttime)
+        {
+          return searchTimer.m_id | VNSITIMER_MASK;
+        }
+      }
+    }
+  }
+  return 0;
+}
+
+bool CVNSITimers::IsChild(int id, time_t starttime)
+{
+  cMutexLock lock(&m_timerLock);
+
+  for (auto &timer : m_timers)
+  {
+    if (timer.m_id != id)
+      continue;
+
+    for (auto &time : timer.m_timersCreated)
+    {
+      if (time == starttime)
+        return true;
+    }
+  }
+  return false;
 }
 
 bool CVNSITimers::StateChange(int &state)
@@ -302,11 +446,14 @@ void CVNSITimers::Action()
 
           for (const cEvent *event = schedule->Events()->First(); event; event = schedule->Events()->Next(event))
           {
+            if (event->EndTime() < time(nullptr))
+              continue;
+
             std::string title(event->Title());
             std::smatch m;
             std::regex e(Convert(searchTimer.m_search));
 
-            if (std::regex_search(title, m, e,  std::regex_constants::match_not_null))
+            if (std::regex_search(title, m, e, std::regex_constants::match_not_null))
             {
               bool duplicate = false;
               LOCK_RECORDINGS_READ;
@@ -336,9 +483,55 @@ void CVNSITimers::Action()
               if (IsDuplicateEvent(Timers, event))
                 continue;
 
-              std::unique_ptr<cTimer> newTimer(new cTimer(event));
-              Timers->Add(newTimer.release());
+              cTimer *newTimer = new cTimer(event);
+
+              if (!Setup.MarginStart)
+              {
+                unsigned int start = newTimer->Start();
+                if (start < searchTimer.m_marginStart)
+                {
+                  newTimer->SetDay(cTimer::IncDay(newTimer->Day(), -1));
+                  start = 24*3600 - (searchTimer.m_marginStart - start);
+                }
+                else
+                  start -= searchTimer.m_marginStart;
+                newTimer->SetStart(start);
+              }
+
+              if (!Setup.MarginStop)
+              {
+                unsigned int stop = newTimer->Stop();
+                if (stop + searchTimer.m_marginEnd >= 24*3600)
+                {
+                  newTimer->SetDay(cTimer::IncDay(newTimer->Day(), 1));
+                  stop = stop + searchTimer.m_marginEnd - 24*3600;
+                }
+                else
+                  stop += searchTimer.m_marginEnd;
+                newTimer->SetStop(stop);
+              }
+
+              if (IsChild(searchTimer.m_id, newTimer->StartTime()))
+              {
+                delete newTimer;
+                continue;
+              }
+
+              Timers->Add(newTimer);
               modified = true;
+
+              {
+                cMutexLock lock(&m_timerLock);
+                for (auto &origTimer : m_timers)
+                {
+                  if (origTimer.m_id == searchTimer.m_id)
+                  {
+                    origTimer.m_timersCreated.push_back(newTimer->StartTime());
+                    Save();
+                    break;
+                  }
+                }
+              }
             }
           }
         }
