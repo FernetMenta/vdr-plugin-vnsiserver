@@ -112,7 +112,29 @@ void CVNSITimers::Load()
       std::string lifetime = line.substr(0, pos);
       timer.m_lifetime = strtol(lifetime.c_str(), &pend, 10);
 
-      timer.m_search = line.substr(pos+1);
+      // searchstring
+      line = line.substr(pos+1);
+      pos = line.find(";");
+      if (pos == line.npos)
+      {
+        timer.m_search = line.substr(pos+1);
+      }
+      else
+      {
+        timer.m_search = line.substr(0, pos);
+      }
+
+      // created timers
+      if (pos != line.npos)
+      {
+        line = line.substr(pos+1);
+        while ((pos = line.find(",")) != line.npos)
+        {
+          std::string tmp = line.substr(0, pos);
+          time_t starttime = strtol(tmp.c_str(), &pend, 10);
+          timer.m_timersCreated.push_back(starttime);
+        }
+      }
 
       timer.m_id = ++m_nextId;
       m_timers.emplace_back(std::move(timer));
@@ -139,7 +161,13 @@ void CVNSITimers::Save()
             << timer.m_enabled << ';'
             << timer.m_priority << ';'
             << timer.m_lifetime << ';'
-            << timer.m_search << '\n';
+            << timer.m_search << ';';
+
+      for (auto &starttime : timer.m_timersCreated)
+      {
+         wfile << starttime << ',';
+      }
+      wfile << '\n';
     }
     wfile.close();
   }
@@ -203,6 +231,9 @@ bool CVNSITimers::UpdateTimer(int id, CVNSITimer &timer)
   {
     if (searchtimer.m_id == id)
     {
+      timer.m_channelID = searchtimer.m_channelID;
+      timer.m_timersCreated = searchtimer.m_timersCreated;
+
       searchtimer = timer;
       m_state++;
       Save();
@@ -222,6 +253,38 @@ bool CVNSITimers::DeleteTimer(int id)
   {
     if (it->m_id == id)
     {
+#if VDRVERSNUM >= 20301
+      cStateKey timerState;
+      timerState.Reset();
+      bool modified = false;
+      cTimers *Timers = cTimers::GetTimersWrite(timerState);
+      if (Timers)
+      {
+        Timers->SetExplicitModify();
+        cTimer *timer = Timers->First();
+        while (timer)
+        {
+          if (!timer->Channel())
+            continue;
+
+          cTimer* nextTimer = Timers->Next(timer);
+          for (auto &starttime : it->m_timersCreated)
+          {
+            if (it->m_channelID == timer->Channel()->GetChannelID() &&
+                timer->StartTime() == starttime)
+            {
+              Timers->Del(timer);
+              Timers->SetModified();
+              modified = true;
+              break;
+            }
+          }
+          timer = nextTimer;
+        }
+        timerState.Remove(modified);
+      }
+#endif
+
       m_timers.erase(it);
       m_state++;
       Save();
@@ -360,6 +423,19 @@ void CVNSITimers::Action()
               cTimer *newTimer = new cTimer(event);
               Timers->Add(newTimer);
               modified = true;
+
+              {
+                cMutexLock lock(&m_timerLock);
+                for (auto &origTimer : m_timers)
+                {
+                  if (origTimer.m_id == searchTimer.m_id)
+                  {
+                    origTimer.m_timersCreated.push_back(newTimer->StartTime());
+                    Save();
+                    break;
+                  }
+                }
+              }
             }
           }
         }

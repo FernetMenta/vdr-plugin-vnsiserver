@@ -44,6 +44,7 @@ public:
   int32_t m_lifetime;
   std::string m_search;
   tChannelID m_channelID;
+  std::vector<time_t> m_timersCreated;
 };
 
 class CVNSITimers : public cThread
@@ -72,6 +73,6 @@ protected:
   std::atomic_bool m_doScan;
   std::atomic_int m_state;
   cMutex m_timerLock;
-  int m_nextId = VNSITIMER_MASK;
+  int m_nextId = 0;
 };
 

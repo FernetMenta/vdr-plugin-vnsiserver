@@ -1592,7 +1592,7 @@ bool cVNSIClient::processTIMER_GetList(cRequestPacket &req) /* OPCODE 82 */
   for (auto &vnsitimer : vnsitimers)
   {
     resp.add_U32(VNSI_TIMER_TYPE_EPG_SEARCH);
-    resp.add_U32(vnsitimer.m_id & m_vnsiTimers.VNSITIMER_MASK);
+    resp.add_U32(vnsitimer.m_id | m_vnsiTimers.VNSITIMER_MASK);
     resp.add_U32(vnsitimer.m_enabled);
     resp.add_U32(0);
     resp.add_U32(0);
