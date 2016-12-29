@@ -1464,7 +1464,10 @@ bool cVNSIClient::processTIMER_Get(cRequestPacket &req) /* OPCODE 81 */
       resp.add_U32(0);
       resp.add_String(timer.m_name.c_str());
       resp.add_String(timer.m_search.c_str());
-      resp.add_U32(0);
+      if (m_protocolVersion >= 10)
+      {
+        resp.add_U32(0);
+      }
     }
     else
     {
@@ -1615,7 +1618,10 @@ bool cVNSIClient::processTIMER_GetList(cRequestPacket &req) /* OPCODE 82 */
     resp.add_U32(0);
     resp.add_String(vnsitimer.m_name.c_str());
     resp.add_String(vnsitimer.m_search.c_str());
-    resp.add_U32(0);
+    if (m_protocolVersion >= 10)
+    {
+      resp.add_U32(0);
+    }
   }
   resp.finalise();
   m_socket.write(resp.getPtr(), resp.getLen());
