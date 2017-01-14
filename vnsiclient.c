@@ -37,11 +37,13 @@
 #include "hash.h"
 #include "channelfilter.h"
 #include "channelscancontrol.h"
-
+#include <sys/types.h>
+#include <dirent.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <map>
 #include <memory>
+#include <string>
 
 #include <vdr/recording.h>
 #include <vdr/channels.h>
@@ -2130,7 +2132,7 @@ bool cVNSIClient::processRECORDINGS_GetList(cRequestPacket &req) /* OPCODE 102 *
 
     char* fullname = strdup(recording->Name());
     char* recname = strrchr(fullname, FOLDERDELIMCHAR);
-    char* directory = NULL;
+    char* directory = nullptr;
 
     if(recname == NULL)
     {
@@ -2162,15 +2164,46 @@ bool cVNSIClient::processRECORDINGS_GetList(cRequestPacket &req) /* OPCODE 102 *
     if(directory != NULL)
     {
       char* p = directory;
-      while(*p != 0) {
-        if(*p == FOLDERDELIMCHAR) *p = '/';
-        if(*p == '_') *p = ' ';
+      while(*p != 0)
+      {
+        if (*p == FOLDERDELIMCHAR)
+          *p = '/';
+        else if (*p == '_')
+          *p = ' ';
         p++;
       }
-      while(*directory == '/') directory++;
+      while(*directory == '/')
+        directory++;
     }
 
-    resp.add_String((isempty(directory)) ? "" : m_toUTF8.Convert(directory));
+    std::string strDirectory;
+    if (directory)
+      strDirectory = directory;
+    int noOfEntries = 1;
+    char* filename = strdup(recording->FileName());
+    char *pch = strrchr(filename, '/');
+    if (pch)
+    {
+      int noOfRecs = 0;
+      *pch = 0;
+      char* foldername = filename;
+      struct dirent **fileListTemp;
+      noOfEntries = scandir(foldername, &fileListTemp, NULL, alphasort);
+      for (int i=0; i<noOfEntries; i++)
+      {
+        std::string name(fileListTemp[i]->d_name);
+        if (name.find(".rec") != std::string::npos)
+          noOfRecs++;
+      }
+      if (noOfRecs > 1)
+      {
+        strDirectory += "/";
+        strDirectory += recname;
+      }
+    }
+    free(filename);
+
+    resp.add_String(strDirectory.empty() ? "" : m_toUTF8.Convert(strDirectory.c_str()));
 
     // filename / uid of recording
     uint32_t uid = cRecordingsCache::GetInstance().Register(recording, false);
