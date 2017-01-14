@@ -1,5 +1,12 @@
 VDR Plugin 'vnsiserver' Revision History
 ----------------------------------------
+2017-01-14: Version 1.5.2
+
+- group recordings
+- fixes for epg updates
+- fixes for searchtimers
+- see github history
+
 2016-09-25: Version 1.5.1
 
 - see github history for fixes
