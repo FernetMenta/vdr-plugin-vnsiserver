@@ -29,7 +29,7 @@
 #include "vnsi.h"
 #include <signal.h>
 #include <sys/ioctl.h>
-#include <sys/unistd.h>
+#include <unistd.h>
 #include <vdr/tools.h>
 #include <vdr/remote.h>
 #include "cxsocket.h"
