@@ -37,6 +37,7 @@ extern int TimeshiftBufferSize;
 extern int TimeshiftBufferFileSize;
 extern char TimeshiftBufferDir[PATH_MAX];
 extern int PlayRecording;
+extern int GroupRecordings;
 extern int AvoidEPGScan;
 extern int DisableScrambleTimeout;
 extern int DisableCamBlacklist;

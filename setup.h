@@ -37,6 +37,7 @@ private:
   int newTimeshiftBufferFileSize;
   char newTimeshiftBufferDir[PATH_MAX];
   int newPlayRecording;
+  int newGroupRecordings;
   int newAvoidEPGScan;
   int newDisableScrambleTimeout;
   int newDisableCamBlacklist;

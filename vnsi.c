@@ -154,8 +154,11 @@ bool cPluginVNSIServer::SetupParse(const char *Name, const char *Value)
     if (*TimeshiftBufferDir && TimeshiftBufferDir[strlen(TimeshiftBufferDir)-1] == '/')
       /* strip trailing slash */
       TimeshiftBufferDir[strlen(TimeshiftBufferDir)-1] = 0;
-  } else if (!strcasecmp(Name, CONFNAME_PLAYRECORDING))
+  }
+  else if (!strcasecmp(Name, CONFNAME_PLAYRECORDING))
     PlayRecording = atoi(Value);
+  else if (!strcasecmp(Name, CONFNAME_GROUPRECORDINGS))
+    GroupRecordings = atoi(Value);
   else if (!strcasecmp(Name, CONFNAME_AVOIDEPGSCAN))
     AvoidEPGScan = atoi(Value);
   else if (!strcasecmp(Name, CONFNAME_DISABLESCRAMBLETIMEOUT))

@@ -2179,29 +2179,33 @@ bool cVNSIClient::processRECORDINGS_GetList(cRequestPacket &req) /* OPCODE 102 *
     std::string strDirectory;
     if (directory)
       strDirectory = directory;
-    int noOfEntries = 1;
-    char* filename = strdup(recording->FileName());
-    char *pch = strrchr(filename, '/');
-    if (pch)
+
+    if (GroupRecordings)
     {
-      int noOfRecs = 0;
-      *pch = 0;
-      char* foldername = filename;
-      struct dirent **fileListTemp;
-      noOfEntries = scandir(foldername, &fileListTemp, NULL, alphasort);
-      for (int i=0; i<noOfEntries; i++)
+      int noOfEntries = 1;
+      char* filename = strdup(recording->FileName());
+      char *pch = strrchr(filename, '/');
+      if (pch)
       {
-        std::string name(fileListTemp[i]->d_name);
-        if (name.find(".rec") != std::string::npos)
-          noOfRecs++;
+        int noOfRecs = 0;
+        *pch = 0;
+        char* foldername = filename;
+        struct dirent **fileListTemp;
+        noOfEntries = scandir(foldername, &fileListTemp, NULL, alphasort);
+        for (int i=0; i<noOfEntries; i++)
+        {
+          std::string name(fileListTemp[i]->d_name);
+          if (name.find(".rec") != std::string::npos)
+            noOfRecs++;
+        }
+        if (noOfRecs > 1)
+        {
+          strDirectory += "/";
+          strDirectory += recname;
+        }
       }
-      if (noOfRecs > 1)
-      {
-        strDirectory += "/";
-        strDirectory += recname;
-      }
+      free(filename);
     }
-    free(filename);
 
     resp.add_String(strDirectory.empty() ? "" : m_toUTF8.Convert(strDirectory.c_str()));
 

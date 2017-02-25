@@ -31,6 +31,7 @@ int TimeshiftBufferSize = 5;
 int TimeshiftBufferFileSize = 6;
 char TimeshiftBufferDir[PATH_MAX] = "\0";
 int PlayRecording = 0;
+int GroupRecordings = 1;
 int AvoidEPGScan = 1;
 int DisableScrambleTimeout = 0;
 int DisableCamBlacklist = 0;
@@ -54,6 +55,9 @@ cMenuSetupVNSI::cMenuSetupVNSI(void)
 
   newPlayRecording = PlayRecording;
   Add(new cMenuEditBoolItem( tr("Play Recording instead of live"), &newPlayRecording));
+
+  newGroupRecordings = GroupRecordings;
+  Add(new cMenuEditBoolItem( tr("Group series recordings"), &newGroupRecordings));
 
   newAvoidEPGScan = AvoidEPGScan;
   Add(new cMenuEditBoolItem( tr("Avoid EPG scan while streaming"), &newAvoidEPGScan));
@@ -93,6 +97,8 @@ void cMenuSetupVNSI::Store(void)
   SetupStore(CONFNAME_TIMESHIFTBUFFERDIR, TimeshiftBufferDir);
 
   SetupStore(CONFNAME_PLAYRECORDING, PlayRecording = newPlayRecording);
+
+  SetupStore(CONFNAME_GROUPRECORDINGS, GroupRecordings = newGroupRecordings);
 
   SetupStore(CONFNAME_AVOIDEPGSCAN, AvoidEPGScan = newAvoidEPGScan);
 

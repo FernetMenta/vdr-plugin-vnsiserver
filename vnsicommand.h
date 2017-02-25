@@ -55,6 +55,7 @@
 #define CONFNAME_AVOIDEPGSCAN "AvoidEPGScan"
 #define CONFNAME_DISABLESCRAMBLETIMEOUT "DisableScrambleTimeout"
 #define CONFNAME_DISABLECAMBLACKLIST "DisableCamBlacklist"
+#define CONFNAME_GROUPRECORDINGS "GroupRecorsings"
 
 /* OPCODE 1 - 19: VNSI network functions for general purpose */
 #define VNSI_LOGIN                 1
