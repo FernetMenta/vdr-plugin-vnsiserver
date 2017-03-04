@@ -461,7 +461,8 @@ void CVNSITimers::Action()
               {
                 if (recording->Info() != nullptr)
                 {
-                  if (strcmp(recording->Info()->Title(), event->Title()) == 0)
+                  if (recording->Info()->Title() != nullptr &&
+                      strcmp(recording->Info()->Title(), event->Title()) == 0)
                   {
                     if (recording->Info()->ShortText() != nullptr && event->ShortText() != nullptr &&
                         strcmp(recording->Info()->ShortText(), event->ShortText()) == 0)
