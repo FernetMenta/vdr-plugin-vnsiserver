@@ -350,6 +350,7 @@ void cVNSIClient::OsdStatusMessage(const char *Message)
     else if (strcasecmp(Message, trVDR("Cancel editing?")) == 0) return;
     else if (strcasecmp(Message, trVDR("Cutter already running - Add to cutting queue?")) == 0) return;
     else if (strcasecmp(Message, trVDR("No index-file found. Creating may take minutes. Create one?")) == 0) return;
+    else if (strcasecmp(Message, trVDR("Low disk space!")) == 0) return;
     else if (strncmp(Message, trVDR("VDR will shut down in"), 21) == 0) return;
 
     cResponsePacket resp;
