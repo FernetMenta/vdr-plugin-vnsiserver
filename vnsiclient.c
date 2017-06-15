@@ -226,6 +226,7 @@ int cVNSIClient::EpgChange()
     return callAgain;
 
 #if VDRVERSNUM >= 20301
+  LOCK_CHANNELS_READ;
   cStateKey SchedulesStateKey(true);
   const cSchedules *schedules = cSchedules::GetSchedulesRead(SchedulesStateKey);
   if (!schedules)
@@ -246,7 +247,6 @@ int cVNSIClient::EpgChange()
       continue;
 
 #if VDRVERSNUM >= 20301
-    LOCK_CHANNELS_READ;
     const cChannel *channel = Channels->GetByChannelID(schedule->ChannelID());
 #else
     Channels.Lock(false);
@@ -2040,6 +2040,7 @@ bool cVNSIClient::processRECORDINGS_GetList(cRequestPacket &req) /* OPCODE 102 *
 {
   cMutexLock lock(&m_timerLock);
 #if VDRVERSNUM >= 20301
+  LOCK_CHANNELS_READ;
   LOCK_RECORDINGS_READ;
 #else
   cThreadLock RecordingsLock(&Recordings);
@@ -2054,11 +2055,7 @@ bool cVNSIClient::processRECORDINGS_GetList(cRequestPacket &req) /* OPCODE 102 *
   for (cRecording *recording = Recordings.First(); recording; recording = Recordings.Next(recording))
 #endif
   {
-#if APIVERSNUM >= 10705
     const cEvent *event = recording->Info()->GetEvent();
-#else
-    const cEvent *event = NULL;
-#endif
 
     time_t recordingStart    = 0;
     int    recordingDuration = 0;
@@ -2077,11 +2074,7 @@ bool cVNSIClient::processRECORDINGS_GetList(cRequestPacket &req) /* OPCODE 102 *
       }
       else
       {
-#if APIVERSNUM >= 10727
         recordingStart = recording->Start();
-#else
-        recordingStart = recording->start;
-#endif
       }
     }
     DEBUGLOG("GRI: RC: recordingStart=%lu recordingDuration=%i", recordingStart, recordingDuration);
@@ -2093,18 +2086,10 @@ bool cVNSIClient::processRECORDINGS_GetList(cRequestPacket &req) /* OPCODE 102 *
     resp.add_U32(recordingDuration);
 
     // priority
-#if APIVERSNUM >= 10727
     resp.add_U32(recording->Priority());
-#else
-    resp.add_U32(recording->priority);
-#endif
 
     // lifetime
-#if APIVERSNUM >= 10727
     resp.add_U32(recording->Lifetime());
-#else
-    resp.add_U32(recording->lifetime);
-#endif
 
     // channel_name
     resp.add_String(recording->Info()->ChannelName() ? m_toUTF8.Convert(recording->Info()->ChannelName()) : "");
@@ -2112,7 +2097,6 @@ bool cVNSIClient::processRECORDINGS_GetList(cRequestPacket &req) /* OPCODE 102 *
     {
       // channel uuid
 #if VDRVERSNUM >= 20301
-      LOCK_CHANNELS_READ;
       const cChannel *channel = Channels->GetByChannelID(recording->Info()->ChannelID());
 #else
       Channels.Lock(false);
@@ -2840,11 +2824,7 @@ bool cVNSIClient::processRECORDINGS_DELETED_GetList(cRequestPacket &req) /* OPCO
       }
       else
       {
-#if APIVERSNUM >= 10727
         recordingStart = recording->Start();
-#else
-        recordingStart = recording->start;
-#endif
       }
     }
     DEBUGLOG("GRI: RC: recordingStart=%lu recordingDuration=%i", recordingStart, recordingDuration);
@@ -2856,18 +2836,10 @@ bool cVNSIClient::processRECORDINGS_DELETED_GetList(cRequestPacket &req) /* OPCO
     resp.add_U32(recordingDuration);
 
     // priority
-#if APIVERSNUM >= 10727
     resp.add_U32(recording->Priority());
-#else
-    resp.add_U32(recording->priority);
-#endif
 
     // lifetime
-#if APIVERSNUM >= 10727
     resp.add_U32(recording->Lifetime());
-#else
-    resp.add_U32(recording->lifetime);
-#endif
 
     // channel_name
     resp.add_String(recording->Info()->ChannelName() ? m_toUTF8.Convert(recording->Info()->ChannelName()) : "");
