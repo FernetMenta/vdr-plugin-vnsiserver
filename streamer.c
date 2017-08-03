@@ -41,14 +41,15 @@
 
 // --- cLiveStreamer -------------------------------------------------
 
-cLiveStreamer::cLiveStreamer(int clientID, bool bAllowRDS, uint8_t timeshift, uint32_t timeout)
+cLiveStreamer::cLiveStreamer(int clientID, bool bAllowRDS, int protocol, uint8_t timeshift, uint32_t timeout)
  : cThread("cLiveStreamer stream processor")
  , m_ClientID(clientID)
  , m_scanTimeout(timeout)
  , m_Demuxer(bAllowRDS)
  , m_VideoInput(m_Event)
 {
-  m_Timeshift       = timeshift;
+  m_protocolVersion = protocol;
+  m_Timeshift = timeshift;
 
   memset(&m_FrontendInfo, 0, sizeof(m_FrontendInfo));
 
@@ -212,8 +213,21 @@ void cLiveStreamer::Action(void)
         requestStreamChangeData = false;
         if (pkt_data.reftime)
         {
-          sendRefTime(&pkt_data);
+          m_refTime = pkt_data.reftime;
+          m_refDTS = pkt_data.dts;
+          if (m_protocolVersion >= 11)
+          {
+            sendStreamTimes(pkt_data);
+            bufferStatsTimer.Set(1000);
+          }
+          else
+            sendRefTime(pkt_data);
           pkt_data.reftime = 0;
+        }
+        if (bufferStatsTimer.TimedOut())
+        {
+          sendStreamTimes(pkt_data);
+          bufferStatsTimer.Set(1000);
         }
         sendStreamPacket(&pkt_data);
       }
@@ -243,11 +257,14 @@ void cLiveStreamer::Action(void)
         }
       }
 
-      // send buffer stats
-      if(bufferStatsTimer.TimedOut())
+      if (m_protocolVersion < 11)
       {
-        sendBufferStatus();
-        bufferStatsTimer.Set(1000);
+        // send buffer stats
+        if (bufferStatsTimer.TimedOut())
+        {
+          sendBufferStatus();
+          bufferStatsTimer.Set(1000);
+        }
       }
     }
     else if (ret == -1)
@@ -669,6 +686,56 @@ void cLiveStreamer::sendStreamStatus()
   m_Socket->write(resp.getPtr(), resp.getLen());
 }
 
+void cLiveStreamer::sendStreamTimes(sStreamPacket &pkt)
+{
+  if (m_Channel == NULL)
+    return;
+
+  cResponsePacket resp;
+  resp.initStream(VNSI_STREAM_TIMES, 0, 0, 0, 0, 0);
+
+  time_t starttime = m_refTime;
+  int64_t time = m_refDTS;
+  time_t current = (pkt.dts - m_refDTS) / DVD_TIME_BASE + m_refTime;
+
+  {
+#if VDRVERSNUM >= 20301
+    LOCK_SCHEDULES_READ;
+    const cSchedule *schedule = Schedules->GetSchedule(m_Channel);
+#else
+    cSchedulesLock MutexLock;
+    const cSchedules *Schedules = cSchedules::Schedules(MutexLock);
+    if (!Schedules)
+      return;
+    const cSchedule *schedule = Schedules->GetSchedule(m_Channel);
+#endif
+    const cEvent *event = schedule->GetEventAround(current);
+    if (event)
+    {
+      starttime = event->StartTime();
+      time = (starttime - m_refTime) * DVD_TIME_BASE + m_refDTS;
+    }
+  }
+  uint32_t start, end;
+  bool timeshift;
+  int64_t mintime = pkt.dts;
+  int64_t maxtime = pkt.dts;
+  m_Demuxer.BufferStatus(timeshift, start, end);
+  if (timeshift)
+  {
+    mintime = (start - starttime) * DVD_TIME_BASE + m_refDTS;
+    maxtime = (end - starttime) * DVD_TIME_BASE + m_refDTS;
+  }
+
+  resp.add_U8(timeshift);
+  resp.add_U32(starttime);
+  resp.add_U64(time);
+  resp.add_U64(mintime);
+  resp.add_U64(maxtime);
+  resp.finaliseStream();
+  m_Socket->write(resp.getPtr(), resp.getLen());
+}
+
 void cLiveStreamer::sendBufferStatus()
 {
   cResponsePacket resp;
@@ -683,15 +750,12 @@ void cLiveStreamer::sendBufferStatus()
   m_Socket->write(resp.getPtr(), resp.getLen());
 }
 
-void cLiveStreamer::sendRefTime(sStreamPacket *pkt)
+void cLiveStreamer::sendRefTime(sStreamPacket &pkt)
 {
-  if(pkt == NULL)
-    return;
-
   cResponsePacket resp;
   resp.initStream(VNSI_STREAM_REFTIME, 0, 0, 0, 0, 0);
-  resp.add_U32(pkt->reftime);
-  resp.add_U64(pkt->pts);
+  resp.add_U32(pkt.reftime);
+  resp.add_U64(pkt.pts);
   resp.finaliseStream();
   m_Socket->write(resp.getPtr(), resp.getLen());
 }

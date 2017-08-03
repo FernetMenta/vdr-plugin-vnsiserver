@@ -54,7 +54,8 @@ class cLiveStreamer : public cThread
   void sendSignalInfo();
   void sendStreamStatus();
   void sendBufferStatus();
-  void sendRefTime(sStreamPacket *pkt);
+  void sendRefTime(sStreamPacket &pkt);
+  void sendStreamTimes(sStreamPacket &pkt);
 
   const int         m_ClientID;
   const cChannel   *m_Channel = nullptr;            /*!> Channel to stream */
@@ -76,8 +77,11 @@ class cLiveStreamer : public cThread
   cVideoBuffer     *m_VideoBuffer = nullptr;
   cVideoInput       m_VideoInput;
   int               m_Priority;
-  uint8_t           m_Timeshift;
-  cCondWait         m_Event;
+  uint8_t m_Timeshift;
+  cCondWait m_Event;
+  time_t m_refTime;
+  int64_t m_refDTS;
+  int m_protocolVersion = 0;
 
 protected:
   virtual void Action(void);
@@ -85,7 +89,7 @@ protected:
   void Close();
 
 public:
-  cLiveStreamer(int clientID, bool bAllowRDS, uint8_t timeshift, uint32_t timeout = 0);
+  cLiveStreamer(int clientID, bool bAllowRDS, int protocol, uint8_t timeshift, uint32_t timeout);
   virtual ~cLiveStreamer();
 
   cLiveStreamer(const cLiveStreamer &) = delete;

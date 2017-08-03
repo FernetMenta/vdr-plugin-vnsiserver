@@ -165,7 +165,7 @@ void cVNSIClient::Action(void)
 bool cVNSIClient::StartChannelStreaming(cResponsePacket &resp, const cChannel *channel, int32_t priority, uint8_t timeshift, uint32_t timeout)
 {
   delete m_Streamer;
-  m_Streamer    = new cLiveStreamer(m_Id, m_bSupportRDS, timeshift, timeout);
+  m_Streamer = new cLiveStreamer(m_Id, m_bSupportRDS, m_protocolVersion, timeshift, timeout);
   m_isStreaming = m_Streamer->StreamChannel(channel, priority, &m_socket, &resp);
   return m_isStreaming;
 }

@@ -27,7 +27,7 @@
 #define VNSI_COMMAND_H
 
 /** Current VNSI Protocol Version number */
-#define VNSI_PROTOCOLVERSION 10
+#define VNSI_PROTOCOLVERSION 11
 
 /** Start of RDS support protocol Version */
 #define VNSI_RDS_PROTOCOLVERSION 8
@@ -141,6 +141,7 @@
 #define VNSI_STREAM_CONTENTINFO  6
 #define VNSI_STREAM_BUFFERSTATS  7
 #define VNSI_STREAM_REFTIME      8
+#define VNSI_STREAM_TIMES        9
 
 /** Scan packet types (server -> client) */
 #define VNSI_SCANNER_PERCENTAGE  1
