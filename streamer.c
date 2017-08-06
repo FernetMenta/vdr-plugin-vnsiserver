@@ -709,6 +709,8 @@ void cLiveStreamer::sendStreamTimes(sStreamPacket &pkt)
       return;
     const cSchedule *schedule = Schedules->GetSchedule(m_Channel);
 #endif
+    if (!schedule)
+      return;
     const cEvent *event = schedule->GetEventAround(current);
     if (event)
     {
