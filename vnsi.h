@@ -41,6 +41,7 @@ extern int GroupRecordings;
 extern int AvoidEPGScan;
 extern int DisableScrambleTimeout;
 extern int DisableCamBlacklist;
+extern int EdlMode;
 
 class cDvbVsniDeviceProbe : public cDvbDeviceProbe
 {

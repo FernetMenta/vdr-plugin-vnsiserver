@@ -35,6 +35,7 @@ int GroupRecordings = 1;
 int AvoidEPGScan = 1;
 int DisableScrambleTimeout = 0;
 int DisableCamBlacklist = 0;
+int EdlMode = 0;
 
 cMenuSetupVNSI::cMenuSetupVNSI(void)
 {
@@ -67,6 +68,12 @@ cMenuSetupVNSI::cMenuSetupVNSI(void)
 
   newDisableCamBlacklist = DisableCamBlacklist;
   Add(new cMenuEditBoolItem( tr("Disable cam blacklist"), &newDisableCamBlacklist));
+
+  edlModesTexts[0] = tr("scene");
+  edlModesTexts[1] = tr("comskip");
+  edlModesTexts[2] = tr("cut");
+  newEdlMode = EdlMode;
+  Add(new cMenuEditStraItem( tr("EDL Mode"), &newEdlMode, 3, edlModesTexts));
 }
 
 void cMenuSetupVNSI::Store(void)
@@ -105,4 +112,6 @@ void cMenuSetupVNSI::Store(void)
   SetupStore(CONFNAME_DISABLESCRAMBLETIMEOUT, DisableScrambleTimeout = newDisableScrambleTimeout);
 
   SetupStore(CONFNAME_DISABLECAMBLACKLIST, DisableCamBlacklist = newDisableCamBlacklist);
+
+  SetupStore(CONFNAME_EDL, EdlMode = newEdlMode);
 }

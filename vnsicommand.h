@@ -56,6 +56,7 @@
 #define CONFNAME_DISABLESCRAMBLETIMEOUT "DisableScrambleTimeout"
 #define CONFNAME_DISABLECAMBLACKLIST "DisableCamBlacklist"
 #define CONFNAME_GROUPRECORDINGS "GroupRecordings"
+#define CONFNAME_EDL "Edl"
 
 /* OPCODE 1 - 19: VNSI network functions for general purpose */
 #define VNSI_LOGIN                 1

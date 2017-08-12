@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: VNSI-Server 1.0.0\n"
 "Report-Msgid-Bugs-To: <see README>\n"
-"POT-Creation-Date: 2016-09-26 21:50+0300\n"
+"POT-Creation-Date: 2017-08-12 00:35+0200\n"
 "PO-Revision-Date: 2015-01-23 21:46+0100\n"
 "Last-Translator: Alwin Esch\n"
 "Language-Team: German\n"
@@ -45,6 +45,9 @@ msgstr "TS-Puffer-Verzeichnis"
 msgid "Play Recording instead of live"
 msgstr "Wiedergeben als Aufzeichnung statt Live"
 
+msgid "Group series recordings"
+msgstr ""
+
 msgid "Avoid EPG scan while streaming"
 msgstr "Keine EPG suche während der Wiedergabe durchführen"
 
@@ -52,6 +55,18 @@ msgid "Disable scramble timeout"
 msgstr ""
 
 msgid "Disable cam blacklist"
+msgstr ""
+
+msgid "scene"
+msgstr ""
+
+msgid "comskip"
+msgstr ""
+
+msgid "cut"
+msgstr ""
+
+msgid "EDL Mode"
 msgstr ""
 
 msgid "Recording with the same name exists"
