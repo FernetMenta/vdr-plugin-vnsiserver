@@ -629,16 +629,16 @@ void cLiveStreamer::sendSignalInfo()
       switch (m_Channel->Source() & cSource::st_Mask)
       {
         case cSource::stSat:
-          resp.add_String(*cString::sprintf("DVB-S%s #%d - %s", (m_FrontendInfo.caps & 0x10000000) ? "2" : "",  cDevice::ActualDevice()->CardIndex(), m_FrontendInfo.name));
+          resp.add_String(*cString::sprintf("DVB-S%s #%d - %s", (m_FrontendInfo.caps & 0x10000000) ? "2" : "",  m_Device->CardIndex(), m_FrontendInfo.name));
           break;
         case cSource::stCable:
-          resp.add_String(*cString::sprintf("DVB-C #%d - %s", cDevice::ActualDevice()->CardIndex(), m_FrontendInfo.name));
+          resp.add_String(*cString::sprintf("DVB-C #%d - %s", m_Device->CardIndex(), m_FrontendInfo.name));
           break;
         case cSource::stTerr:
-          resp.add_String(*cString::sprintf("DVB-T #%d - %s", cDevice::ActualDevice()->CardIndex(), m_FrontendInfo.name));
+          resp.add_String(*cString::sprintf("DVB-T #%d - %s", m_Device->CardIndex(), m_FrontendInfo.name));
           break;
         case cSource::stAtsc:
-          resp.add_String(*cString::sprintf("ATSC #%d - %s", cDevice::ActualDevice()->CardIndex(), m_FrontendInfo.name));
+          resp.add_String(*cString::sprintf("ATSC #%d - %s", m_Device->CardIndex(), m_FrontendInfo.name));
           break;
         default:
           resp.add_U8(0);
