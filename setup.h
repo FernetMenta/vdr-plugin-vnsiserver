@@ -41,6 +41,8 @@ private:
   int newAvoidEPGScan;
   int newDisableScrambleTimeout;
   int newDisableCamBlacklist;
+  int newEdlMode;
+  const char *edlModesTexts[3];
 protected:
   virtual void Store(void);
 public:

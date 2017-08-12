@@ -718,6 +718,8 @@ bool cVNSIClient::process_GetSetup(cRequestPacket &req) /* OPCODE 8 */
     resp.add_U32(TimeshiftBufferSize);
   else if (!strcasecmp(name, CONFNAME_TIMESHIFTBUFFERFILESIZE))
     resp.add_U32(TimeshiftBufferFileSize);
+  else if (!strcasecmp(name, CONFNAME_EDL))
+    resp.add_U32(EdlMode);
 
   resp.finalise();
   m_socket.write(resp.getPtr(), resp.getLen());
@@ -752,6 +754,11 @@ bool cVNSIClient::process_StoreSetup(cRequestPacket &req) /* OPCODE 9 */
   {
     int value = req.extract_U32();
     cPluginVNSIServer::StoreSetup(CONFNAME_PLAYRECORDING, value);
+  }
+  else if (!strcasecmp(name, CONFNAME_EDL))
+  {
+    int value = req.extract_U32();
+    cPluginVNSIServer::StoreSetup(CONFNAME_EDL, value);
   }
 
   cResponsePacket resp;
@@ -2324,13 +2331,43 @@ bool cVNSIClient::processRECORDINGS_GetEdl(cRequestPacket &req) /* OPCODE 105 */
     if(marks.Load(recording->FileName(), recording->FramesPerSecond(), recording->IsPesRecording()))
     {
 #if VDRVERSNUM >= 10732
-      cMark* mark = NULL;
       double fps = recording->FramesPerSecond();
-      while((mark = marks.GetNextBegin(mark)) != NULL)
+      cMark* mark = NULL;
+
+      if (EdlMode == 0)         /* scene */
       {
-        resp.add_U64(mark->Position() *1000 / fps);
-        resp.add_U64(mark->Position() *1000 / fps);
-        resp.add_S32(2);
+        while((mark = marks.GetNextBegin(mark)) != NULL)
+        {
+          resp.add_U64(mark->Position() *1000 / fps);
+          resp.add_U64(mark->Position() *1000 / fps);
+          resp.add_S32(2);
+        }
+      }
+      else
+      {
+        int kodiMode = EdlMode==1 ? 3 : 0; /* comskip : cut */
+        int endPos = 0;
+        cMark* endMark = NULL;
+
+        while ((mark = marks.GetNextBegin(endMark)) != NULL)
+        {
+          if (endPos != mark->Position())
+          {
+            resp.add_U64(endPos *1000 / fps);
+            resp.add_U64(mark->Position() *1000 / fps);
+            resp.add_S32(kodiMode);
+          }
+          if ((endMark = marks.GetNextEnd(mark)) == NULL)
+            break;
+          endPos = endMark->Position();
+        }
+
+        if (endMark && endPos < recording->NumFrames())
+        {
+          resp.add_U64(endPos *1000 / fps);
+          resp.add_U64(recording->NumFrames() *1000 / fps);
+          resp.add_S32(kodiMode);
+        }
       }
 #endif
     }

@@ -165,6 +165,8 @@ bool cPluginVNSIServer::SetupParse(const char *Name, const char *Value)
     DisableScrambleTimeout = atoi(Value);
   else if (!strcasecmp(Name, CONFNAME_DISABLECAMBLACKLIST))
     DisableCamBlacklist = atoi(Value);
+  else if (!strcasecmp(Name, CONFNAME_EDL))
+    EdlMode = atoi(Value);
   else
     return false;
   return true;
