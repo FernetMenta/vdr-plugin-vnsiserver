@@ -53,6 +53,7 @@ public:
   ~cRecPlayer();
   uint64_t getLengthBytes();
   uint32_t getLengthFrames();
+  double getFPS();
   int getBlock(unsigned char* buffer, uint64_t position, int amount);
 
   bool openFile(int index);
@@ -79,6 +80,7 @@ private:
   std::vector<cSegment> m_segments;
   uint64_t m_totalLength;
   uint32_t m_totalFrames;
+  double m_fps;
 };
 
 #endif // VNSI_RECPLAYER_H

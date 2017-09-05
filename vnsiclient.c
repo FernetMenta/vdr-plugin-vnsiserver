@@ -1014,16 +1014,24 @@ bool cVNSIClient::processRecStream_GetIFrame(cRequestPacket &req) /* OPCODE 45 *
 bool cVNSIClient::processRecStream_GetLength(cRequestPacket &req) /* OPCODE 46 */
 {
   uint64_t length = 0;
+  uint64_t lengthMsec = 0;
 
   if (m_RecPlayer)
   {
     m_RecPlayer->reScan();
     length = m_RecPlayer->getLengthBytes();
+
+    lengthMsec = m_RecPlayer->getLengthFrames() * 1000 / m_RecPlayer->getFPS();
   }
 
   cResponsePacket resp;
   resp.init(req.getRequestID());
   resp.add_U64(length);
+
+  if (m_protocolVersion >= 12)
+  {
+    resp.add_U64(lengthMsec);
+  }
 
   resp.finalise();
   m_socket.write(resp.getPtr(), resp.getLen());

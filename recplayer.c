@@ -50,6 +50,8 @@ cRecPlayer::cRecPlayer(const cRecording* rec, bool inProgress)
   if(m_pesrecording)
     INFOLOG("recording '%s' is a PES recording", m_recordingFilename.c_str());
 
+  m_fps = rec->FramesPerSecond();
+
   scan();
 }
 
@@ -179,6 +181,11 @@ uint64_t cRecPlayer::getLengthBytes()
 uint32_t cRecPlayer::getLengthFrames()
 {
   return m_totalFrames;
+}
+
+double cRecPlayer::getFPS()
+{
+  return m_fps;
 }
 
 int cRecPlayer::getBlock(unsigned char* buffer, uint64_t position, int amount)
