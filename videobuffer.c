@@ -618,6 +618,7 @@ public:
   virtual void Put(const uint8_t *buf, unsigned int size);
   virtual int ReadBlock(uint8_t **buf, unsigned int size, time_t &endTime, time_t &wrapTime);
   virtual time_t GetRefTime();
+  virtual void AttachInput(bool attach);
 
 protected:
   cVideoBufferRecording(const cRecording *rec);
@@ -680,6 +681,11 @@ bool cVideoBufferRecording::Init()
 time_t cVideoBufferRecording::GetRefTime()
 {
   return m_Recording->Start();
+}
+
+void cVideoBufferRecording::AttachInput(bool attach)
+{
+
 }
 
 off_t cVideoBufferRecording::Available()
