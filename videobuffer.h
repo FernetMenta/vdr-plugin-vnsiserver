@@ -48,7 +48,7 @@ public:
   virtual bool HasBuffer() { return false; };
   virtual time_t GetRefTime();
   int Read(uint8_t **buf, unsigned int size, time_t &endTime, time_t &wrapTime);
-  void AttachInput(bool attach);
+  virtual void AttachInput(bool attach);
 protected:
   cVideoBuffer();
   cTimeMs m_Timer;
