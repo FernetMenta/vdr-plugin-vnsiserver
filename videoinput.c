@@ -612,8 +612,8 @@ void cVideoInput::Close()
       DELETENULL(m_PatFilter);
     }
   }
-  m_Channel = NULL;
-  m_Device = NULL;
+  m_Channel = nullptr;
+  m_Device = nullptr;
   if (m_VideoBuffer)
   {
     m_VideoBuffer->AttachInput(false);
@@ -657,8 +657,12 @@ void cVideoInput::RequestRetune()
 
 cVideoInput::eReceivingStatus cVideoInput::ReceivingStatus()
 {
+  if (!IsOpen())
+    return NORMAL;
+
   if (!m_Device || !m_DummyReceiver)
     return RETUNE;
+
   if (m_RetuneRequested)
   {
     (void)m_Device->Receiving();  // wait for the receivers mutex

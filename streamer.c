@@ -190,7 +190,9 @@ void cLiveStreamer::Action(void)
 
   while (Running())
   {
-    auto retune = m_VideoInput.ReceivingStatus();
+    cVideoInput::eReceivingStatus retune = cVideoInput::NORMAL;
+    if (m_VideoInput.IsOpen())
+      retune = m_VideoInput.ReceivingStatus();
     if (retune == cVideoInput::RETUNE)
       // allow timeshift playback when retune == cVideoInput::CLOSE
       ret = -1;
