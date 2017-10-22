@@ -1097,6 +1097,9 @@ bool cVNSIClient::processCHANNELS_GetChannels(cRequestPacket &req) /* OPCODE 63 
     if (channel->Sid() == 0)
       continue;
 
+    if (endswith(channel->Name(), "OBSOLETE"))
+      continue;
+
     // check filter
     if (filter && !VNSIChannelFilter.PassFilter(*channel))
       continue;
@@ -1227,6 +1230,9 @@ bool cVNSIClient::processCHANNELS_GetGroupMembers(cRequestPacket &req)
     }
 
     if(name.empty())
+      continue;
+
+    if (endswith(channel->Name(), "OBSOLETE"))
       continue;
 
     if(cVNSIChannelFilter::IsRadio(channel) != radio)
