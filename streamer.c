@@ -697,7 +697,7 @@ void cLiveStreamer::sendStreamTimes(sStreamPacket &pkt)
   resp.initStream(VNSI_STREAM_TIMES, 0, 0, 0, 0, 0);
 
   time_t starttime = m_refTime;
-  int64_t time = m_refDTS;
+  int64_t refDTS = m_refDTS;
   time_t current = (pkt.dts - m_refDTS) / DVD_TIME_BASE + m_refTime;
 
   {
@@ -717,7 +717,7 @@ void cLiveStreamer::sendStreamTimes(sStreamPacket &pkt)
     if (event)
     {
       starttime = event->StartTime();
-      time = (starttime - m_refTime) * DVD_TIME_BASE + m_refDTS;
+      refDTS = (starttime - m_refTime) * DVD_TIME_BASE + m_refDTS;
     }
   }
   uint32_t start, end;
@@ -727,13 +727,13 @@ void cLiveStreamer::sendStreamTimes(sStreamPacket &pkt)
   m_Demuxer.BufferStatus(timeshift, start, end);
   if (timeshift)
   {
-    mintime = (start - starttime) * DVD_TIME_BASE + m_refDTS;
-    maxtime = (end - starttime) * DVD_TIME_BASE + m_refDTS;
+    mintime = (start - starttime) * DVD_TIME_BASE + refDTS;
+    maxtime = (end - starttime) * DVD_TIME_BASE + refDTS;
   }
 
   resp.add_U8(timeshift);
   resp.add_U32(starttime);
-  resp.add_U64(time);
+  resp.add_U64(refDTS);
   resp.add_U64(mintime);
   resp.add_U64(maxtime);
   resp.finaliseStream();
