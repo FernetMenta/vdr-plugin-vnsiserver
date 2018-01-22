@@ -526,8 +526,29 @@ void cLiveStreamer::sendStreamChange()
   m_Socket->write(resp.getPtr(), resp.getLen());
 }
 
+// taken from vdr 2.3.4+ keeping the comments
+static uint16_t dB1000toRelative(__s64 dB1000, int Low, int High)
+{
+  // Convert the given value, which is in 1/1000 dBm, to a percentage in the
+  // range 0..0xffff. Anything below Low is considered 0, and anything above
+  // High counts as 0xffff.
+  if (dB1000 < Low)
+    return 0;
+  if (dB1000 > High)
+    return 0xffff;
+  // return 0xffff - 0xffff * (High - dB1000) / (High - Low); // linear conversion
+  // return 0xffff - 0xffff * sqr(dB1000 - High) / sqr(Low - High); // quadratic conversion, see https://www.adriangranados.com/blog/dbm-to-percent-conversion
+  dB1000 = 256 * 256 * (dB1000 - High) / (Low - High); // avoids the sqr() function
+  dB1000 = (dB1000 * dB1000) / 0x10000;
+
+  if (dB1000 > 0xffff)
+    return 0;
+  return (uint16_t)(0xffff - dB1000);
+}
+
 void cLiveStreamer::sendSignalInfo()
 {
+
   /* If no frontend is found m_Frontend is set to -2, in this case
      return a empty signalinfo package */
   if (m_Frontend == -2)
@@ -619,13 +640,91 @@ void cLiveStreamer::sendSignalInfo()
       memset(&status, 0, sizeof(status));
       ioctl(m_Frontend, FE_READ_STATUS, &status);
 
-      if (ioctl(m_Frontend, FE_READ_SIGNAL_STRENGTH, &fe_signal) == -1)
+      bool signal_needed(true), snr_needed(true), ber_needed(true), unc_needed(true);
+      dtv_property fe_props[4];
+      dtv_properties fe_cmd;
+      memset(&fe_props, 0, sizeof(fe_props));
+      memset(&fe_cmd, 0, sizeof(fe_cmd));
+
+      fe_props[0].cmd = DTV_STAT_SIGNAL_STRENGTH;
+      fe_props[1].cmd = DTV_STAT_CNR;
+      fe_props[2].cmd = DTV_STAT_PRE_ERROR_BIT_COUNT;
+      fe_props[3].cmd = DTV_STAT_ERROR_BLOCK_COUNT;
+
+      fe_cmd.props = fe_props;
+      fe_cmd.num = 4;
+
+      if (ioctl(m_Frontend, FE_GET_PROPERTY, &fe_cmd) == 0)
+      {
+        if (fe_props[0].u.st.len > 0)
+        {
+          switch (fe_props[0].u.st.stat[0].scale)
+          {
+            case FE_SCALE_RELATIVE:
+              fe_signal = (uint16_t)fe_props[0].u.st.stat[0].uvalue;
+              signal_needed = false;
+              break;
+            case FE_SCALE_DECIBEL:
+              fe_signal = dB1000toRelative(fe_props[0].u.st.stat[0].svalue, -95000, -20000);
+              signal_needed = false;
+              DEBUGLOG("Signal decibel: %d -> %d",
+                       (int)fe_props[0].u.st.stat[0].svalue, (int)fe_signal);
+              break;
+          }
+        }
+        if (fe_props[1].u.st.len > 0)
+        {
+          switch (fe_props[1].u.st.stat[0].scale)
+          {
+            case FE_SCALE_RELATIVE:
+              fe_snr = (uint16_t)fe_props[1].u.st.stat[0].uvalue;
+              snr_needed = false;
+              break;
+            case FE_SCALE_DECIBEL:
+              fe_snr = dB1000toRelative(fe_props[1].u.st.stat[0].svalue, 5000, 20000);
+              snr_needed = false;
+              DEBUGLOG("SNR decibel: %d -> %d",
+                       (int)fe_props[1].u.st.stat[0].svalue, (int)fe_snr);
+              break;
+          }
+        }
+        if (fe_props[2].u.st.len > 0)
+        {
+          switch (fe_props[2].u.st.stat[0].scale)
+          {
+            case FE_SCALE_COUNTER:
+              fe_ber = (uint32_t)fe_props[2].u.st.stat[0].uvalue;
+              ber_needed = false;
+              break;
+            case FE_SCALE_NOT_AVAILABLE:
+              break;
+            default:
+              DEBUGLOG("BER scale: %d", fe_props[2].u.st.stat[0].scale);
+          }
+        }
+        if (fe_props[3].u.st.len > 0)
+        {
+          switch (fe_props[3].u.st.stat[0].scale)
+          {
+            case FE_SCALE_COUNTER:
+              fe_unc = (uint32_t)fe_props[3].u.st.stat[0].uvalue;
+              unc_needed = false;
+              break;
+            case FE_SCALE_NOT_AVAILABLE:
+              break;
+            default:
+              DEBUGLOG("UNC scale: %d", fe_props[3].u.st.stat[0].scale);
+          }
+        }
+      }
+
+      if (signal_needed && ioctl(m_Frontend, FE_READ_SIGNAL_STRENGTH, &fe_signal) == -1)
         fe_signal = -2;
-      if (ioctl(m_Frontend, FE_READ_SNR, &fe_snr) == -1)
+      if (snr_needed && ioctl(m_Frontend, FE_READ_SNR, &fe_snr) == -1)
         fe_snr = -2;
-      if (ioctl(m_Frontend, FE_READ_BER, &fe_ber) == -1)
+      if (ber_needed && ioctl(m_Frontend, FE_READ_BER, &fe_ber) == -1)
         fe_ber = -2;
-      if (ioctl(m_Frontend, FE_READ_UNCORRECTED_BLOCKS, &fe_unc) == -1)
+      if (unc_needed && ioctl(m_Frontend, FE_READ_UNCORRECTED_BLOCKS, &fe_unc) == -1)
         fe_unc = -2;
 
       switch (m_Channel->Source() & cSource::st_Mask)
