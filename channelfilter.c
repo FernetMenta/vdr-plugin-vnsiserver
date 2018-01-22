@@ -164,31 +164,33 @@ void cVNSIChannelFilter::Load()
 
 void cVNSIChannelFilter::StoreWhitelist(bool radio)
 {
-  cMutexLock lock(&m_Mutex);
-
-  cString filename;
-  std::ofstream wfile;
-  std::vector<cVNSIProvider> *whitelist;
-
-  if (radio)
   {
-    filename = cString::sprintf("%s/radiowhitelist.vnsi", *VNSIServerConfig.ConfigDirectory);
-    whitelist = &m_providersRadio;
-  }
-  else
-  {
-    filename = cString::sprintf("%s/videowhitelist.vnsi", *VNSIServerConfig.ConfigDirectory);
-    whitelist = &m_providersVideo;
-  }
+    cMutexLock lock(&m_Mutex);
 
-  wfile.open(filename);
-  if(wfile.is_open())
-  {
-    for (const auto i : *whitelist)
+    cString filename;
+    std::ofstream wfile;
+    std::vector<cVNSIProvider> *whitelist;
+
+    if (radio)
     {
-      wfile << i.m_name << '|' << i.m_caid << '\n';
+      filename = cString::sprintf("%s/radiowhitelist.vnsi", *VNSIServerConfig.ConfigDirectory);
+      whitelist = &m_providersRadio;
     }
-    wfile.close();
+    else
+    {
+      filename = cString::sprintf("%s/videowhitelist.vnsi", *VNSIServerConfig.ConfigDirectory);
+      whitelist = &m_providersVideo;
+    }
+
+    wfile.open(filename);
+    if(wfile.is_open())
+    {
+      for (const auto i : *whitelist)
+      {
+        wfile << i.m_name << '|' << i.m_caid << '\n';
+      }
+      wfile.close();
+    }
   }
 
   SortChannels();
@@ -196,31 +198,33 @@ void cVNSIChannelFilter::StoreWhitelist(bool radio)
 
 void cVNSIChannelFilter::StoreBlacklist(bool radio)
 {
-  cMutexLock lock(&m_Mutex);
-
-  cString filename;
-  std::ofstream wfile;
-  std::set<int> *blacklist;
-
-  if (radio)
   {
-    filename = cString::sprintf("%s/radioblacklist.vnsi", *VNSIServerConfig.ConfigDirectory);
-    blacklist = &m_channelsRadio;
-  }
-  else
-  {
-    filename = cString::sprintf("%s/videoblacklist.vnsi", *VNSIServerConfig.ConfigDirectory);
-    blacklist = &m_channelsVideo;
-  }
+    cMutexLock lock(&m_Mutex);
 
-  wfile.open(filename);
-  if(wfile.is_open())
-  {
-    for (const auto i : *blacklist)
+    cString filename;
+    std::ofstream wfile;
+    std::set<int> *blacklist;
+
+    if (radio)
     {
-      wfile << i << '\n';
+      filename = cString::sprintf("%s/radioblacklist.vnsi", *VNSIServerConfig.ConfigDirectory);
+      blacklist = &m_channelsRadio;
     }
-    wfile.close();
+    else
+    {
+      filename = cString::sprintf("%s/videoblacklist.vnsi", *VNSIServerConfig.ConfigDirectory);
+      blacklist = &m_channelsVideo;
+    }
+
+    wfile.open(filename);
+    if(wfile.is_open())
+    {
+      for (const auto i : *blacklist)
+      {
+        wfile << i << '\n';
+      }
+      wfile.close();
+    }
   }
 
   SortChannels();
