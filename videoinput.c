@@ -515,8 +515,6 @@ bool cVideoInput::Open(const cChannel *channel, int priority, cVideoBuffer *vide
     if (m_Device->SwitchChannel(m_Channel, false))
     {
 
-      m_Device->SetCurrentChannel(m_Channel);
-
 #if VDRVERSNUM < 20104
       m_PatFilter = new cLivePatFilter(this, m_Channel);
       m_Device->AttachFilter(m_PatFilter);
