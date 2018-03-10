@@ -65,6 +65,7 @@ cVNSIClient::cVNSIClient(int fd, unsigned int id, const char *ClientAdr, CVNSITi
 {
   SetDescription("VNSI Client %u->%s", id, ClientAdr);
 
+  m_StatusInterfaceEnabled = false;
   Start();
 }
 
@@ -299,8 +300,6 @@ int cVNSIClient::EpgChange()
 
 void cVNSIClient::Recording(const cDevice *Device, const char *Name, const char *FileName, bool On)
 {
-  cMutexLock lock(&m_msgLock);
-
   if (m_StatusInterfaceEnabled)
   {
     cResponsePacket resp;
@@ -324,8 +323,6 @@ void cVNSIClient::Recording(const cDevice *Device, const char *Name, const char 
 
 void cVNSIClient::OsdStatusMessage(const char *Message)
 {
-  cMutexLock lock(&m_msgLock);
-
   if (m_StatusInterfaceEnabled && Message)
   {
     /* Ignore this messages */

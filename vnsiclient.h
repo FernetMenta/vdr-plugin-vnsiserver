@@ -34,6 +34,7 @@
 #include "cxsocket.h"
 #include "channelscancontrol.h"
 
+#include <atomic>
 #include <map>
 #include <string>
 
@@ -53,41 +54,6 @@ class CVNSITimers;
 class cVNSIClient : public cThread
                   , public cStatus
 {
-  const unsigned int m_Id;
-  cxSocket         m_socket;
-  bool             m_loggedIn = false;
-  bool             m_StatusInterfaceEnabled = false;
-  cLiveStreamer   *m_Streamer = nullptr;
-  bool             m_isStreaming = false;
-  bool             m_bSupportRDS = false;
-  const cString    m_ClientAddress;
-  cRecPlayer      *m_RecPlayer = nullptr;
-  cCharSetConv     m_toUTF8;
-  uint32_t         m_protocolVersion;
-  cMutex           m_msgLock;
-  static cMutex    m_timerLock;
-  cVnsiOsdProvider *m_Osd = nullptr;
-  CScanControl      m_ChannelScanControl;
-  static bool       m_inhibidDataUpdates;
-  typedef struct
-  {
-    int attempts = 0;
-    time_t lastEvent = 0;
-    time_t lastTrigger = 0;
-  } sEpgUpdate;
-  std::map<int, sEpgUpdate> m_epgUpdate;
-  CVNSITimers &m_vnsiTimers;
-
-protected:
-
-  bool processRequest(cRequestPacket &req);
-
-  virtual void Action(void) override;
-  virtual void Recording(const cDevice *Device, const char *Name, const char *FileName, bool On) override;
-  virtual void OsdStatusMessage(const char *Message) override;
-#if VDRVERSNUM >= 20104
-  virtual void ChannelChange(const cChannel *Channel) override;
-#endif
 
 public:
 
@@ -101,27 +67,25 @@ public:
   void RecordingsChange();
   void SignalTimerChange();
   int EpgChange();
-  static bool InhibidDataUpdates() { return m_inhibidDataUpdates; }
-
   unsigned int GetID() { return m_Id; }
 
+  static bool InhibidDataUpdates() { return m_inhibidDataUpdates; }
+
 protected:
+
+  void Action(void) override;
+  void Recording(const cDevice *Device, const char *Name, const char *FileName, bool On) override;
+  void OsdStatusMessage(const char *Message) override;
+#if VDRVERSNUM >= 20104
+  void ChannelChange(const cChannel *Channel) override;
+#endif
 
   void SetLoggedIn(bool yesNo) { m_loggedIn = yesNo; }
   void SetStatusInterface(bool yesNo) { m_StatusInterfaceEnabled = yesNo; }
   bool StartChannelStreaming(cResponsePacket &resp, const cChannel *channel, int32_t priority, uint8_t timeshift, uint32_t timeout);
   void StopChannelStreaming();
 
-private:
-
-  typedef struct {
-    bool automatic;
-    bool radio;
-    std::string name;
-  } ChannelGroup;
-
-  std::map<std::string, ChannelGroup> m_channelgroups[2];
-
+  bool processRequest(cRequestPacket &req);
   bool process_Login(cRequestPacket &r);
   bool process_GetTime(cRequestPacket &r);
   bool process_EnableStatusInterface(cRequestPacket &r);
@@ -194,9 +158,8 @@ private:
 
   cString CreatePiconRef(const cChannel* channel);
 
-private:
-  /** Static callback functions to interact with wirbelscan plugin over
-      the plugin service interface */
+  // Static callback functions to interact with wirbelscan plugin over
+  // the plugin service interface
   friend class CScanControl;
 
   void processSCAN_SetPercentage(int percent);
@@ -206,4 +169,39 @@ private:
   void processSCAN_NewChannel(const char *Name, bool isRadio, bool isEncrypted, bool isHD);
   void processSCAN_IsFinished();
   void processSCAN_SetStatus(int status);
+
+  typedef struct
+  {
+    bool automatic;
+    bool radio;
+    std::string name;
+  } ChannelGroup;
+
+  std::map<std::string, ChannelGroup> m_channelgroups[2];
+
+  const unsigned int m_Id;
+  cxSocket m_socket;
+  bool m_loggedIn = false;
+  std::atomic_bool m_StatusInterfaceEnabled;
+  cLiveStreamer *m_Streamer = nullptr;
+  bool m_isStreaming = false;
+  bool m_bSupportRDS = false;
+  const cString m_ClientAddress;
+  cRecPlayer *m_RecPlayer = nullptr;
+  cCharSetConv m_toUTF8;
+  uint32_t m_protocolVersion;
+  cMutex m_msgLock;
+  static cMutex m_timerLock;
+  cVnsiOsdProvider *m_Osd = nullptr;
+  CScanControl m_ChannelScanControl;
+  static bool m_inhibidDataUpdates;
+
+  typedef struct
+  {
+    int attempts = 0;
+    time_t lastEvent = 0;
+    time_t lastTrigger = 0;
+  } sEpgUpdate;
+  std::map<int, sEpgUpdate> m_epgUpdate;
+  CVNSITimers &m_vnsiTimers;
 };
