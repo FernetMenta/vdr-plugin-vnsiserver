@@ -1,5 +1,13 @@
 VDR Plugin 'vnsiserver' Revision History
 ----------------------------------------
+
+2018-05-01: Version 1.6.0
+
+- protocol 12 with stream times for timeshift
+- EDL: choose between scenes, comskips and cuts
+- Signal info: use DVB5 API if possible
+- see github history
+
 2017-01-14: Version 1.5.2
 
 - group recordings
