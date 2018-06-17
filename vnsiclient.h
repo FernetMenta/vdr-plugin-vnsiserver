@@ -150,7 +150,7 @@ protected:
   bool processSCAN_Start(cRequestPacket &r);
   bool processSCAN_Stop(cRequestPacket &r);
 
-  bool Undelete(cRecording* recording);
+  bool Undelete(cRecording* recording, cRecordings* reclist, cRecordings* dellist);
 
   bool processOSD_Connect(cRequestPacket &req);
   bool processOSD_Disconnect();
