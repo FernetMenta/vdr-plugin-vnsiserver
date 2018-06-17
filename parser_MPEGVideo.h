@@ -38,7 +38,7 @@ private:
   uint32_t        m_StartCode;
   bool            m_NeedIFrame;
   bool            m_NeedSPS;
-  int             m_FrameDuration;
+  int64_t         m_FrameDuration;
   int             m_vbvDelay;       /* -1 if CBR */
   int             m_vbvSize;        /* Video buffer size (in bytes) */
   int             m_Width;
