@@ -98,6 +98,8 @@ void cVNSIStatus::Action(void)
 {
   cTimeMs chanTimer(0);
   cTimeMs epgTimer(0);
+  cTimeMs recTimer(0);
+  int recCnt = 0;
 
   // get initial state of the recordings
 #if VDRVERSNUM >= 20301
@@ -216,7 +218,13 @@ void cVNSIStatus::Action(void)
       if (recordings->Lock(recState))
       {
         recState.Remove();
-        INFOLOG("Requesting clients to reload recordings list");
+        recTimer.Set(2500);
+        ++recCnt;
+      }
+      else if (recCnt && recTimer.TimedOut())
+      {
+        INFOLOG("Requesting clients to reload recordings list (%d)", recCnt);
+        recCnt = 0;
         for (auto &i : m_clients)
         {
           i.RecordingsChange();
@@ -274,7 +282,13 @@ void cVNSIStatus::Action(void)
       if(Recordings.StateChanged(recState))
       {
         INFOLOG("Recordings state changed (%i)", recState);
+        recTimer.Set(2500);
+        ++recCnt;
+      }
+      else if (recCnt && recTimer.TimedOut())
+      {
         INFOLOG("Requesting clients to reload recordings list");
+        recCnt = 0;
         for (auto &i : m_clients)
           i.RecordingsChange();
       }
