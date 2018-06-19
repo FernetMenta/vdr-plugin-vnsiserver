@@ -3004,7 +3004,7 @@ bool cVNSIClient::processRECORDINGS_DELETED_Delete(cRequestPacket &req) /* OPCOD
   return true;
 }
 
-bool cVNSIClient::Undelete(cRecording* recording)
+bool cVNSIClient::Undelete(cRecording* recording, cRecordings* reclist, cRecordings* dellist)
 {
   DEBUGLOG("undelete recording: %s", recording->Name());
 
@@ -3062,17 +3062,9 @@ bool cVNSIClient::Undelete(cRecording* recording)
           OsdStatusMessage(*cString::sprintf("%s (%s)", tr("Error while accessing indexfile"), NewName));
         }
 
-#if VDRVERSNUM >= 20301
-        LOCK_RECORDINGS_WRITE;
-        LOCK_DELETEDRECORDINGS_WRITE;
-        DeletedRecordings->Del(recording);
-        Recordings->Update();
-        DeletedRecordings->Update();
-#else
-        DeletedRecordings.Del(recording);
-        Recordings.Update();
-        DeletedRecordings.Update();
-#endif
+        dellist->Del(recording);
+        reclist->Update();
+        dellist->Update();
       }
       else
       {
@@ -3099,6 +3091,7 @@ bool cVNSIClient::processRECORDINGS_DELETED_Undelete(cRequestPacket &req) /* OPC
     uint32_t uid = req.extract_U32();
 
 #if VDRVERSNUM >= 20301
+    LOCK_RECORDINGS_WRITE;
     LOCK_DELETEDRECORDINGS_WRITE;
     for (cRecording* recording = DeletedRecordings->First(); recording; recording = DeletedRecordings->Next(recording))
 #else
@@ -3108,7 +3101,11 @@ bool cVNSIClient::processRECORDINGS_DELETED_Undelete(cRequestPacket &req) /* OPC
     {
       if (uid == CreateStringHash(recording->FileName()))
       {
-        if (Undelete(recording))
+#if VDRVERSNUM >= 20301
+        if (Undelete(recording, Recordings, DeletedRecordings))
+#else
+        if (Undelete(recording, &Recordings, &DeletedRecordings))
+#endif
         {
           INFOLOG("Recording \"%s\" undeleted", recording->FileName());
           ret = VNSI_RET_OK;
