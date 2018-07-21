@@ -24,8 +24,7 @@
  *
  */
 
-#ifndef VNSI_CXSOCKET_H
-#define VNSI_CXSOCKET_H
+#pragma once
 
 #ifdef __FreeBSD__
 #include <netinet/in.h>
@@ -59,4 +58,3 @@ class cxSocket
   static char *ip2txt(uint32_t ip, unsigned int port, char *str);
 };
 
-#endif // VNSI_CXSOCKET_H
