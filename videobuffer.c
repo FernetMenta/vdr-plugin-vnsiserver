@@ -111,6 +111,7 @@ public:
   virtual off_t GetPosCur();
   virtual void GetPositions(off_t *cur, off_t *min, off_t *max);
   virtual bool HasBuffer() { return true; };
+  virtual void GetBufferTime(time_t &endTime, time_t &wrapTime);
 
 protected:
   cVideoBufferTimeshift();
@@ -184,6 +185,14 @@ off_t cVideoBufferTimeshift::Available()
     ret = m_BufferSize - (m_ReadPtr - m_WritePtr);
 
   return ret;
+}
+
+void cVideoBufferTimeshift::GetBufferTime(time_t &endTime, time_t &wrapTime)
+{
+  cMutexLock lock(&m_Mutex);
+
+  endTime = m_bufferEndTime;
+  wrapTime = m_bufferWrapTime;
 }
 //-----------------------------------------------------------------------------
 
@@ -951,4 +960,10 @@ time_t cVideoBuffer::GetRefTime()
   time_t t;
   time(&t);
   return t;
+}
+
+void cVideoBuffer::GetBufferTime(time_t &endTime, time_t &wrapTime)
+{
+  endTime = 0;
+  wrapTime = 0;
 }

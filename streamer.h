@@ -23,8 +23,7 @@
  *
  */
 
-#ifndef VNSI_RECEIVER_H
-#define VNSI_RECEIVER_H
+#pragma once
 
 #include <linux/dvb/frontend.h>
 #include <linux/videodev2.h>
@@ -38,6 +37,8 @@
 #include "demuxer.h"
 #include "videoinput.h"
 
+#include <memory>
+
 class cxSocket;
 class cChannel;
 class cTSParser;
@@ -49,46 +50,8 @@ class cLiveStreamer : public cThread
 {
   friend class cParser;
 
-  void sendStreamPacket(sStreamPacket *pkt);
-  void sendStreamChange();
-  void sendSignalInfo();
-  void sendStreamStatus();
-  void sendBufferStatus();
-  void sendRefTime(sStreamPacket &pkt);
-  void sendStreamTimes(sStreamPacket &pkt);
-
-  const int         m_ClientID;
-  const cChannel   *m_Channel = nullptr;            /*!> Channel to stream */
-  cDevice          *m_Device;
-  cxSocket         *m_Socket = nullptr;             /*!> The socket class to communicate with client */
-  int               m_Frontend = -1;                /*!> File descriptor to access used receiving device  */
-  dvb_frontend_info m_FrontendInfo;                 /*!> DVB Information about the receiving device (DVB only) */
-  v4l2_capability   m_vcap;                         /*!> PVR Information about the receiving device (pvrinput only) */
-  cString           m_DeviceString;                 /*!> The name of the receiving device */
-  bool              m_startup = true;
-  bool              m_IsAudioOnly = false;          /*!> Set to true if streams contains only audio */
-  bool              m_IsMPEGPS = false;             /*!> TS Stream contains MPEG PS data like from pvrinput */
-  uint32_t          m_scanTimeout;                  /*!> Channel scanning timeout (in seconds) */
-  cTimeMs           m_last_tick;
-  bool              m_SignalLost = false;
-  bool              m_IFrameSeen = false;
-  cResponsePacket   m_streamHeader;
-  cVNSIDemuxer      m_Demuxer;
-  cVideoBuffer     *m_VideoBuffer = nullptr;
-  cVideoInput       m_VideoInput;
-  int               m_Priority;
-  uint8_t m_Timeshift;
-  cCondWait m_Event;
-  time_t m_refTime;
-  int64_t m_refDTS;
-  int m_protocolVersion = 0;
-
-protected:
-  virtual void Action(void);
-  bool Open(int serial = -1);
-  void Close();
-
 public:
+
   cLiveStreamer(int clientID, bool bAllowRDS, int protocol, uint8_t timeshift, uint32_t timeout);
   virtual ~cLiveStreamer();
 
@@ -103,6 +66,48 @@ public:
   bool IsMPEGPS() { return m_IsMPEGPS; }
   bool SeekTime(int64_t time, uint32_t &serial);
   void RetuneChannel(const cChannel *channel);
+  void AddStatusSocket(int fd);
+  void SendStatus();
+
+protected:
+  virtual void Action(void);
+  bool Open(int serial = -1);
+  void Close();
+
+  void sendStreamPacket(sStreamPacket *pkt);
+  void sendStreamChange();
+  void sendSignalInfo();
+  void sendStreamStatus();
+  void sendBufferStatus();
+  void sendRefTime(sStreamPacket &pkt);
+  void sendStreamTimes();
+
+  const int m_ClientID;
+  const cChannel *m_Channel = nullptr;
+  cDevice *m_Device;
+  cxSocket *m_Socket = nullptr;             /*!> The socket class to communicate with client */
+  std::unique_ptr<cxSocket> m_statusSocket;
+  int m_Frontend = -1;                      /*!> File descriptor to access used receiving device  */
+  dvb_frontend_info m_FrontendInfo;         /*!> DVB Information about the receiving device (DVB only) */
+  v4l2_capability m_vcap;                   /*!> PVR Information about the receiving device (pvrinput only) */
+  cString m_DeviceString;                   /*!> The name of the receiving device */
+  bool m_startup = true;
+  bool m_IsAudioOnly = false;               /*!> Set to true if streams contains only audio */
+  bool m_IsMPEGPS = false;                  /*!> TS Stream contains MPEG PS data like from pvrinput */
+  uint32_t m_scanTimeout;                   /*!> Channel scanning timeout (in seconds) */
+  cTimeMs m_last_tick;
+  bool m_SignalLost = false;
+  bool m_IFrameSeen = false;
+  cResponsePacket m_streamHeader;
+  cVNSIDemuxer m_Demuxer;
+  cVideoBuffer *m_VideoBuffer = nullptr;
+  cVideoInput m_VideoInput;
+  int m_Priority;
+  uint8_t m_Timeshift;
+  cCondWait m_Event;
+  time_t m_refTime;
+  int64_t m_refDTS;
+  int64_t m_curDTS = 0;
+  int m_protocolVersion = 0;
 };
 
-#endif  // VNSI_RECEIVER_H

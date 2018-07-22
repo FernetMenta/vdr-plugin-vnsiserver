@@ -92,10 +92,14 @@ protected:
   bool process_Ping(cRequestPacket &r);
   bool process_GetSetup(cRequestPacket &r);
   bool process_StoreSetup(cRequestPacket &r);
+  bool process_GetSocket(cRequestPacket &r);
+  bool process_InvalidateSocket(cRequestPacket &r);
 
   bool processChannelStream_Open(cRequestPacket &r);
   bool processChannelStream_Close(cRequestPacket &req);
   bool processChannelStream_Seek(cRequestPacket &r);
+  bool processChannelStream_StatusSocket(cRequestPacket &r);
+  bool processChannelStream_StatusRequest(cRequestPacket &r);
 
   bool processRecStream_Open(cRequestPacket &r);
   bool processRecStream_Close(cRequestPacket &r);
