@@ -27,8 +27,6 @@
 #include <sys/ioctl.h>
 #include <time.h>
 
-#define DISABLE_TEMPLATES_COLLIDING_WITH_STL
-
 #include "streamer.h"
 
 #include "config.h"

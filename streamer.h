@@ -27,9 +27,6 @@
 
 #include <linux/dvb/frontend.h>
 #include <linux/videodev2.h>
-#include <vdr/channels.h>
-#include <vdr/device.h>
-#include <vdr/receiver.h>
 #include <vdr/thread.h>
 
 #include "parser.h"
@@ -45,6 +42,7 @@ class cTSParser;
 class cResponsePacket;
 class cVideoBuffer;
 class cVideoInput;
+class cDevice;
 
 class cLiveStreamer : public cThread
 {

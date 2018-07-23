@@ -24,6 +24,7 @@
 
 #include <stdlib.h>
 #include <assert.h>
+#include <limits.h>
 #include <vdr/remux.h>
 #include <vdr/channels.h>
 #include "config.h"
@@ -39,7 +40,6 @@
 #include "parser_Teletext.h"
 
 #define PTS_MASK 0x1ffffffffLL
-//#define PTS_MASK 0x7ffffLL
 
 #ifndef INT64_MIN
 #define INT64_MIN       (-0x7fffffffffffffffLL-1)

@@ -22,8 +22,7 @@
  *
  */
 
-#ifndef VNSI_DEMUXER_HEVC_H
-#define VNSI_DEMUXER_HEVC_H
+#pragma once
 
 #include "parser.h"
 
@@ -53,9 +52,9 @@ private:
 
   typedef struct HDR_NAL_t
   {
-     uint nal_unit_type;
-     uint nuh_layer_id;
-     uint nuh_temporal_id;
+     unsigned int nal_unit_type;
+     unsigned int nuh_layer_id;
+     unsigned int nuh_temporal_id;
   } HDR_NAL;
 
   typedef struct mpeg_rational_s {
@@ -119,5 +118,3 @@ public:
   virtual void Reset();
 };
 
-
-#endif // VNSI_DEMUXER_HEVC_H

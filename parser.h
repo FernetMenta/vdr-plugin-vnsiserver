@@ -24,9 +24,8 @@
 
 #pragma once
 
-#include <vdr/device.h>
-#include <queue>
 #include <vector>
+#include <stdint.h>
 
 #define DVD_TIME_BASE 1000000
 #define DVD_NOPTS_VALUE    (-1LL<<52) // should be possible to represent in both double and __int64
@@ -52,32 +51,32 @@
 #define ISO13522_STREAM   0xF3
 #define PROG_STREAM_DIR   0xFF
 
-inline bool PesIsHeader(const uchar *p)
+inline bool PesIsHeader(const unsigned char *p)
 {
   return !(p)[0] && !(p)[1] && (p)[2] == 1;
 }
 
-inline int PesHeaderLength(const uchar *p)
+inline int PesHeaderLength(const unsigned char *p)
 {
   return 8 + (p)[8] + 1;
 }
 
-inline bool PesIsVideoPacket(const uchar *p)
+inline bool PesIsVideoPacket(const unsigned char *p)
 {
   return (((p)[3] & ~VIDEO_STREAM_MASK) == VIDEO_STREAM);
 }
 
-inline bool PesIsMPEGAudioPacket(const uchar *p)
+inline bool PesIsMPEGAudioPacket(const unsigned char *p)
 {
   return (((p)[3] & ~AUDIO_STREAM_MASK) == AUDIO_STREAM);
 }
 
-inline bool PesIsPS1Packet(const uchar *p)
+inline bool PesIsPS1Packet(const unsigned char *p)
 {
   return ((p)[3] == PRIVATE_STREAM1 || (p)[3] == PRIVATE_STREAM3 );
 }
 
-inline bool PesIsAudioPacket(const uchar *p)
+inline bool PesIsAudioPacket(const unsigned char *p)
 {
   return (PesIsMPEGAudioPacket(p) || PesIsPS1Packet(p));
 }

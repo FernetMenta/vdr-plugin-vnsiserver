@@ -24,13 +24,16 @@
 
 #pragma once
 
-#include <list>
+
 #include "parser.h"
+
+#include <list>
+#include <vdr/channels.h>
+#include <vdr/remux.h>
 
 struct sStreamPacket;
 class cTSStream;
 class cChannel;
-class cPatPmtParser;
 class cVideoBuffer;
 
 class cStreamInfo
