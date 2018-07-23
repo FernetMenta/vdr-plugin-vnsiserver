@@ -47,6 +47,7 @@ public:
   virtual void SetCache(bool on) {};
   virtual bool HasBuffer() { return false; };
   virtual time_t GetRefTime();
+  virtual void GetBufferTime(time_t &endTime, time_t &wrapTime);
   int Read(uint8_t **buf, unsigned int size, time_t &endTime, time_t &wrapTime);
   void AttachInput(bool attach);
 protected:

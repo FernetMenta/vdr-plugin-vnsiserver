@@ -24,8 +24,7 @@
  *
  */
 
-#ifndef VNSI_CXSOCKET_H
-#define VNSI_CXSOCKET_H
+#pragma once
 
 #ifdef __FreeBSD__
 #include <netinet/in.h>
@@ -39,14 +38,14 @@
 
 class cxSocket
 {
-  const int m_fd;
+  int m_fd;
   cMutex m_MutexWrite;
   cPoller m_pollerRead;
   cPoller m_pollerWrite;
 
  public:
   cxSocket(int h);
-  ~cxSocket();
+  virtual ~cxSocket();
 
   cxSocket(const cxSocket &) = delete;
   cxSocket &operator=(const cxSocket &) = delete;
@@ -54,9 +53,10 @@ class cxSocket
   void Shutdown(void);
   void LockWrite();
   void UnlockWrite();
+  int GetHandle();
+  void Invalidate();
   ssize_t read(void *buffer, size_t size, int timeout_ms = -1);
   ssize_t write(const void *buffer, size_t size, int timeout_ms = -1, bool more_data = false);
   static char *ip2txt(uint32_t ip, unsigned int port, char *str);
 };
 
-#endif // VNSI_CXSOCKET_H

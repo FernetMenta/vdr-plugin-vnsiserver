@@ -71,7 +71,7 @@ public:
 
 cVNSIServer::cVNSIServer(int listenPort) : cThread("VNSI Server")
 {
-  m_ServerPort  = listenPort;
+  m_ServerPort = listenPort;
 
   Start();
 

@@ -354,10 +354,13 @@ bool cVNSIDemuxer::SeekTime(int64_t time)
 
 void cVNSIDemuxer::BufferStatus(bool &timeshift, uint32_t &start, uint32_t &end)
 {
+  cMutexLock lock(&m_Mutex);
+
   timeshift = m_VideoBuffer->HasBuffer();
 
   if (timeshift)
   {
+    m_VideoBuffer->GetBufferTime(m_endTime, m_wrapTime);
     if (!m_wrapTime)
     {
       start = m_refTime;

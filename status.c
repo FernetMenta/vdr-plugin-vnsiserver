@@ -94,6 +94,13 @@ static void DeleteFiles(const char *directory_path, const char *suffix)
   closedir(dir);
 }
 
+void cVNSIStatus::AddClient(int fd, unsigned int id, const char *ClientAdr, CVNSITimers &timers)
+{
+  cMutexLock lock(&m_mutex);
+  std::shared_ptr<cVNSIClient> client = std::make_shared<cVNSIClient>(fd, id, ClientAdr, timers);
+  m_clients.push_back(client);
+}
+
 void cVNSIStatus::Action(void)
 {
   cTimeMs chanTimer(0);
@@ -164,22 +171,21 @@ void cVNSIStatus::Action(void)
     m_mutex.Lock();
 
     // remove disconnected clients
-    for (ClientList::iterator i = m_clients.begin(); i != m_clients.end();)
+    for (auto i = m_clients.begin(); i != m_clients.end();)
     {
-      if (!i->Active())
+      if (!(*i)->Active())
       {
-        INFOLOG("Client with ID %u seems to be disconnected, removing from client list", i->GetID());
+        INFOLOG("removing client with ID %u from client list", (*i)->GetID());
         i = m_clients.erase(i);
       }
-      else {
-        i++;
+      else
+      {
+        ++i;
       }
     }
 
-    /*!
-     * Don't to updates during running channel scan, KODI's PVR manager becomes
-     * restarted of finished scan.
-     */
+    // Don't to updates during running channel scan, KODI's PVR manager becomes
+    //restarted of finished scan.
     if (!cVNSIClient::InhibidDataUpdates())
     {
       // reset inactivity timeout as long as there are clients connected
@@ -189,15 +195,15 @@ void cVNSIStatus::Action(void)
       }
 
       // trigger clients to reload the modified channel list
-      if(chanTimer.TimedOut())
+      if (chanTimer.TimedOut())
       {
 #if VDRVERSNUM >= 20301
         if (channels->Lock(chanState))
         {
           chanState.Remove(false);
           INFOLOG("Requesting clients to reload channel list");
-          for (auto &i : m_clients)
-            i.ChannelsChange();
+          for (auto client : m_clients)
+            client->ChannelsChange();
           chanTimer.Set(5000);
         }
 #else
@@ -206,13 +212,12 @@ void cVNSIStatus::Action(void)
         {
           Channels.SetModified((modified == CHANNELSMOD_USER) ? true : false);
           INFOLOG("Requesting clients to reload channel list");
-          for (auto &i : m_clients)
-            i.ChannelsChange();
+          for (auto client : m_clients)
+            client->ChannelsChange();
         }
         chanTimer.Set(5000);
 #endif
       }
-
 
 #if VDRVERSNUM >= 20301
       if (recordings->Lock(recState))
@@ -225,9 +230,9 @@ void cVNSIStatus::Action(void)
       {
         INFOLOG("Requesting clients to reload recordings list (%d)", recCnt);
         recCnt = 0;
-        for (auto &i : m_clients)
+        for (auto client : m_clients)
         {
-          i.RecordingsChange();
+          client->RecordingsChange();
         }
       }
 
@@ -235,18 +240,18 @@ void cVNSIStatus::Action(void)
       {
         timerState.Remove(false);
         INFOLOG("Requesting clients to reload timers");
-        for (auto &i : m_clients)
+        for (auto client : m_clients)
         {
-          i.SignalTimerChange();
+          client->SignalTimerChange();
         }
       }
 
       if (m_vnsiTimers->StateChange(vnsitimerState))
       {
         INFOLOG("Requesting clients to reload vnsi-timers");
-        for (auto &i : m_clients)
+        for (auto client : m_clients)
         {
-          i.SignalTimerChange();
+          client->SignalTimerChange();
         }
       }
 
@@ -257,9 +262,9 @@ void cVNSIStatus::Action(void)
           epgState.Remove(false);
           DEBUGLOG("Requesting clients to load epg");
           int callAgain = 0;
-          for (auto &i : m_clients)
+          for (auto client : m_clients)
           {
-            callAgain |= i.EpgChange();
+            callAgain |= client->EpgChange();
           }
           if (callAgain & VNSI_EPG_AGAIN)
           {
@@ -279,7 +284,7 @@ void cVNSIStatus::Action(void)
       }
 #else
       // update recordings
-      if(Recordings.StateChanged(recState))
+      if (Recordings.StateChanged(recState))
       {
         INFOLOG("Recordings state changed (%i)", recState);
         recTimer.Set(2500);
@@ -289,27 +294,27 @@ void cVNSIStatus::Action(void)
       {
         INFOLOG("Requesting clients to reload recordings list");
         recCnt = 0;
-        for (auto &i : m_clients)
-          i.RecordingsChange();
+        for (auto client : m_clients)
+          client->RecordingsChange();
       }
 
       // update timers
-      if(Timers.Modified(timerState))
+      if (Timers.Modified(timerState))
       {
         INFOLOG("Timers state changed (%i)", timerState);
         INFOLOG("Requesting clients to reload timers");
-        for (auto &i : m_clients)
+        for (auto client : m_clients)
         {
-          i.SignalTimerChange();
+          client->SignalTimerChange();
         }
       }
 
       // update epg
-      if((cSchedules::Modified() > epgUpdate + 10) || time(NULL) > epgUpdate + 300)
+      if ((cSchedules::Modified() > epgUpdate + 10) || time(NULL) > epgUpdate + 300)
       {
-        for (auto &i : m_clients)
+        for (auto client : m_clients)
         {
-          i.EpgChange();
+          client->EpgChange();
         }
         epgUpdate = time(NULL);
       }

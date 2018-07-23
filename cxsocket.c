@@ -54,20 +54,20 @@
 #endif
 
 cxSocket::cxSocket(int h)
-  :m_fd(h),
-   m_pollerRead(m_fd),
-   m_pollerWrite(m_fd, true)
+  :m_fd(h), m_pollerRead(m_fd), m_pollerWrite(m_fd, true)
 {
 }
 
 cxSocket::~cxSocket()
 {
-  close(m_fd);
+  if (m_fd >= 0)
+    close(m_fd);
 }
 
 void cxSocket::Shutdown()
 {
-  ::shutdown(m_fd, SHUT_RD);
+  if (m_fd >= 0)
+    ::shutdown(m_fd, SHUT_RD);
 }
 
 void cxSocket::LockWrite()
@@ -80,16 +80,29 @@ void cxSocket::UnlockWrite()
   m_MutexWrite.Unlock();
 }
 
+int cxSocket::GetHandle()
+{
+  return m_fd;
+}
+
+void cxSocket::Invalidate()
+{
+  m_fd = -1;
+}
+
 ssize_t cxSocket::write(const void *buffer, size_t size, int timeout_ms, bool more_data)
 {
   cMutexLock CmdLock(&m_MutexWrite);
+
+  if (m_fd < 0)
+    return 0;
 
   ssize_t written = (ssize_t)size;
   const unsigned char *ptr = (const unsigned char *)buffer;
 
   while (size > 0)
   {
-    if(!m_pollerWrite.Poll(timeout_ms))
+    if (!m_pollerWrite.Poll(timeout_ms))
     {
       ERRORLOG("cxSocket::write(fd=%d): poll() failed", m_fd);
       return written-size;
@@ -118,6 +131,9 @@ ssize_t cxSocket::write(const void *buffer, size_t size, int timeout_ms, bool mo
 
 ssize_t cxSocket::read(void *buffer, size_t size, int timeout_ms)
 {
+  if (m_fd < 0)
+    return 0;
+
   int retryCounter = 0;
 
   ssize_t missing = (ssize_t)size;
@@ -161,18 +177,23 @@ ssize_t cxSocket::read(void *buffer, size_t size, int timeout_ms)
 char *cxSocket::ip2txt(uint32_t ip, unsigned int port, char *str)
 {
   // inet_ntoa is not thread-safe (?)
-  if(str) {
+  if (str)
+  {
     unsigned int iph =(unsigned int)ntohl(ip);
     unsigned int porth =(unsigned int)ntohs(port);
-    if(!porth)
+    if (!porth)
+    {
       sprintf(str, "%d.%d.%d.%d",
 	      ((iph>>24)&0xff), ((iph>>16)&0xff),
 	      ((iph>>8)&0xff), ((iph)&0xff));
+    }
     else
+    {
       sprintf(str, "%u.%u.%u.%u:%u",
 	      ((iph>>24)&0xff), ((iph>>16)&0xff),
 	      ((iph>>8)&0xff), ((iph)&0xff),
 	      porth);
+    }
   }
   return str;
 }
