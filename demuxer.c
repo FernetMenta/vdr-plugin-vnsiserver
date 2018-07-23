@@ -176,7 +176,7 @@ int cVNSIDemuxer::Read(sStreamPacket *packet, sStreamPacket *packet_side_data)
     else if (error < 0)
     {
       m_Error |= abs(error);
-      if (m_Error & ERROR_PES_SCRAMBLE)
+      if (m_Error & (ERROR_PES_SCRAMBLE | ERROR_TS_SCRAMBLE))
       {
         if (m_seenFirstPacket)
         {

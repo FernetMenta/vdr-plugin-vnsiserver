@@ -64,9 +64,9 @@ cParser::~cParser()
 
 void cParser::Reset()
 {
-  m_curPTS    = DVD_NOPTS_VALUE;
-  m_curDTS    = DVD_NOPTS_VALUE;
-  m_prevDTS   = DVD_NOPTS_VALUE;
+  m_curPTS = DVD_NOPTS_VALUE;
+  m_curDTS = DVD_NOPTS_VALUE;
+  m_prevDTS = DVD_NOPTS_VALUE;
   m_PesBufferPtr = 0;
   m_PesParserPtr = 0;
   m_PesNextFramePtr = 0;
@@ -75,6 +75,7 @@ void cParser::Reset()
   m_PesPacketLength = 0;
   m_PesHeaderPtr = 0;
   m_Error = ERROR_PES_GENERAL;
+  m_scrambleCounter = 0;
 }
 /*
  * Extract DTS and PTS and update current values in stream
@@ -178,7 +179,10 @@ int cParser::ParsePacketHeader(uint8_t *data)
 {
   if (TsIsScrambled(data))
   {
-    m_Error = ERROR_PES_SCRAMBLE;
+    if (m_scrambleCounter > 100)
+      m_Error = ERROR_TS_SCRAMBLE;
+    else
+      m_scrambleCounter++;
     return -1;
   }
 
@@ -186,11 +190,12 @@ int cParser::ParsePacketHeader(uint8_t *data)
   {
     m_IsPusi = true;
     m_Error = 0;
+    m_scrambleCounter = 0;
   }
 
   int  bytes = TS_SIZE - TsPayloadOffset(data);
 
-  if(bytes < 0 || bytes > TS_SIZE)
+  if (bytes < 0 || bytes > TS_SIZE)
   {
     m_Error = ERROR_PES_GENERAL;
     return -1;
@@ -208,7 +213,7 @@ int cParser::ParsePacketHeader(uint8_t *data)
     return 0;
   }
 
-  /* drop broken PES packets */
+  // drop broken PES packets
   if (m_Error)
   {
     return -1;
@@ -446,7 +451,6 @@ cTSStream::cTSStream(eStreamType type, int pid, sPtsWrap *ptsWrap, bool handleSi
   : m_streamType(type)
   , m_pID(pid)
 {
-  m_pesError        = false;
   m_pesParser       = NULL;
   m_language[0]     = 0;
   m_FpsScale        = 0;
@@ -535,6 +539,7 @@ cTSStream::~cTSStream()
 int cTSStream::ProcessTSPacket(uint8_t *data, sStreamPacket *pkt, sStreamPacket *pkt_side_data, bool iframe)
 {
   int ret = 1;
+  int lastError = m_pesParser->GetError();
 
   if (!data)
     return ret;
@@ -544,10 +549,15 @@ int cTSStream::ProcessTSPacket(uint8_t *data, sStreamPacket *pkt, sStreamPacket 
 
   int payloadSize = m_pesParser->ParsePacketHeader(data);
   if (payloadSize == 0)
+  {
     return ret;
+  }
   else if (payloadSize < 0)
   {
-    return -m_pesParser->GetError();
+    if (lastError)
+      return 1;
+    else
+      return -m_pesParser->GetError();
   }
 
   if (!m_pesParser->AddPESPacket(data+TS_SIZE-payloadSize, payloadSize))

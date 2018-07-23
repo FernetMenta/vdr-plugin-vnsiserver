@@ -780,7 +780,12 @@ void cLiveStreamer::sendStreamStatus()
   uint16_t error = m_Demuxer.GetError();
   if (error & ERROR_PES_SCRAMBLE)
   {
-    INFOLOG("Channel: scrambled %d", error);
+    INFOLOG("Channel: scrambled (PES) %d", error);
+    resp.add_String(cString::sprintf("Channel: scrambled (%d)", error));
+  }
+  else if (error & ERROR_TS_SCRAMBLE)
+  {
+    INFOLOG("Channel: scrambled (TS) %d", error);
     resp.add_String(cString::sprintf("Channel: scrambled (%d)", error));
   }
   else if (error & ERROR_PES_STARTCODE)

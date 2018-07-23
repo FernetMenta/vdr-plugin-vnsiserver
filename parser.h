@@ -22,8 +22,7 @@
  *
  */
 
-#ifndef VNSI_DEMUXER_H
-#define VNSI_DEMUXER_H
+#pragma once
 
 #include <vdr/device.h>
 #include <queue>
@@ -155,7 +154,6 @@ public:
 
   bool AddPESPacket(uint8_t *data, int size);
   virtual void Parse(sStreamPacket *pkt, sStreamPacket *pkt_side_data) = 0;
-//  void ClearFrame() {m_PesBufferPtr = 0;}
   int ParsePacketHeader(uint8_t *data);
   int ParsePESHeader(uint8_t *buf, size_t len);
   virtual void Reset();
@@ -185,13 +183,14 @@ protected:
   int64_t     m_prevPTS;
   int64_t     m_prevDTS;
 
-  bool        m_IsPusi;
-  uint16_t    m_Error;
+  bool m_IsPusi;
+  uint16_t m_Error;
+  int m_scrambleCounter = 0;
 
-  cTSStream  *m_Stream;
-  bool        m_IsVideo;
-  sPtsWrap   *m_PtsWrap;
-  bool        m_ObservePtsWraps;
+  cTSStream *m_Stream;
+  bool m_IsVideo;
+  sPtsWrap *m_PtsWrap;
+  bool m_ObservePtsWraps;
 };
 
 
@@ -203,7 +202,6 @@ private:
   eStreamContent        m_streamContent;
   bool                  m_IsStreamChange;
 
-  bool                  m_pesError;
   cParser              *m_pesParser;
 
   char                  m_language[4];  // ISO 639 3-letter language code (empty string if undefined)
@@ -265,4 +263,3 @@ public:
   static int64_t Rescale(int64_t a, int64_t b, int64_t c);
 };
 
-#endif // VNSI_DEMUXER_H
