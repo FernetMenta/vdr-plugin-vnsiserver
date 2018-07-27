@@ -25,6 +25,7 @@
 #pragma once
 
 #include <vector>
+#include <cstddef>
 #include <stdint.h>
 
 #define DVD_TIME_BASE 1000000
