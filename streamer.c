@@ -27,6 +27,12 @@
 #include <sys/ioctl.h>
 #include <time.h>
 
+// work-around for VDR's tools.h
+#if VDRVERSNUM < 20400
+#define __STL_CONFIG_H 1
+#else
+#define DISABLE_TEMPLATES_COLLIDING_WITH_STL 1
+#endif
 #include "streamer.h"
 
 #include "config.h"
