@@ -1,6 +1,10 @@
 VDR Plugin 'vnsiserver' Revision History
 ----------------------------------------
 
+2018-10-19: Version 1.8.0
+
+- see gibhub history
+
 2018-05-01: Version 1.6.0
 
 - protocol 12 with stream times for timeshift
