@@ -16,10 +16,10 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 
 msgid "Your scanner version doesnt support services - Please upgrade."
-msgstr ""
+msgstr "Die Version des Scanners unterstützt keine Dienste - Bitte aktualisieren."
 
 msgid "Your scanner version is to old - Please upgrade."
-msgstr ""
+msgstr "Die Version des Scanners ist zu alt - Bitte aktualisieren."
 
 msgid "Off"
 msgstr "Aus"
@@ -46,28 +46,28 @@ msgid "Play Recording instead of live"
 msgstr "Wiedergeben als Aufzeichnung statt Live"
 
 msgid "Group series recordings"
-msgstr ""
+msgstr "Serienaufnahmen gruppieren"
 
 msgid "Avoid EPG scan while streaming"
 msgstr "Keine EPG suche während der Wiedergabe durchführen"
 
 msgid "Disable scramble timeout"
-msgstr ""
+msgstr "Entschlüsselungs-Timeout deaktivieren"
 
 msgid "Disable cam blacklist"
-msgstr ""
+msgstr "Cam-Blacklist deaktivieren"
 
 msgid "scene"
-msgstr ""
+msgstr "Szene"
 
 msgid "comskip"
-msgstr ""
+msgstr "Werbung"
 
 msgid "cut"
-msgstr ""
+msgstr "Schnitt"
 
 msgid "EDL Mode"
-msgstr ""
+msgstr "EDL-Modus"
 
 msgid "Recording with the same name exists"
 msgstr "Aufnahme mit der selben größe existiert"
