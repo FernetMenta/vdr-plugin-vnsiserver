@@ -514,6 +514,8 @@ cTSStream::cTSStream(eStreamType type, int pid, sPtsWrap *ptsWrap, bool handleSi
   {
     m_pesParser = new cParserTeletext(m_pID, this, ptsWrap, false);
     m_streamContent = scTELETEXT;
+    m_compositionPageId = -1;
+    m_ancillaryPageId = -1;
   }
   else if (m_streamType == stDVBSUB)
   {

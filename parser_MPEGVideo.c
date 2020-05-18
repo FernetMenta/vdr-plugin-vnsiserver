@@ -64,6 +64,8 @@ cParserMPEG2Video::cParserMPEG2Video(int pID, cTSStream *stream, sPtsWrap *ptsWr
   m_FpsScale          = 0;
   m_PesBufferInitialSize  = 80000;
   m_IsVideo = true;
+  m_AuPrevDTS 	      = -2;
+  m_AuDTS	      = -1;
   Reset();
 }
 
