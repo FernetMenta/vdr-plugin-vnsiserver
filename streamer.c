@@ -56,6 +56,8 @@ cLiveStreamer::cLiveStreamer(int clientID, bool bAllowRDS, int protocol, uint8_t
 {
   m_protocolVersion = protocol;
   m_Timeshift = timeshift;
+  m_refTime = -1;
+  m_refDTS = -2;
 
   memset(&m_FrontendInfo, 0, sizeof(m_FrontendInfo));
 

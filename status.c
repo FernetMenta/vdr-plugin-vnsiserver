@@ -136,7 +136,7 @@ void cVNSIStatus::Action(void)
 #endif
 
   // vnsitimer
-  int vnsitimerState;
+  int vnsitimerState = -1;
   m_vnsiTimers->StateChange(vnsitimerState);
 
   // last update of epg
